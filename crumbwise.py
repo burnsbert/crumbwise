@@ -64,6 +64,8 @@ SECTIONS = {
     "BIG ONGOING PROJECTS": {"tab": "research", "order": 0},
     "PROBLEMS TO SOLVE": {"tab": "research", "order": 1},
     "THINGS TO RESEARCH": {"tab": "research", "order": 2},
+    "RESEARCH IN PROGRESS": {"tab": "research", "order": 3},
+    "RESEARCH DONE": {"tab": "research", "order": 4},
     "BACKLOG HIGH PRIORITY": {"tab": "backlog", "order": 0},
     "BACKLOG MEDIUM PRIORITY": {"tab": "backlog", "order": 1},
     "BACKLOG LOW PRIORITY": {"tab": "backlog", "order": 2},

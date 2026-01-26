@@ -7,7 +7,7 @@ const SECTION_CONFIG = {
         secondary: ['FOLLOW UPS', 'BLOCKED']
     },
     research: {
-        columns: ['BIG ONGOING PROJECTS', 'PROBLEMS TO SOLVE', 'THINGS TO RESEARCH']
+        columns: ['BIG ONGOING PROJECTS', 'PROBLEMS TO SOLVE', 'THINGS TO RESEARCH', 'RESEARCH IN PROGRESS', 'RESEARCH DONE']
     },
     backlog: {
         columns: ['BACKLOG HIGH PRIORITY', 'BACKLOG MEDIUM PRIORITY', 'BACKLOG LOW PRIORITY']
@@ -171,7 +171,7 @@ function renderSettingsPage() {
 function renderColumn(section, isSecondary = false) {
     const sectionTasks = tasks[section] || [];
     const taskCards = sectionTasks
-        .map(task => renderCard(task))
+        .map(task => renderCard(task, section))
         .join('');
 
     const columnClass = isSecondary ? 'column secondary' : 'column';
@@ -195,13 +195,25 @@ function renderColumn(section, isSecondary = false) {
     `;
 }
 
-function renderCard(task) {
+function renderCard(task, section) {
     const completedClass = task.completed ? 'completed' : '';
     const textWithLinks = linkify(escapeHtml(task.text));
+
+    // Determine which move button to show based on section
+    const currentSections = [...SECTION_CONFIG.current.columns, ...SECTION_CONFIG.current.secondary];
+    const backlogSections = SECTION_CONFIG.backlog.columns;
+
+    let moveButton = '';
+    if (currentSections.includes(section)) {
+        moveButton = `<button class="card-btn move" onclick="event.stopPropagation(); showMoveToBacklog('${task.id}')" title="Move to Backlog">↓</button>`;
+    } else if (backlogSections.includes(section)) {
+        moveButton = `<button class="card-btn move" onclick="event.stopPropagation(); showMoveToCurrent('${task.id}')" title="Move to Current">↑</button>`;
+    }
 
     return `
         <div class="card ${completedClass}" data-id="${task.id}" onclick="handleCardClick(event, '${task.id}')">
             <div class="card-actions">
+                ${moveButton}
                 <button class="card-btn delete" onclick="event.stopPropagation(); deleteCard('${task.id}')" title="Delete">×</button>
             </div>
             <div class="card-text">${textWithLinks}</div>
@@ -579,3 +591,56 @@ async function syncToConfluence() {
         syncBtn.classList.remove('disabled');
     }
 }
+
+// Move to Backlog modal
+let moveTaskId = null;
+
+function showMoveToBacklog(taskId) {
+    moveTaskId = taskId;
+    const modal = document.getElementById('move-to-backlog-modal');
+    modal.classList.remove('hidden');
+}
+
+function showMoveToCurrent(taskId) {
+    moveTaskId = taskId;
+    const modal = document.getElementById('move-to-current-modal');
+    modal.classList.remove('hidden');
+}
+
+async function moveToSection(targetSection) {
+    if (!moveTaskId) return;
+
+    try {
+        await fetch(`/api/tasks/${moveTaskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ section: targetSection })
+        });
+        await loadTasks();
+    } catch (error) {
+        console.error('Failed to move task:', error);
+    }
+
+    closeMoveModals();
+}
+
+function closeMoveModals() {
+    moveTaskId = null;
+    document.getElementById('move-to-backlog-modal').classList.add('hidden');
+    document.getElementById('move-to-current-modal').classList.add('hidden');
+}
+
+// Setup move modals on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Close modals on backdrop click
+    ['move-to-backlog-modal', 'move-to-current-modal'].forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeMoveModals();
+                }
+            });
+        }
+    });
+});

@@ -45,6 +45,34 @@
         </div>
     </div>
 
+    <!-- Move to Backlog Modal -->
+    <div id="move-to-backlog-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Move to Backlog</h2>
+            <p>Select priority:</p>
+            <div class="modal-actions modal-actions-vertical">
+                <button class="action-btn" onclick="moveToSection('BACKLOG HIGH PRIORITY')">High Priority</button>
+                <button class="action-btn" onclick="moveToSection('BACKLOG MEDIUM PRIORITY')">Medium Priority</button>
+                <button class="action-btn" onclick="moveToSection('BACKLOG LOW PRIORITY')">Low Priority</button>
+                <button class="action-btn cancel" onclick="closeMoveModals()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Move to Current Modal -->
+    <div id="move-to-current-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Move to Current</h2>
+            <p>Select destination:</p>
+            <div class="modal-actions modal-actions-vertical">
+                <button class="action-btn" onclick="moveToSection('TODO FOLLOWING WEEK')">Following Week</button>
+                <button class="action-btn" onclick="moveToSection('TODO NEXT WEEK')">Next Week</button>
+                <button class="action-btn" onclick="moveToSection('TODO THIS WEEK')">This Week</button>
+                <button class="action-btn" onclick="moveToSection('IN PROGRESS TODAY')">In Progress</button>
+                <button class="action-btn cancel" onclick="closeMoveModals()">Cancel</button>
+            </div>
+        </div>
+    </div>
 
     <main>
         <!-- Tab content -->
