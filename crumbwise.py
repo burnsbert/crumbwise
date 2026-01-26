@@ -326,16 +326,17 @@ def new_week():
     current_quarter = get_current_quarter()
     done_this_week = sections.get("DONE THIS WEEK", [])
     current_quarter_tasks = sections.get(current_quarter, [])
-    sections[current_quarter] = done_this_week + current_quarter_tasks
+    sections[current_quarter] = current_quarter_tasks + done_this_week
     sections["DONE THIS WEEK"] = []
 
     # Shift weekly items:
-    # TODO NEXT WEEK -> TODO THIS WEEK
+    # TODO NEXT WEEK -> TODO THIS WEEK (preserving existing items)
     # TODO FOLLOWING WEEK -> TODO NEXT WEEK
+    this_week = sections.get("TODO THIS WEEK", [])
     next_week = sections.get("TODO NEXT WEEK", [])
     following_week = sections.get("TODO FOLLOWING WEEK", [])
 
-    sections["TODO THIS WEEK"] = next_week
+    sections["TODO THIS WEEK"] = this_week + next_week
     sections["TODO NEXT WEEK"] = following_week
     sections["TODO FOLLOWING WEEK"] = []
 

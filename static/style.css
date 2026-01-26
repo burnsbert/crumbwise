@@ -290,9 +290,9 @@ main {
 }
 
 .card-btn {
-    background: rgba(255,255,255,0.1);
-    border: none;
-    color: var(--text-muted);
+    background: #1a4a7a;
+    border: 1px solid #2a5a8a;
+    color: #ffffff;
     width: 24px;
     height: 24px;
     border-radius: 4px;
@@ -304,8 +304,8 @@ main {
 }
 
 .card-btn:hover {
-    background: rgba(255,255,255,0.2);
-    color: var(--text-color);
+    background: #2a6a9a;
+    color: #ffffff;
 }
 
 .card-btn.delete:hover {
@@ -365,9 +365,6 @@ main {
 }
 
 /* Edit mode */
-.card.editing .card-text {
-    display: none;
-}
 
 .card-edit-input {
     width: 100%;

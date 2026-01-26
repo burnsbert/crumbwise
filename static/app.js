@@ -198,10 +198,8 @@ function renderCard(task) {
     const textWithLinks = linkify(escapeHtml(task.text));
 
     return `
-        <div class="card ${completedClass}" data-id="${task.id}">
+        <div class="card ${completedClass}" data-id="${task.id}" onclick="handleCardClick(event, '${task.id}')">
             <div class="card-actions">
-                <button class="card-btn" onclick="toggleComplete('${task.id}')" title="Toggle complete">✓</button>
-                <button class="card-btn" onclick="editCard('${task.id}')" title="Edit">✎</button>
                 <button class="card-btn delete" onclick="deleteCard('${task.id}')" title="Delete">×</button>
             </div>
             <div class="card-text">${textWithLinks}</div>
@@ -263,6 +261,20 @@ async function handleAddTaskKey(event, section) {
     } else if (event.key === 'Escape') {
         hideAddTask(event.target, section);
     }
+}
+
+// Handle card click - edit unless clicking link or button
+function handleCardClick(event, taskId) {
+    // Don't edit if clicking a link or button
+    if (event.target.tagName === 'A' || event.target.tagName === 'BUTTON') {
+        return;
+    }
+    // Don't edit if already editing
+    const card = document.querySelector(`.card[data-id="${taskId}"]`);
+    if (card.classList.contains('editing')) {
+        return;
+    }
+    editCard(taskId);
 }
 
 // Edit card
