@@ -205,9 +205,9 @@ function renderCard(task, section) {
 
     let moveButton = '';
     if (currentSections.includes(section)) {
-        moveButton = `<button class="card-btn move" onclick="event.stopPropagation(); showMoveToBacklog('${task.id}')" title="Move to Backlog">↓</button>`;
+        moveButton = `<button class="card-btn move" onclick="event.stopPropagation(); showMoveToBacklog('${task.id}')" title="Move to Backlog">&gt;&gt;</button>`;
     } else if (backlogSections.includes(section)) {
-        moveButton = `<button class="card-btn move" onclick="event.stopPropagation(); showMoveToCurrent('${task.id}')" title="Move to Current">↑</button>`;
+        moveButton = `<button class="card-btn move" onclick="event.stopPropagation(); showMoveToCurrent('${task.id}')" title="Move to Current">&lt;&lt;</button>`;
     }
 
     return `

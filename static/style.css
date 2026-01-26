@@ -252,13 +252,13 @@ main {
     border-radius: 6px;
     margin-bottom: 8px;
     cursor: grab;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: border-color 0.15s;
     position: relative;
+    border: 1px solid transparent;
 }
 
 .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.4);
 }
 
 .card:active {
