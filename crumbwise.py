@@ -6,16 +6,24 @@ import re
 import uuid
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request
 
 
 def get_current_quarter():
-    """Get the current quarter string like 'DONE Q1 2026'."""
-    now = datetime.now()
-    quarter = (now.month - 1) // 3 + 1
-    return f"DONE Q{quarter} {now.year}"
+    """Get the current quarter string like 'DONE Q1 2026'.
+
+    Based on the most recent Friday (including today if it's Friday).
+    This ensures weekly tasks are attributed to the correct quarter
+    even when clicking New Week on a Monday after quarter end.
+    """
+    today = datetime.now().date()
+    # Friday is weekday 4 (Monday=0, Sunday=6)
+    days_since_friday = (today.weekday() - 4) % 7
+    most_recent_friday = today - timedelta(days=days_since_friday)
+    quarter = (most_recent_friday.month - 1) // 3 + 1
+    return f"DONE Q{quarter} {most_recent_friday.year}"
 
 app = Flask(__name__)
 
@@ -35,6 +43,13 @@ def load_settings():
 def save_settings(settings):
     """Save settings to JSON file."""
     SETTINGS_FILE.write_text(json.dumps(settings, indent=2))
+
+
+def clear_undo():
+    """Clear undo file after any task modification."""
+    if UNDO_FILE.exists():
+        UNDO_FILE.unlink()
+
 
 # Section definitions with display order and tab grouping
 # Current tab flow: Week After Next -> Next Week -> This Week -> In Progress -> Done This Week
@@ -201,6 +216,7 @@ def add_task():
     }
     sections[section].append(new_task)
     save_tasks(sections)
+    clear_undo()
 
     return jsonify(new_task), 201
 
@@ -242,6 +258,7 @@ def update_task(task_id):
         sections[new_section].append(found_task)
 
     save_tasks(sections)
+    clear_undo()
     return jsonify(found_task)
 
 
@@ -255,6 +272,7 @@ def delete_task(task_id):
             if task["id"] == task_id:
                 tasks.remove(task)
                 save_tasks(sections)
+                clear_undo()
                 return jsonify({"success": True})
 
     return jsonify({"error": "Task not found"}), 404
@@ -270,6 +288,7 @@ def toggle_complete(task_id):
             if task["id"] == task_id:
                 task["completed"] = not task["completed"]
                 save_tasks(sections)
+                clear_undo()
                 return jsonify(task)
 
     return jsonify({"error": "Task not found"}), 404
@@ -310,6 +329,7 @@ def reorder_tasks():
     sections[target_section].insert(target_index, found_task)
 
     save_tasks(sections)
+    clear_undo()
     return jsonify({"success": True})
 
 
@@ -467,8 +487,7 @@ def generate_confluence_content(sections):
                     r'<a href="\1">\1</a>',
                     text
                 )
-                checkbox = '&#9746;' if task.get('completed') else '&#9744;'
-                html_parts.append(f'<li>{checkbox} {text}</li>')
+                html_parts.append(f'<li>{text}</li>')
             html_parts.append('</ul>')
         else:
             html_parts.append('<p><em>(empty)</em></p>')

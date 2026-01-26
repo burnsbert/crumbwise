@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNewWeek();
     setupSettings();
     loadTasks();
-    checkUndoAvailable();
     loadSettings();
 });
 
@@ -49,19 +48,22 @@ function setupTabs() {
 
 async function loadTasks() {
     try {
-        // Fetch current quarter and tasks in parallel
-        const [tasksResponse, quarterResponse] = await Promise.all([
+        // Fetch current quarter, tasks, and undo status in parallel
+        const [tasksResponse, quarterResponse, undoResponse] = await Promise.all([
             fetch('/api/tasks'),
-            fetch('/api/current-quarter')
+            fetch('/api/current-quarter'),
+            fetch('/api/can-undo')
         ]);
         tasks = await tasksResponse.json();
         const quarterData = await quarterResponse.json();
+        const undoData = await undoResponse.json();
         currentQuarter = quarterData.quarter;
 
         // Build history columns dynamically from task data
         updateHistoryColumns();
 
         renderBoard();
+        updateUndoButton(undoData.canUndo);
     } catch (error) {
         console.error('Failed to load tasks:', error);
     }
@@ -200,7 +202,7 @@ function renderCard(task) {
     return `
         <div class="card ${completedClass}" data-id="${task.id}" onclick="handleCardClick(event, '${task.id}')">
             <div class="card-actions">
-                <button class="card-btn delete" onclick="deleteCard('${task.id}')" title="Delete">×</button>
+                <button class="card-btn delete" onclick="event.stopPropagation(); deleteCard('${task.id}')" title="Delete">×</button>
             </div>
             <div class="card-text">${textWithLinks}</div>
         </div>
@@ -332,16 +334,6 @@ async function saveEdit(taskId) {
         await loadTasks();
     } catch (error) {
         console.error('Failed to save edit:', error);
-    }
-}
-
-// Toggle complete
-async function toggleComplete(taskId) {
-    try {
-        await fetch(`/api/tasks/${taskId}/complete`, { method: 'POST' });
-        await loadTasks();
-    } catch (error) {
-        console.error('Failed to toggle complete:', error);
     }
 }
 

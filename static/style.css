@@ -39,13 +39,7 @@ header {
     display: flex;
     gap: 8px;
     margin-bottom: 8px;
-}
-
-.tab-separator {
-    width: 1px;
-    height: 24px;
-    background: rgba(255,255,255,0.2);
-    margin: 0 12px;
+    margin-right: 20px;
 }
 
 .action-btn {
@@ -154,7 +148,6 @@ main {
 .followups-area {
     margin-top: var(--gap);
     padding-top: var(--gap);
-    border-top: 1px solid rgba(255,255,255,0.1);
 }
 
 .followups-area.hidden {
