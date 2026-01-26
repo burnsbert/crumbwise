@@ -175,8 +175,8 @@ function renderColumn(section, isSecondary = false) {
         .join('');
 
     const columnClass = isSecondary ? 'column secondary' : 'column';
-    const sectionClass = isSecondary || section === 'DONE THIS WEEK' ? 'blocked-section' :
-                         section === currentQuarter || section === 'IN PROGRESS TODAY' ? 'current-period' :
+    const sectionClass = isSecondary || section === 'DONE THIS WEEK' || section === 'RESEARCH DONE' || section === currentQuarter ? 'blocked-section' :
+                         section === 'IN PROGRESS TODAY' || section === 'RESEARCH IN PROGRESS' ? 'current-period' :
                          (section.startsWith('DONE Q') || section.startsWith('DONE 20')) && section !== currentQuarter && section !== 'DONE THIS WEEK' ? 'past-period' : '';
 
     return `
