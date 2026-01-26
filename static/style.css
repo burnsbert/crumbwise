@@ -1,0 +1,568 @@
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg-color: #1a1a2e;
+    --surface-color: #16213e;
+    --card-color: #0f3460;
+    --accent-color: #ea580c;
+    --blocked-color: #ea580c;
+    --text-color: #eee;
+    --text-muted: #888;
+    --border-radius: 8px;
+    --column-width: 280px;
+    --gap: 16px;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+}
+
+/* Header */
+header {
+    background: var(--surface-color);
+    padding: 16px 24px 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.tab-separator {
+    width: 1px;
+    height: 24px;
+    background: rgba(255,255,255,0.2);
+    margin: 0 12px;
+}
+
+.action-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: var(--text-color);
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.action-btn:hover:not(.disabled) {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
+}
+
+.action-btn.undo:not(.disabled) {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.action-btn.undo:not(.disabled):hover {
+    background: rgba(234, 88, 12, 0.2);
+}
+
+.action-btn.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.logo-link {
+    text-decoration: none;
+    margin-bottom: 12px;
+}
+
+header h1 {
+    font-family: 'Pacifico', cursive;
+    font-size: 2.2rem;
+    font-weight: 400;
+    background: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #ea580c 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 3s ease infinite;
+    text-shadow: 0 0 30px rgba(234, 88, 12, 0.4);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.tab {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-bottom: none;
+    color: var(--text-muted);
+    padding: 10px 20px 8px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    position: relative;
+    top: 1px;
+}
+
+.tab:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-color);
+}
+
+.tab.active {
+    background: var(--bg-color);
+    border-color: rgba(255,255,255,0.2);
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+/* Main content */
+main {
+    padding: var(--gap);
+}
+
+/* Logo animation */
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Board */
+.board {
+    display: flex;
+    gap: var(--gap);
+    overflow-x: auto;
+    padding-bottom: var(--gap);
+}
+
+/* Secondary area (Follow-ups and Blocked) */
+.followups-area {
+    margin-top: var(--gap);
+    padding-top: var(--gap);
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.followups-area.hidden {
+    display: none;
+}
+
+.followups-columns {
+    display: flex;
+    gap: var(--gap);
+    overflow-x: auto;
+}
+
+/* Columns */
+.column {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    width: var(--column-width);
+    min-width: var(--column-width);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 180px);
+}
+
+/* Shorter columns on Current tab to show secondary row */
+.board.current-tab .column {
+    max-height: calc(100vh - 380px);
+}
+
+.column.secondary {
+    max-height: calc(100vh - 380px);
+}
+
+.column-header {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.column-count {
+    background: rgba(255,255,255,0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+}
+
+/* Current period highlight in History */
+.column.current-period {
+    border: 2px solid #2563eb;
+}
+
+.column.current-period .column-header {
+    background: #2563eb;
+    color: white;
+}
+
+.column.current-period .column-count {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Past periods are de-emphasized */
+.column.past-period {
+    opacity: 0.6;
+}
+
+.column.past-period:hover {
+    opacity: 1;
+}
+
+.column-tasks {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    min-height: 100px;
+}
+
+/* Cards */
+.card {
+    background: var(--card-color);
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: grab;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.card:active {
+    cursor: grabbing;
+}
+
+.card.completed {
+    opacity: 0.7;
+}
+
+.card-text {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.card-text a {
+    color: #64b5f6;
+    text-decoration: none;
+}
+
+.card-text a:hover {
+    text-decoration: underline;
+}
+
+.card-actions {
+    display: none;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    gap: 4px;
+}
+
+.card:hover .card-actions {
+    display: flex;
+}
+
+.card-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: var(--text-muted);
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-btn:hover {
+    background: rgba(255,255,255,0.2);
+    color: var(--text-color);
+}
+
+.card-btn.delete:hover {
+    background: var(--accent-color);
+    color: white;
+}
+
+/* Add task */
+.add-task {
+    padding: 8px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.add-task-btn {
+    width: 100%;
+    padding: 8px;
+    background: transparent;
+    border: 1px dashed rgba(255,255,255,0.2);
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.add-task-btn:hover {
+    border-color: var(--accent-color);
+    color: var(--text-color);
+}
+
+.add-task-input {
+    width: 100%;
+    padding: 8px;
+    background: var(--card-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.add-task-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Drag states */
+.sortable-ghost {
+    opacity: 0.4;
+}
+
+.sortable-chosen {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.sortable-drag {
+    opacity: 1 !important;
+}
+
+/* Edit mode */
+.card.editing .card-text {
+    display: none;
+}
+
+.card-edit-input {
+    width: 100%;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: var(--surface-color);
+    padding: 24px;
+    border-radius: var(--border-radius);
+    max-width: 400px;
+    width: 90%;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.modal-content h2 {
+    margin: 0 0 16px 0;
+    color: var(--text-color);
+    font-size: 1.25rem;
+}
+
+.modal-content p {
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+}
+
+.modal-content ul {
+    margin: 0 0 20px 0;
+    padding-left: 20px;
+    color: var(--text-color);
+}
+
+.modal-content li {
+    margin-bottom: 8px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.action-btn.confirm {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+.action-btn.confirm:hover {
+    background: #1d4ed8;
+}
+
+.action-btn.cancel {
+    background: transparent;
+}
+
+/* Settings Modal */
+.settings-modal {
+    max-width: 500px;
+}
+
+.settings-section {
+    margin-bottom: 20px;
+}
+
+.settings-section h3 {
+    color: var(--text-color);
+    font-size: 1rem;
+    margin: 0 0 8px 0;
+}
+
+.settings-help {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+}
+
+.settings-help a {
+    color: #60a5fa;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--card-color);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.form-group input::placeholder {
+    color: var(--text-muted);
+}
+
+.token-status {
+    display: block;
+    font-size: 0.8rem;
+    margin-top: 4px;
+    color: #22c55e;
+}
+
+/* Settings Page */
+.settings-view {
+    justify-content: center;
+}
+
+.settings-page {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.settings-card {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    padding: 24px;
+}
+
+.settings-card h2 {
+    color: var(--text-color);
+    font-size: 1.25rem;
+    margin: 0 0 8px 0;
+}
+
+.settings-actions {
+    margin-top: 20px;
+}
+
+.action-btn.confirm {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+}
+
+.action-btn.confirm:hover {
+    background: #1d4ed8;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
+}
