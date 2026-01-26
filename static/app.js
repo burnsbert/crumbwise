@@ -4,10 +4,10 @@ const SECTION_CONFIG = {
     current: {
         // Flow: Week After Next -> Next Week -> This Week -> In Progress -> Done This Week
         columns: ['TODO FOLLOWING WEEK', 'TODO NEXT WEEK', 'TODO THIS WEEK', 'IN PROGRESS TODAY', 'DONE THIS WEEK'],
-        secondary: ['FOLLOW UPS', 'BLOCKED']
+        secondary: ['BIG ONGOING PROJECTS', 'FOLLOW UPS', 'BLOCKED']
     },
     research: {
-        columns: ['BIG ONGOING PROJECTS', 'PROBLEMS TO SOLVE', 'THINGS TO RESEARCH', 'RESEARCH IN PROGRESS', 'RESEARCH DONE']
+        columns: ['PROBLEMS TO SOLVE', 'THINGS TO RESEARCH', 'RESEARCH IN PROGRESS', 'RESEARCH DONE']
     },
     backlog: {
         columns: ['BACKLOG HIGH PRIORITY', 'BACKLOG MEDIUM PRIORITY', 'BACKLOG LOW PRIORITY']
@@ -175,7 +175,7 @@ function renderColumn(section, isSecondary = false) {
         .join('');
 
     const columnClass = isSecondary ? 'column secondary' : 'column';
-    const sectionClass = section === 'BLOCKED' || section === 'DONE THIS WEEK' ? 'blocked-section' :
+    const sectionClass = isSecondary || section === 'DONE THIS WEEK' ? 'blocked-section' :
                          section === currentQuarter || section === 'IN PROGRESS TODAY' ? 'current-period' :
                          (section.startsWith('DONE Q') || section.startsWith('DONE 20')) && section !== currentQuarter && section !== 'DONE THIS WEEK' ? 'past-period' : '';
 
@@ -200,11 +200,12 @@ function renderCard(task, section) {
     const textWithLinks = linkify(escapeHtml(task.text));
 
     // Determine which move button to show based on section
-    const currentSections = [...SECTION_CONFIG.current.columns, ...SECTION_CONFIG.current.secondary];
+    // Only main columns + BLOCKED get move buttons (not BIG ONGOING PROJECTS or FOLLOW UPS)
+    const currentWithMove = [...SECTION_CONFIG.current.columns, 'BLOCKED'];
     const backlogSections = SECTION_CONFIG.backlog.columns;
 
     let moveButton = '';
-    if (currentSections.includes(section)) {
+    if (currentWithMove.includes(section)) {
         moveButton = `<button class="card-btn move" onclick="event.stopPropagation(); showMoveToBacklog('${task.id}')" title="Move to Backlog">&gt;&gt;</button>`;
     } else if (backlogSections.includes(section)) {
         moveButton = `<button class="card-btn move" onclick="event.stopPropagation(); showMoveToCurrent('${task.id}')" title="Move to Current">&lt;&lt;</button>`;

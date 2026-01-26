@@ -61,7 +61,7 @@ SECTIONS = {
     "DONE THIS WEEK": {"tab": "current", "order": 4},
     "FOLLOW UPS": {"tab": "current", "order": 5, "area": "secondary"},
     "BLOCKED": {"tab": "current", "order": 6, "area": "secondary"},
-    "BIG ONGOING PROJECTS": {"tab": "research", "order": 0},
+    "BIG ONGOING PROJECTS": {"tab": "current", "order": 0, "area": "secondary"},
     "PROBLEMS TO SOLVE": {"tab": "research", "order": 1},
     "THINGS TO RESEARCH": {"tab": "research", "order": 2},
     "RESEARCH IN PROGRESS": {"tab": "research", "order": 3},
