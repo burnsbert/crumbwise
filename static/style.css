@@ -201,6 +201,16 @@ main {
     font-size: 0.75rem;
 }
 
+.week-date-banner {
+    background: rgba(71, 85, 105, 0.4);
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #94A3B8;
+    text-align: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+}
+
 /* Current period highlight in History */
 .column.current-period {
     border: 2px solid #2563eb;

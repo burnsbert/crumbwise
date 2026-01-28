@@ -25,6 +25,31 @@ def get_current_quarter():
     quarter = (most_recent_friday.month - 1) // 3 + 1
     return f"DONE Q{quarter} {most_recent_friday.year}"
 
+
+def get_week_dates():
+    """Get Monday-Friday date ranges for this week, next week, and following week.
+
+    Returns a dict with formatted date ranges like 'Jan 27 - Jan 31'.
+    """
+    today = datetime.now().date()
+    # Monday is weekday 0
+    days_since_monday = today.weekday()
+    this_monday = today - timedelta(days=days_since_monday)
+
+    def format_week(monday):
+        friday = monday + timedelta(days=4)
+        # Format: "Jan 27 - Jan 31" or "Jan 27 - Feb 2" if crossing months
+        mon_str = monday.strftime("%b %d").replace(" 0", " ")
+        fri_str = friday.strftime("%b %d").replace(" 0", " ")
+        # If same month, could shorten, but keeping full format for clarity
+        return f"{mon_str} - {fri_str}"
+
+    return {
+        "TODO THIS WEEK": format_week(this_monday),
+        "TODO NEXT WEEK": format_week(this_monday + timedelta(days=7)),
+        "TODO FOLLOWING WEEK": format_week(this_monday + timedelta(days=14)),
+    }
+
 app = Flask(__name__)
 
 DATA_DIR = Path(__file__).parent / "data"
@@ -187,6 +212,12 @@ def get_sections():
 def get_current_quarter_api():
     """Get the current quarter string."""
     return jsonify({"quarter": get_current_quarter()})
+
+
+@app.route("/api/week-dates")
+def get_week_dates_api():
+    """Get Monday-Friday date ranges for TODO week sections."""
+    return jsonify(get_week_dates())
 
 
 @app.route("/api/tasks")

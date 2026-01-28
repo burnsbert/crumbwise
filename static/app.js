@@ -21,6 +21,7 @@ const SECTION_CONFIG = {
 };
 
 let currentQuarter = null;
+let weekDates = {};
 
 let currentTab = 'current';
 let tasks = {};
@@ -48,15 +49,17 @@ function setupTabs() {
 
 async function loadTasks() {
     try {
-        // Fetch current quarter, tasks, and undo status in parallel
-        const [tasksResponse, quarterResponse, undoResponse] = await Promise.all([
+        // Fetch current quarter, tasks, undo status, and week dates in parallel
+        const [tasksResponse, quarterResponse, undoResponse, weekDatesResponse] = await Promise.all([
             fetch('/api/tasks'),
             fetch('/api/current-quarter'),
-            fetch('/api/can-undo')
+            fetch('/api/can-undo'),
+            fetch('/api/week-dates')
         ]);
         tasks = await tasksResponse.json();
         const quarterData = await quarterResponse.json();
         const undoData = await undoResponse.json();
+        weekDates = await weekDatesResponse.json();
         currentQuarter = quarterData.quarter;
 
         // Build history columns dynamically from task data
@@ -179,12 +182,16 @@ function renderColumn(section, isSecondary = false) {
                          section === 'IN PROGRESS TODAY' || section === 'RESEARCH IN PROGRESS' ? 'current-period' :
                          (section.startsWith('DONE Q') || section.startsWith('DONE 20')) && section !== currentQuarter && section !== 'DONE THIS WEEK' ? 'past-period' : '';
 
+    // Add date banner for TODO week sections
+    const dateBanner = weekDates[section] ? `<div class="week-date-banner">${weekDates[section]}</div>` : '';
+
     return `
         <div class="${columnClass} ${sectionClass}" data-section="${section}">
             <div class="column-header">
                 <span>${section}</span>
                 <span class="column-count">${sectionTasks.length}</span>
             </div>
+            ${dateBanner}
             <div class="column-tasks" data-section="${section}">
                 ${taskCards}
             </div>
