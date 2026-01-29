@@ -138,6 +138,46 @@ function renderBoard() {
         });
         sortableInstances.push(sortable);
     });
+
+    // Setup header drop zones - dropping on header adds to end of section
+    document.querySelectorAll('.column-header').forEach(header => {
+        const column = header.closest('.column');
+        header.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            column.classList.add('drag-over');
+        });
+        header.addEventListener('dragleave', () => {
+            column.classList.remove('drag-over');
+        });
+        header.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            column.classList.remove('drag-over');
+
+            // Find the dragged task card
+            const draggedCard = document.querySelector('.sortable-drag, .sortable-chosen');
+            if (!draggedCard) return;
+
+            const taskId = draggedCard.dataset.id;
+            const section = header.closest('.column').dataset.section;
+            const sectionTasks = tasks[section] || [];
+
+            try {
+                await fetch('/api/tasks/reorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        taskId,
+                        section,
+                        index: sectionTasks.length
+                    })
+                });
+                await loadTasks();
+            } catch (error) {
+                console.error('Failed to move to section:', error);
+                await loadTasks();
+            }
+        });
+    });
 }
 
 function renderSettingsPage() {
