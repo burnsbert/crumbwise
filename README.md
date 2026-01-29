@@ -11,7 +11,11 @@ A local-first task management app with a visual kanban-style board UI. Tasks are
   - **Research/Ops**: Ongoing projects, problems to solve, things to research
   - **Backlog**: High/Medium/Low priority items
   - **History**: Completed tasks organized by quarter
+  - **Settings**: Configure integrations and preferences
 - **Weekly Workflow**: "New Week" button advances your weekly columns with undo support
+- **Notes Area**: Freeform text area on the Current tab for quick notes
+- **8 Color Themes**: Click the Theme button to cycle through dark and light themes
+- **Google Calendar Integration**: See today's meetings in a timeline sidebar
 - **Confluence Sync**: Optional integration to sync tasks to a Confluence page
 - **No Cloud Required**: Everything runs locally on your machine
 
@@ -72,6 +76,45 @@ The "Current" tab is designed around a weekly workflow:
 3. Move active tasks to "In Progress Today"
 4. Mark completed tasks in "Done This Week"
 5. Click "New Week" to advance everything (done items move to history)
+
+### Themes
+
+Click the **Theme** button in the header to cycle through 8 color themes:
+
+| Theme | Type | Description |
+|-------|------|-------------|
+| Deep Space | Dark | Navy blue with orange accents (default) |
+| Forest Depths | Dark | Deep woodland greens |
+| Midnight Ocean | Dark | Cool blues |
+| Amethyst Dusk | Dark | Rich purples |
+| Warm Sand | Light | Cream with terracotta accents |
+| Ember Glow | Dark | Charcoal with red-orange accents |
+| SNES Classic | Dark | Retro gaming gray-purple |
+| Parchment | Light | Warm sepia tones |
+
+Your theme preference is saved automatically.
+
+### Google Calendar Integration (Optional)
+
+Display today's meetings in a timeline sidebar on the Current tab.
+
+**One-time setup** (use a personal Gmail account):
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) and sign in with a personal Gmail
+2. Create a new project named "Crumbwise"
+3. Enable the [Calendar API](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com)
+4. Set up [OAuth consent screen](https://console.cloud.google.com/auth/branding) (External, add your work email as a test user)
+5. Create [OAuth credentials](https://console.cloud.google.com/auth/clients) (Web application, redirect URI: `http://localhost:5050/api/calendar/callback`)
+6. Copy the Client ID and Client Secret
+
+**Connect your calendar:**
+
+1. Go to Settings tab in Crumbwise
+2. Paste your Client ID and Client Secret, click "Save Credentials"
+3. Click "Connect Google Calendar"
+4. Sign in with your **work account** to access your work calendar
+
+The calendar sidebar shows timed events (not all-day events), with indicators for declined (grayed out) and tentative (?) meetings. Use the arrow buttons to view other days.
 
 ### Confluence Integration (Optional)
 
