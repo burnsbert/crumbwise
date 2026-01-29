@@ -4,7 +4,8 @@ const SECTION_CONFIG = {
     current: {
         // Flow: Week After Next -> Next Week -> This Week -> In Progress -> Done This Week
         columns: ['TODO FOLLOWING WEEK', 'TODO NEXT WEEK', 'TODO THIS WEEK', 'IN PROGRESS TODAY', 'DONE THIS WEEK'],
-        secondary: ['BIG ONGOING PROJECTS', 'FOLLOW UPS', 'BLOCKED']
+        secondary: ['BIG ONGOING PROJECTS', 'FOLLOW UPS', 'BLOCKED'],
+        hasNotes: true
     },
     research: {
         columns: ['PROBLEMS TO SOLVE', 'THINGS TO RESEARCH', 'RESEARCH IN PROGRESS', 'RESEARCH DONE']
@@ -26,6 +27,8 @@ let weekDates = {};
 let currentTab = 'current';
 let tasks = {};
 let sortableInstances = [];
+let notes = '';
+let notesSaveTimeout = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -49,18 +52,21 @@ function setupTabs() {
 
 async function loadTasks() {
     try {
-        // Fetch current quarter, tasks, undo status, and week dates in parallel
-        const [tasksResponse, quarterResponse, undoResponse, weekDatesResponse] = await Promise.all([
+        // Fetch current quarter, tasks, undo status, week dates, and notes in parallel
+        const [tasksResponse, quarterResponse, undoResponse, weekDatesResponse, notesResponse] = await Promise.all([
             fetch('/api/tasks'),
             fetch('/api/current-quarter'),
             fetch('/api/can-undo'),
-            fetch('/api/week-dates')
+            fetch('/api/week-dates'),
+            fetch('/api/notes')
         ]);
         tasks = await tasksResponse.json();
         const quarterData = await quarterResponse.json();
         const undoData = await undoResponse.json();
         weekDates = await weekDatesResponse.json();
+        const notesData = await notesResponse.json();
         currentQuarter = quarterData.quarter;
+        notes = notesData.notes || '';
 
         // Build history columns dynamically from task data
         updateHistoryColumns();
@@ -115,12 +121,26 @@ function renderBoard() {
         .map(section => renderColumn(section))
         .join('');
 
-    // Render secondary area (Follow-ups and Blocked) for Current tab
+    // Render secondary area for Current tab
     if (config.secondary && config.secondary.length > 0) {
         followupsArea.classList.remove('hidden');
-        followupsColumns.innerHTML = config.secondary
+        let secondaryHtml = config.secondary
             .map(section => renderColumn(section, true))
             .join('');
+
+        // Add notes area if this tab has it
+        if (config.hasNotes) {
+            secondaryHtml += renderNotesArea();
+        }
+
+        followupsColumns.innerHTML = secondaryHtml;
+
+        // Setup notes auto-save if notes area exists
+        const notesTextarea = document.getElementById('notes-textarea');
+        if (notesTextarea) {
+            notesTextarea.value = notes;
+            notesTextarea.addEventListener('input', handleNotesInput);
+        }
     } else {
         followupsArea.classList.add('hidden');
         followupsColumns.innerHTML = '';
@@ -209,6 +229,39 @@ function renderSettingsPage() {
             </div>
         </div>
     `;
+}
+
+function renderNotesArea() {
+    return `
+        <div class="notes-area">
+            <div class="column-header">
+                <span>NOTES</span>
+            </div>
+            <textarea id="notes-textarea" class="notes-textarea" placeholder="Add notes here..."></textarea>
+        </div>
+    `;
+}
+
+function handleNotesInput(event) {
+    notes = event.target.value;
+
+    // Debounce save - wait 5 seconds after typing stops
+    if (notesSaveTimeout) {
+        clearTimeout(notesSaveTimeout);
+    }
+    notesSaveTimeout = setTimeout(saveNotes, 5000);
+}
+
+async function saveNotes() {
+    try {
+        await fetch('/api/notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes })
+        });
+    } catch (error) {
+        console.error('Failed to save notes:', error);
+    }
 }
 
 function renderColumn(section, isSecondary = false) {

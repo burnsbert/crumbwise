@@ -56,6 +56,7 @@ DATA_DIR = Path(__file__).parent / "data"
 TASKS_FILE = DATA_DIR / "tasks.md"
 UNDO_FILE = DATA_DIR / "tasks.md.undo"
 SETTINGS_FILE = DATA_DIR / "settings.json"
+NOTES_FILE = DATA_DIR / "notes.txt"
 
 
 def load_settings():
@@ -84,9 +85,9 @@ SECTIONS = {
     "TODO THIS WEEK": {"tab": "current", "order": 2},
     "IN PROGRESS TODAY": {"tab": "current", "order": 3},
     "DONE THIS WEEK": {"tab": "current", "order": 4},
-    "FOLLOW UPS": {"tab": "current", "order": 5, "area": "secondary"},
-    "BLOCKED": {"tab": "current", "order": 6, "area": "secondary"},
     "BIG ONGOING PROJECTS": {"tab": "current", "order": 0, "area": "secondary"},
+    "FOLLOW UPS": {"tab": "current", "order": 1, "area": "secondary"},
+    "BLOCKED": {"tab": "current", "order": 2, "area": "secondary"},
     "PROBLEMS TO SOLVE": {"tab": "research", "order": 1},
     "THINGS TO RESEARCH": {"tab": "research", "order": 2},
     "RESEARCH IN PROGRESS": {"tab": "research", "order": 3},
@@ -450,6 +451,24 @@ def update_settings():
     return jsonify({"success": True})
 
 
+@app.route("/api/notes", methods=["GET"])
+def get_notes():
+    """Get the notes content."""
+    if NOTES_FILE.exists():
+        return jsonify({"notes": NOTES_FILE.read_text()})
+    return jsonify({"notes": ""})
+
+
+@app.route("/api/notes", methods=["POST"])
+def save_notes():
+    """Save the notes content."""
+    data = request.json
+    notes = data.get("notes", "")
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    NOTES_FILE.write_text(notes)
+    return jsonify({"success": True})
+
+
 def extract_confluence_page_id(url):
     """Extract page ID from various Confluence URL formats."""
     import re
@@ -488,11 +507,11 @@ def generate_confluence_content(sections):
         ("THINGS TO RESEARCH", "THINGS TO RESEARCH"),
         ("BIG ONGOING PROJECTS", "BIG ONGOING PROJECTS"),
         ("FOLLOW UPS", "FOLLOW UPS"),
+        ("BLOCKED", "BLOCKED"),
         ("IN PROGRESS TODAY", "IN PROGRESS TODAY"),
         ("TODO THIS WEEK", "TODO THIS WEEK"),
         ("TODO NEXT WEEK", "TODO NEXT WEEK"),
         ("TODO FOLLOWING WEEK", "TODO FOLLOWING WEEK"),
-        ("BLOCKED", "BLOCKED"),
         ("BACKLOG HIGH PRIORITY", "BACKLOG HIGH PRIORITY"),
         ("BACKLOG MEDIUM PRIORITY", "BACKLOG MEDIUM PRIORITY"),
         ("BACKLOG LOW PRIORITY", "BACKLOG LOW PRIORITY"),
@@ -524,6 +543,23 @@ def generate_confluence_content(sections):
             html_parts.append('</ul>')
         else:
             html_parts.append('<p><em>(empty)</em></p>')
+
+    # Add notes section at the end
+    notes = ""
+    if NOTES_FILE.exists():
+        notes = NOTES_FILE.read_text().strip()
+    html_parts.append('<h2>NOTES</h2>')
+    if notes:
+        # Convert newlines to <br/> and URLs to links
+        notes_html = re.sub(
+            r'(https?://[^\s]+)',
+            r'<a href="\1">\1</a>',
+            notes
+        )
+        notes_html = notes_html.replace('\n', '<br/>')
+        html_parts.append(f'<p>{notes_html}</p>')
+    else:
+        html_parts.append('<p><em>(empty)</em></p>')
 
     return '\n'.join(html_parts)
 

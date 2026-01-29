@@ -28,7 +28,7 @@ body {
 /* Header */
 header {
     background: var(--surface-color);
-    padding: 16px 24px 0;
+    padding: 8px 24px 0;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -74,7 +74,7 @@ header {
 
 .logo-link {
     text-decoration: none;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
 }
 
 header h1 {
@@ -179,6 +179,46 @@ main {
 
 .column.secondary {
     max-height: calc(100vh - 380px);
+}
+
+/* Notes area - double wide */
+.notes-area {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    width: calc(var(--column-width) * 2 + var(--gap));
+    min-width: calc(var(--column-width) * 2 + var(--gap));
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 380px);
+}
+
+.notes-area .column-header {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.notes-textarea {
+    flex: 1;
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: none;
+    font-family: inherit;
+    outline: none;
+}
+
+.notes-textarea::placeholder {
+    color: var(--text-muted);
 }
 
 .column-header {

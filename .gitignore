@@ -1,6 +1,7 @@
 # Personal data (not shared)
 data/settings.json
 data/tasks.md
+data/notes.txt
 
 # Python
 __pycache__/
