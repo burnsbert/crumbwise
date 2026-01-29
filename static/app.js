@@ -951,13 +951,22 @@ function renderCalendarEvent(event, className) {
         meetLink = `<a href="${event.hangoutLink}" target="_blank" class="calendar-meet-link">Join Meet</a>`;
     }
 
+    // Add response status class
+    if (event.responseStatus === 'declined') {
+        className += ' declined';
+    } else if (event.responseStatus === 'tentative') {
+        className += ' tentative';
+    }
+
     const title = event.htmlLink
         ? `<a href="${event.htmlLink}" target="_blank">${escapeHtml(event.summary)}</a>`
         : escapeHtml(event.summary);
 
+    const tentativeIndicator = event.responseStatus === 'tentative' ? '<span class="tentative-indicator">?</span>' : '';
+
     return `
         <div class="${className}">
-            <div class="calendar-event-time">${timeStr}</div>
+            <div class="calendar-event-time">${timeStr}${tentativeIndicator}</div>
             <div class="calendar-event-title">${title}</div>
             ${meetLink}
         </div>

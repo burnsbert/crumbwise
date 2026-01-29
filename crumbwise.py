@@ -846,6 +846,13 @@ def calendar_events():
             if 'dateTime' not in start or 'dateTime' not in end:
                 continue
 
+            # Get current user's response status
+            response_status = None
+            for attendee in event.get('attendees', []):
+                if attendee.get('self'):
+                    response_status = attendee.get('responseStatus')
+                    break
+
             events.append({
                 'id': event.get('id'),
                 'summary': event.get('summary', '(No title)'),
@@ -853,7 +860,8 @@ def calendar_events():
                 'end': end.get('dateTime'),
                 'hangoutLink': event.get('hangoutLink'),
                 'htmlLink': event.get('htmlLink'),
-                'isAllDay': False
+                'isAllDay': False,
+                'responseStatus': response_status
             })
 
         return jsonify({"connected": True, "events": events})

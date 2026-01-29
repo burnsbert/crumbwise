@@ -691,7 +691,8 @@ main {
 #calendar-date {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .calendar-nav-btn {
@@ -760,6 +761,29 @@ main {
 
 .calendar-event.past {
     opacity: 0.6;
+}
+
+.calendar-event.declined {
+    opacity: 0.4;
+    text-decoration: line-through;
+}
+
+.calendar-event.tentative {
+    border-left-color: #eab308;
+}
+
+.tentative-indicator {
+    display: inline-block;
+    background: #eab308;
+    color: #000;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    line-height: 16px;
+    margin-left: 6px;
 }
 
 .calendar-event-time {
