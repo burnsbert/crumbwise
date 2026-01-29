@@ -654,6 +654,7 @@ main {
 .main-content {
     display: flex;
     gap: var(--gap);
+    align-items: flex-start;
 }
 
 .board-container {
@@ -669,7 +670,7 @@ main {
     border-radius: var(--border-radius);
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 100px);
+    align-self: stretch;
 }
 
 .calendar-sidebar.hidden {
