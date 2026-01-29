@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSettings();
     loadTasks();
     loadSettings();
+    calendarDateOffset = 0; // Always start on today
     loadCalendarEvents();
     checkCalendarConnectionFromUrl();
 });
