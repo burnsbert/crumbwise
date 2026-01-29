@@ -146,8 +146,8 @@ main {
 
 /* Secondary area (Follow-ups and Blocked) */
 .followups-area {
-    margin-top: var(--gap);
-    padding-top: var(--gap);
+    margin-top: 4px;
+    padding-top: 0;
 }
 
 .followups-area.hidden {
