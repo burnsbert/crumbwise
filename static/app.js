@@ -33,9 +33,24 @@ let calendarEvents = [];
 let calendarConnected = false;
 let calendarDateOffset = 0; // 0 = today, -1 = yesterday, 1 = tomorrow, etc.
 let calendarVisible = true;
+let currentTheme = 1;
+let currentDraggedTaskId = null;
+
+const THEME_COUNT = 8;
+const THEME_NAMES = {
+    1: 'Deep Space',
+    2: 'Forest Depths',
+    3: 'Midnight Ocean',
+    4: 'Amethyst Dusk',
+    5: 'Warm Sand',
+    6: 'Ember Glow',
+    7: 'SNES Classic',
+    8: 'Parchment'
+};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    loadTheme(); // Load theme first to avoid flash
     setupTabs();
     setupNewWeek();
     setupSettings();
@@ -45,6 +60,46 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCalendarEvents();
     checkCalendarConnectionFromUrl();
 });
+
+// Theme functions
+async function loadTheme() {
+    try {
+        const response = await fetch('/api/theme');
+        const data = await response.json();
+        currentTheme = data.theme || 1;
+        applyTheme(currentTheme);
+    } catch (error) {
+        console.error('Failed to load theme:', error);
+        applyTheme(1);
+    }
+}
+
+function applyTheme(themeNum) {
+    document.body.setAttribute('data-theme', themeNum);
+    updateThemeTooltip();
+}
+
+async function cycleTheme() {
+    currentTheme = (currentTheme % THEME_COUNT) + 1;
+    applyTheme(currentTheme);
+
+    try {
+        await fetch('/api/theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ theme: currentTheme })
+        });
+    } catch (error) {
+        console.error('Failed to save theme:', error);
+    }
+}
+
+function updateThemeTooltip() {
+    const tooltip = document.querySelector('.theme-tooltip');
+    if (tooltip) {
+        tooltip.textContent = `Theme ${currentTheme}: ${THEME_NAMES[currentTheme]}`;
+    }
+}
 
 function setupTabs() {
     document.querySelectorAll('.tab').forEach(tab => {
@@ -116,6 +171,7 @@ function renderBoard() {
         board.className = 'board settings-view';
         board.innerHTML = renderSettingsPage();
         followupsArea.classList.add('hidden');
+        document.getElementById('calendar-sidebar')?.classList.add('hidden');
         loadSettingsIntoForm();
         return;
     }
@@ -161,6 +217,9 @@ function renderBoard() {
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
             dragClass: 'sortable-drag',
+            onStart: (evt) => {
+                currentDraggedTaskId = evt.item.dataset.id;
+            },
             onEnd: handleDragEnd
         });
         sortableInstances.push(sortable);
@@ -183,13 +242,14 @@ function renderBoard() {
             e.preventDefault();
             column.classList.remove('drag-over');
 
-            // Find the dragged task card
-            const draggedCard = document.querySelector('.sortable-drag, .sortable-chosen');
-            if (!draggedCard) return;
+            // Use the tracked dragged task ID
+            if (!currentDraggedTaskId) return;
 
-            const taskId = draggedCard.dataset.id;
+            const taskId = currentDraggedTaskId;
             const section = header.closest('.column').dataset.section;
-            const sectionTasks = tasks[section] || [];
+
+            // Count tasks excluding the one being moved (in case it's from same section)
+            const sectionTasks = (tasks[section] || []).filter(t => t.id !== taskId);
 
             try {
                 await fetch('/api/tasks/reorder', {
@@ -198,9 +258,10 @@ function renderBoard() {
                     body: JSON.stringify({
                         taskId,
                         section,
-                        index: sectionTasks.length
+                        index: sectionTasks.length + 1  // Put at end
                     })
                 });
+                currentDraggedTaskId = null;  // Clear after handling
                 await loadTasks();
             } catch (error) {
                 console.error('Failed to move to section:', error);
@@ -481,9 +542,14 @@ async function deleteCard(taskId) {
 
 // Drag and drop
 async function handleDragEnd(event) {
+    // Skip if already handled by header drop
+    if (!currentDraggedTaskId) return;
+
     const taskId = event.item.dataset.id;
     const newSection = event.to.dataset.section;
     const newIndex = event.newIndex;
+
+    currentDraggedTaskId = null;  // Clear after handling
 
     try {
         await fetch('/api/tasks/reorder', {

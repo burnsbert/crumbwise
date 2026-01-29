@@ -5,7 +5,8 @@
     padding: 0;
 }
 
-:root {
+/* Theme 1: Deep Space (Dark - Original) */
+:root, [data-theme="1"] {
     --bg-color: #1a1a2e;
     --surface-color: #16213e;
     --card-color: #0f3460;
@@ -13,9 +14,167 @@
     --blocked-color: #ea580c;
     --text-color: #eee;
     --text-muted: #888;
+    --logo-gradient-start: #ea580c;
+    --logo-gradient-mid: #f97316;
+    --logo-gradient-end: #ea580c;
+    --logo-glow: rgba(234, 88, 12, 0.4);
     --border-radius: 8px;
     --column-width: 265px;
     --gap: 16px;
+}
+
+/* Theme 2: Forest Depths (Dark - Nature/Green) */
+[data-theme="2"] {
+    --bg-color: #1a2419;
+    --surface-color: #243022;
+    --card-color: #2d3d2a;
+    --accent-color: #4ade80;
+    --blocked-color: #4ade80;
+    --text-color: #e8f0e8;
+    --text-muted: #7a9178;
+    --logo-gradient-start: #22c55e;
+    --logo-gradient-mid: #4ade80;
+    --logo-gradient-end: #22c55e;
+    --logo-glow: rgba(34, 197, 94, 0.4);
+}
+
+/* Theme 3: Midnight Ocean (Dark - Cool/Blue) */
+[data-theme="3"] {
+    --bg-color: #0f172a;
+    --surface-color: #1e293b;
+    --card-color: #334155;
+    --accent-color: #38bdf8;
+    --blocked-color: #38bdf8;
+    --text-color: #e2e8f0;
+    --text-muted: #64748b;
+    --logo-gradient-start: #0ea5e9;
+    --logo-gradient-mid: #38bdf8;
+    --logo-gradient-end: #0ea5e9;
+    --logo-glow: rgba(14, 165, 233, 0.4);
+}
+
+/* Theme 4: Amethyst Dusk (Dark - Purple/Violet) */
+[data-theme="4"] {
+    --bg-color: #1a1625;
+    --surface-color: #2d2640;
+    --card-color: #3d3558;
+    --accent-color: #a78bfa;
+    --blocked-color: #a78bfa;
+    --text-color: #ede9fe;
+    --text-muted: #8b7faa;
+    --logo-gradient-start: #8b5cf6;
+    --logo-gradient-mid: #a78bfa;
+    --logo-gradient-end: #8b5cf6;
+    --logo-glow: rgba(139, 92, 246, 0.4);
+}
+
+/* Theme 5: Warm Sand (Light - Warm/Neutral) */
+[data-theme="5"] {
+    --bg-color: #faf7f2;
+    --surface-color: #f0ebe0;
+    --card-color: #ffffff;
+    --accent-color: #c2410c;
+    --blocked-color: #c2410c;
+    --text-color: #292524;
+    --text-muted: #78716c;
+    --logo-gradient-start: #c2410c;
+    --logo-gradient-mid: #ea580c;
+    --logo-gradient-end: #c2410c;
+    --logo-glow: rgba(194, 65, 12, 0.3);
+}
+
+/* Theme 6: Ember Glow (Dark - Warm/Red) */
+[data-theme="6"] {
+    --bg-color: #1c1917;
+    --surface-color: #292524;
+    --card-color: #3d3533;
+    --accent-color: #f97316;
+    --blocked-color: #f97316;
+    --text-color: #fafaf9;
+    --text-muted: #a8a29e;
+    --logo-gradient-start: #dc2626;
+    --logo-gradient-mid: #f97316;
+    --logo-gradient-end: #dc2626;
+    --logo-glow: rgba(249, 115, 22, 0.4);
+    --card-btn-bg: #4a3f3d;
+    --card-btn-border: #5c4f4c;
+    --card-btn-hover: #6a5a56;
+}
+
+/* Theme 7: SNES Classic (Dark - Retro Gaming) */
+[data-theme="7"] {
+    --bg-color: #1a1a24;
+    --surface-color: #2d2d3d;
+    --card-color: #3d3d52;
+    --accent-color: #9d8cd6;
+    --blocked-color: #9d8cd6;
+    --text-color: #e8e8f0;
+    --text-muted: #8888a0;
+    --logo-gradient-start: #7b68c4;
+    --logo-gradient-mid: #9d8cd6;
+    --logo-gradient-end: #c4b5e8;
+    --logo-glow: rgba(157, 140, 214, 0.4);
+    --card-btn-bg: #4a4a6a;
+    --card-btn-border: #5a5a7a;
+    --card-btn-hover: #6a6a8a;
+}
+
+/* Theme 8: Parchment (Light - Warm/Classic) */
+[data-theme="8"] {
+    --bg-color: #f5f0e6;
+    --surface-color: #ebe4d4;
+    --card-color: #fffdf8;
+    --accent-color: #8b5a2b;
+    --blocked-color: #8b5a2b;
+    --text-color: #3d3225;
+    --text-muted: #7a6d5c;
+    --logo-gradient-start: #8b5a2b;
+    --logo-gradient-mid: #b8860b;
+    --logo-gradient-end: #8b5a2b;
+    --logo-glow: rgba(139, 90, 43, 0.3);
+    --card-btn-bg: #e8dcc8;
+    --card-btn-border: #d4c4a8;
+    --card-btn-hover: #d8c8b0;
+}
+
+/* Light theme adjustments (5, 8) */
+[data-theme="5"], [data-theme="8"] {
+    --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+    --scrollbar-hover: rgba(0, 0, 0, 0.3);
+    --border-alpha: 0.15;
+    --card-btn-bg: #e2e8f0;
+    --card-btn-border: #cbd5e1;
+    --card-btn-hover: #d1d5db;
+    --header-border: rgba(0, 0, 0, 0.1);
+    --btn-bg: rgba(0, 0, 0, 0.08);
+    --btn-border: rgba(0, 0, 0, 0.15);
+    --btn-hover-bg: rgba(0, 0, 0, 0.12);
+    --btn-hover-border: rgba(0, 0, 0, 0.25);
+    --tab-bg: rgba(0, 0, 0, 0.04);
+    --tab-border: rgba(0, 0, 0, 0.1);
+    --tab-hover-bg: rgba(0, 0, 0, 0.08);
+    --column-border: rgba(0, 0, 0, 0.08);
+    --card-border-hover: rgba(0, 0, 0, 0.25);
+}
+
+/* Dark theme adjustments (1, 2, 3, 4, 6, 7) */
+:root, [data-theme="1"], [data-theme="2"], [data-theme="3"], [data-theme="4"], [data-theme="6"], [data-theme="7"] {
+    --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+    --scrollbar-hover: rgba(255, 255, 255, 0.3);
+    --border-alpha: 0.2;
+    --card-btn-bg: #1a4a7a;
+    --card-btn-border: #2a5a8a;
+    --card-btn-hover: #2a6a9a;
+    --header-border: rgba(255, 255, 255, 0.2);
+    --btn-bg: rgba(255, 255, 255, 0.1);
+    --btn-border: rgba(255, 255, 255, 0.25);
+    --btn-hover-bg: rgba(255, 255, 255, 0.2);
+    --btn-hover-border: rgba(255, 255, 255, 0.4);
+    --tab-bg: rgba(255, 255, 255, 0.05);
+    --tab-border: rgba(255, 255, 255, 0.15);
+    --tab-hover-bg: rgba(255, 255, 255, 0.1);
+    --column-border: rgba(255, 255, 255, 0.1);
+    --card-border-hover: rgba(255, 255, 255, 0.4);
 }
 
 body {
@@ -32,7 +191,7 @@ header {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
+    border-bottom: 1px solid var(--header-border);
 }
 
 .header-actions {
@@ -43,8 +202,8 @@ header {
 }
 
 .action-btn {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.25);
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
     color: var(--text-color);
     padding: 6px 14px;
     border-radius: 20px;
@@ -54,8 +213,8 @@ header {
 }
 
 .action-btn:hover:not(.disabled) {
-    background: rgba(255,255,255,0.2);
-    border-color: rgba(255,255,255,0.4);
+    background: var(--btn-hover-bg);
+    border-color: var(--btn-hover-border);
 }
 
 .action-btn.undo:not(.disabled) {
@@ -77,6 +236,32 @@ header {
     display: none;
 }
 
+.action-btn.theme-btn {
+    position: relative;
+}
+
+.action-btn.theme-btn .theme-tooltip {
+    position: absolute;
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card-color);
+    color: var(--text-color);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 100;
+    border: 1px solid var(--btn-border);
+}
+
+.action-btn.theme-btn:hover .theme-tooltip {
+    opacity: 1;
+}
+
 .action-btn.disabled {
     opacity: 0.3;
     cursor: not-allowed;
@@ -91,13 +276,13 @@ header h1 {
     font-family: 'Pacifico', cursive;
     font-size: 2.2rem;
     font-weight: 400;
-    background: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #ea580c 100%);
+    background: linear-gradient(135deg, var(--logo-gradient-start) 0%, var(--logo-gradient-mid) 50%, var(--logo-gradient-end) 100%);
     background-size: 200% 200%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     animation: gradient-shift 3s ease infinite;
-    text-shadow: 0 0 30px rgba(234, 88, 12, 0.4);
+    text-shadow: 0 0 30px var(--logo-glow);
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
@@ -109,8 +294,8 @@ header h1 {
 }
 
 .tab {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.15);
+    background: var(--tab-bg);
+    border: 1px solid var(--tab-border);
     border-bottom: none;
     color: var(--text-muted);
     padding: 10px 20px 8px;
@@ -123,13 +308,13 @@ header h1 {
 }
 
 .tab:hover {
-    background: rgba(255,255,255,0.1);
+    background: var(--tab-hover-bg);
     color: var(--text-color);
 }
 
 .tab.active {
     background: var(--bg-color);
-    border-color: rgba(255,255,255,0.2);
+    border-color: var(--header-border);
     color: var(--text-color);
     font-weight: 500;
 }
@@ -210,7 +395,7 @@ main {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--text-muted);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid var(--column-border);
 }
 
 .notes-textarea {
@@ -238,14 +423,14 @@ main {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--text-muted);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid var(--column-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
 .column-count {
-    background: rgba(255,255,255,0.1);
+    background: var(--btn-bg);
     padding: 2px 8px;
     border-radius: 10px;
     font-size: 0.75rem;
@@ -318,7 +503,7 @@ main {
 }
 
 .card:hover {
-    border: 1px solid rgba(255,255,255,0.4);
+    border: 1px solid var(--card-border-hover);
 }
 
 .card:active {
@@ -357,9 +542,9 @@ main {
 }
 
 .card-btn {
-    background: #1a4a7a;
-    border: 1px solid #2a5a8a;
-    color: #ffffff;
+    background: var(--card-btn-bg);
+    border: 1px solid var(--card-btn-border);
+    color: var(--text-color);
     width: 24px;
     height: 24px;
     border-radius: 4px;
@@ -371,8 +556,8 @@ main {
 }
 
 .card-btn:hover {
-    background: #2a6a9a;
-    color: #ffffff;
+    background: var(--card-btn-hover);
+    color: var(--text-color);
 }
 
 .card-btn.delete:hover {
@@ -383,14 +568,14 @@ main {
 /* Add task */
 .add-task {
     padding: 8px;
-    border-top: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid var(--column-border);
 }
 
 .add-task-btn {
     width: 100%;
     padding: 8px;
     background: transparent;
-    border: 1px dashed rgba(255,255,255,0.2);
+    border: 1px dashed var(--btn-border);
     border-radius: 6px;
     color: var(--text-muted);
     cursor: pointer;
@@ -479,7 +664,7 @@ main {
     border-radius: var(--border-radius);
     max-width: 400px;
     width: 90%;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--column-border);
 }
 
 .modal-content h2 {
@@ -572,7 +757,7 @@ main {
     width: 100%;
     padding: 10px 12px;
     background: var(--card-color);
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid var(--btn-border);
     border-radius: 6px;
     color: var(--text-color);
     font-size: 0.9rem;
@@ -642,12 +827,12 @@ main {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.2);
+    background: var(--scrollbar-thumb);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.3);
+    background: var(--scrollbar-hover);
 }
 
 /* Main content layout with calendar sidebar */
@@ -682,7 +867,7 @@ main {
     font-weight: 600;
     font-size: 0.9rem;
     color: var(--text-color);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid var(--column-border);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -697,7 +882,7 @@ main {
 
 .calendar-nav-btn {
     background: transparent;
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid var(--btn-border);
     color: var(--text-color);
     width: 28px;
     height: 28px;
@@ -710,8 +895,8 @@ main {
 }
 
 .calendar-nav-btn:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.3);
+    background: var(--btn-bg);
+    border-color: var(--btn-hover-border);
 }
 
 .calendar-date-text {

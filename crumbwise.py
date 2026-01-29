@@ -887,6 +887,27 @@ def calendar_disconnect():
     return jsonify({"success": True})
 
 
+@app.route("/api/theme", methods=["GET"])
+def get_theme():
+    """Get current theme number."""
+    settings = load_settings()
+    theme = settings.get('theme', 1)
+    return jsonify({"theme": theme})
+
+
+@app.route("/api/theme", methods=["POST"])
+def set_theme():
+    """Set theme number."""
+    data = request.json
+    theme = data.get('theme', 1)
+    # Validate theme is between 1 and 8
+    theme = max(1, min(8, int(theme)))
+    settings = load_settings()
+    settings['theme'] = theme
+    save_settings(settings)
+    return jsonify({"success": True, "theme": theme})
+
+
 if __name__ == "__main__":
     ensure_data_file()
     print("Starting Crumbwise on http://localhost:5050")
