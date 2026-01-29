@@ -18,6 +18,7 @@
             <div class="header-actions">
                 <button id="new-week-btn" class="action-btn" title="Start a new week">New Week</button>
                 <button id="undo-btn" class="action-btn undo disabled" title="Undo last new week">Undo</button>
+                <button id="calendar-toggle-btn" class="action-btn calendar-toggle hidden" onclick="toggleCalendarSidebar()">Hide Cal</button>
                 <button id="sync-btn" class="action-btn sync disabled" title="Sync to Confluence">Sync</button>
             </div>
             <button class="tab active" data-tab="current">Current</button>
@@ -75,15 +76,29 @@
     </div>
 
     <main>
-        <!-- Tab content -->
-        <div id="board" class="board">
-            <!-- Columns will be populated by JavaScript -->
-        </div>
+        <div class="main-content">
+            <div class="board-container">
+                <!-- Tab content -->
+                <div id="board" class="board">
+                    <!-- Columns will be populated by JavaScript -->
+                </div>
 
-        <!-- Follow-ups area - visible on Current tab -->
-        <div id="followups-area" class="followups-area hidden">
-            <div id="followups-columns" class="followups-columns">
-                <!-- Follow-ups and Blocked columns will be populated by JavaScript -->
+                <!-- Follow-ups area - visible on Current tab -->
+                <div id="followups-area" class="followups-area hidden">
+                    <div id="followups-columns" class="followups-columns">
+                        <!-- Follow-ups and Blocked columns will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar sidebar - visible on Current tab when connected -->
+            <div id="calendar-sidebar" class="calendar-sidebar hidden">
+                <div class="calendar-header">
+                    <span id="calendar-date">Today</span>
+                </div>
+                <div id="calendar-timeline" class="calendar-timeline">
+                    <!-- Events will be populated by JavaScript -->
+                </div>
             </div>
         </div>
     </main>

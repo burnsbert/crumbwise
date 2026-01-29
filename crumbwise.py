@@ -8,7 +8,12 @@ import json
 import requests
 from datetime import datetime, timedelta
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect
+
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 
 def get_current_quarter():
@@ -428,6 +433,12 @@ def get_settings():
     if settings.get("confluence_token"):
         settings["confluence_token_set"] = True
         settings["confluence_token"] = ""  # Don't send actual token
+    # Don't expose Google client secret
+    if settings.get("google_client_secret"):
+        settings["google_client_secret"] = ""
+    # Don't expose Google credentials
+    settings.pop("google_credentials", None)
+    settings.pop("google_oauth_state", None)
     return jsonify(settings)
 
 
@@ -643,6 +654,229 @@ def sync_confluence():
 
     except requests.RequestException as e:
         return jsonify({"error": f"Request failed: {str(e)}"}), 500
+
+
+# Google Calendar Integration (OAuth)
+GOOGLE_SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+GOOGLE_REDIRECT_URI = 'http://localhost:5050/api/calendar/callback'
+
+
+def get_google_client_config():
+    """Get Google OAuth client config from settings."""
+    settings = load_settings()
+    client_id = settings.get('google_client_id')
+    client_secret = settings.get('google_client_secret')
+
+    if not client_id or not client_secret:
+        return None
+
+    return {
+        "web": {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uris": [GOOGLE_REDIRECT_URI]
+        }
+    }
+
+
+def get_google_credentials():
+    """Get stored Google credentials if available."""
+    settings = load_settings()
+    creds_data = settings.get('google_credentials')
+
+    if not creds_data:
+        return None
+
+    try:
+        creds = Credentials(
+            token=creds_data.get('token'),
+            refresh_token=creds_data.get('refresh_token'),
+            token_uri=creds_data.get('token_uri'),
+            client_id=creds_data.get('client_id'),
+            client_secret=creds_data.get('client_secret'),
+            scopes=creds_data.get('scopes')
+        )
+
+        if creds.expired and creds.refresh_token:
+            from google.auth.transport.requests import Request
+            creds.refresh(Request())
+            save_google_credentials(creds)
+
+        return creds
+    except Exception:
+        return None
+
+
+def save_google_credentials(creds):
+    """Save Google credentials to settings."""
+    settings = load_settings()
+    settings['google_credentials'] = {
+        'token': creds.token,
+        'refresh_token': creds.refresh_token,
+        'token_uri': creds.token_uri,
+        'client_id': creds.client_id,
+        'client_secret': creds.client_secret,
+        'scopes': list(creds.scopes) if creds.scopes else GOOGLE_SCOPES
+    }
+    save_settings(settings)
+
+
+@app.route("/api/calendar/status")
+def calendar_status():
+    """Check Google Calendar connection status."""
+    settings = load_settings()
+    has_config = bool(settings.get('google_client_id') and settings.get('google_client_secret'))
+    creds = get_google_credentials()
+    return jsonify({
+        "has_config": has_config,
+        "connected": creds is not None
+    })
+
+
+@app.route("/api/calendar/config", methods=["POST"])
+def save_calendar_config():
+    """Save Google OAuth client credentials."""
+    data = request.json
+    settings = load_settings()
+
+    if data.get('client_id'):
+        settings['google_client_id'] = data['client_id'].strip()
+    if data.get('client_secret'):
+        settings['google_client_secret'] = data['client_secret'].strip()
+
+    save_settings(settings)
+    return jsonify({"success": True})
+
+
+@app.route("/api/calendar/auth-url")
+def calendar_auth_url():
+    """Generate Google OAuth URL."""
+    client_config = get_google_client_config()
+    if not client_config:
+        return jsonify({"error": "Client credentials not configured"}), 400
+
+    flow = Flow.from_client_config(
+        client_config,
+        scopes=GOOGLE_SCOPES,
+        redirect_uri=GOOGLE_REDIRECT_URI
+    )
+
+    auth_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true',
+        prompt='consent'
+    )
+
+    settings = load_settings()
+    settings['google_oauth_state'] = state
+    save_settings(settings)
+
+    return jsonify({"auth_url": auth_url})
+
+
+@app.route("/api/calendar/callback")
+def calendar_callback():
+    """Handle Google OAuth callback."""
+    error = request.args.get('error')
+    if error:
+        return redirect('/?calendar_error=' + error)
+
+    code = request.args.get('code')
+    if not code:
+        return redirect('/?calendar_error=no_code')
+
+    client_config = get_google_client_config()
+    if not client_config:
+        return redirect('/?calendar_error=no_config')
+
+    try:
+        flow = Flow.from_client_config(
+            client_config,
+            scopes=GOOGLE_SCOPES,
+            redirect_uri=GOOGLE_REDIRECT_URI
+        )
+        flow.fetch_token(code=code)
+        save_google_credentials(flow.credentials)
+
+        settings = load_settings()
+        settings.pop('google_oauth_state', None)
+        save_settings(settings)
+
+        return redirect('/?calendar_connected=true')
+    except Exception as e:
+        return redirect('/?calendar_error=' + str(e))
+
+
+@app.route("/api/calendar/events")
+def calendar_events():
+    """Get calendar events for a given day (default: today)."""
+    creds = get_google_credentials()
+    if not creds:
+        return jsonify({"connected": False, "events": []})
+
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+
+        # Get date offset from query param (0 = today, -1 = yesterday, 1 = tomorrow)
+        offset = request.args.get('offset', 0, type=int)
+        target_date = datetime.now() + timedelta(days=offset)
+
+        start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        time_min = start_of_day.isoformat() + 'Z'
+        time_max = end_of_day.isoformat() + 'Z'
+
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=time_min,
+            timeMax=time_max,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+
+        events = []
+        for event in events_result.get('items', []):
+            start = event.get('start', {})
+            end = event.get('end', {})
+
+            # Skip all-day events and events without specific times
+            if 'dateTime' not in start or 'dateTime' not in end:
+                continue
+
+            events.append({
+                'id': event.get('id'),
+                'summary': event.get('summary', '(No title)'),
+                'start': start.get('dateTime'),
+                'end': end.get('dateTime'),
+                'hangoutLink': event.get('hangoutLink'),
+                'htmlLink': event.get('htmlLink'),
+                'isAllDay': False
+            })
+
+        return jsonify({"connected": True, "events": events})
+
+    except HttpError as e:
+        if e.resp.status == 401:
+            settings = load_settings()
+            settings.pop('google_credentials', None)
+            save_settings(settings)
+            return jsonify({"connected": False, "events": [], "error": "Token expired"})
+        return jsonify({"connected": False, "events": [], "error": str(e)})
+    except Exception as e:
+        return jsonify({"connected": False, "events": [], "error": str(e)})
+
+
+@app.route("/api/calendar/disconnect", methods=["POST"])
+def calendar_disconnect():
+    """Disconnect Google Calendar."""
+    settings = load_settings()
+    settings.pop('google_credentials', None)
+    settings.pop('google_oauth_state', None)
+    save_settings(settings)
+    return jsonify({"success": True})
 
 
 if __name__ == "__main__":

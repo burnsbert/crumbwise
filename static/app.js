@@ -29,6 +29,10 @@ let tasks = {};
 let sortableInstances = [];
 let notes = '';
 let notesSaveTimeout = null;
+let calendarEvents = [];
+let calendarConnected = false;
+let calendarDateOffset = 0; // 0 = today, -1 = yesterday, 1 = tomorrow, etc.
+let calendarVisible = true;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -37,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSettings();
     loadTasks();
     loadSettings();
+    loadCalendarEvents();
+    checkCalendarConnectionFromUrl();
 });
 
 function setupTabs() {
@@ -159,6 +165,9 @@ function renderBoard() {
         sortableInstances.push(sortable);
     });
 
+    // Update calendar sidebar visibility
+    renderCalendarSidebar();
+
     // Setup header drop zones - dropping on header adds to end of section
     document.querySelectorAll('.column-header').forEach(header => {
         const column = header.closest('.column');
@@ -204,6 +213,13 @@ function renderSettingsPage() {
     return `
         <div class="settings-page">
             <div class="settings-card">
+                <h2>Google Calendar</h2>
+                <div id="google-calendar-status" class="calendar-status">
+                    <!-- Status will be populated by JS -->
+                </div>
+            </div>
+
+            <div class="settings-card" style="margin-top: 16px;">
                 <h2>Confluence Integration</h2>
                 <p class="settings-help">Sync your tasks to a Confluence page. You'll need an API token from <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank">Atlassian Account Settings</a>.</p>
 
@@ -581,10 +597,19 @@ function updateUndoButton(canUndo) {
 function setupSettings() {
     const syncBtn = document.getElementById('sync-btn');
 
-    // Use event delegation for save button since it's dynamically rendered
+    // Use event delegation for settings buttons since they're dynamically rendered
     document.addEventListener('click', async (e) => {
         if (e.target.id === 'save-settings-btn') {
             await saveSettings();
+        }
+        if (e.target.id === 'save-google-config-btn') {
+            await saveGoogleConfig();
+        }
+        if (e.target.id === 'connect-google-btn') {
+            await connectGoogleCalendar();
+        }
+        if (e.target.id === 'disconnect-google-btn') {
+            await disconnectGoogleCalendar();
         }
     });
 
@@ -619,6 +644,9 @@ function loadSettingsIntoForm() {
             } else {
                 tokenStatus.textContent = '';
             }
+
+            // Load calendar status (shows appropriate UI based on state)
+            loadGoogleCalendarStatus();
         });
 }
 
@@ -664,6 +692,278 @@ function updateSyncButton(settings) {
     }
 }
 
+// Google Calendar functions
+async function loadGoogleCalendarStatus() {
+    const statusDiv = document.getElementById('google-calendar-status');
+    if (!statusDiv) return;
+
+    try {
+        const response = await fetch('/api/calendar/status');
+        const data = await response.json();
+
+        if (data.connected) {
+            statusDiv.innerHTML = `
+                <div class="calendar-connected">
+                    <span class="status-indicator connected"></span>
+                    <span>Calendar connected</span>
+                    <button id="disconnect-google-btn" class="action-btn cancel" style="margin-left: 12px;">Disconnect</button>
+                </div>
+            `;
+        } else if (data.has_config) {
+            statusDiv.innerHTML = `
+                <p class="settings-help">Credentials saved. Click below to connect, then sign in with your <strong>work account</strong> to see your work calendar.</p>
+                <div class="settings-actions">
+                    <button id="connect-google-btn" class="action-btn confirm">Connect Google Calendar</button>
+                </div>
+            `;
+        } else {
+            statusDiv.innerHTML = `
+                <p class="settings-help">Display today's meetings in a timeline on the Current tab.</p>
+                <details class="setup-instructions">
+                    <summary>Setup Instructions (one-time, use a personal Gmail)</summary>
+                    <p class="setup-note">Use a <strong>personal Gmail account</strong> (not your work account) to create the app. You'll sign in with your work account later to access your work calendar.</p>
+                    <ol>
+                        <li>Sign into <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a> with a personal Gmail</li>
+                        <li>Click the project dropdown at the top → "New Project" → name it "Crumbwise" → Create</li>
+                        <li>Go to <a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com" target="_blank">Calendar API</a> → click "Enable"</li>
+                        <li>Go to <a href="https://console.cloud.google.com/auth/branding" target="_blank">OAuth consent screen</a> → Branding → click "Get Started"</li>
+                        <li>Enter App name "Crumbwise", your email → Next → select "External" → Next → your email again → Next → agree to policy → Create</li>
+                        <li>Go to <a href="https://console.cloud.google.com/auth/audience" target="_blank">OAuth Audience</a> → under "Test users" click "Add users" → add your <strong>work email</strong> → Save</li>
+                        <li>Go to <a href="https://console.cloud.google.com/auth/clients" target="_blank">OAuth Clients</a> → "Create Client" → select "Web application"</li>
+                        <li>Under "Authorized redirect URIs" → Add URI → <code>http://localhost:5050/api/calendar/callback</code> → Create</li>
+                        <li>Copy the Client ID and Client Secret below (secret only shown once!)</li>
+                    </ol>
+                </details>
+
+                <div class="form-group">
+                    <label for="google-client-id">Client ID</label>
+                    <input type="text" id="google-client-id" placeholder="xxxxx.apps.googleusercontent.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="google-client-secret">Client Secret</label>
+                    <input type="password" id="google-client-secret" placeholder="Enter client secret">
+                </div>
+
+                <div class="settings-actions">
+                    <button id="save-google-config-btn" class="action-btn confirm">Save Credentials</button>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Failed to load calendar status:', error);
+        statusDiv.innerHTML = `<span class="text-muted">Failed to check calendar status</span>`;
+    }
+}
+
+async function saveGoogleConfig() {
+    const clientId = document.getElementById('google-client-id').value.trim();
+    const clientSecret = document.getElementById('google-client-secret').value.trim();
+
+    if (!clientId || !clientSecret) {
+        alert('Please enter both Client ID and Client Secret');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/calendar/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_id: clientId, client_secret: clientSecret })
+        });
+
+        if (response.ok) {
+            await loadGoogleCalendarStatus();
+        }
+    } catch (error) {
+        console.error('Failed to save config:', error);
+    }
+}
+
+async function connectGoogleCalendar() {
+    try {
+        const response = await fetch('/api/calendar/auth-url');
+        const data = await response.json();
+
+        if (data.auth_url) {
+            window.location.href = data.auth_url;
+        } else if (data.error) {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Failed to get auth URL:', error);
+    }
+}
+
+async function disconnectGoogleCalendar() {
+    if (!confirm('Disconnect Google Calendar?')) return;
+
+    try {
+        await fetch('/api/calendar/disconnect', { method: 'POST' });
+        await loadGoogleCalendarStatus();
+        await loadCalendarEvents();
+    } catch (error) {
+        console.error('Failed to disconnect:', error);
+    }
+}
+
+function checkCalendarConnectionFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('calendar_connected') === 'true') {
+        window.history.replaceState({}, '', '/');
+        loadCalendarEvents();
+    }
+    if (params.get('calendar_error')) {
+        alert('Calendar connection failed: ' + params.get('calendar_error'));
+        window.history.replaceState({}, '', '/');
+    }
+}
+
+// Calendar Timeline functions
+async function loadCalendarEvents() {
+    try {
+        const url = calendarDateOffset === 0
+            ? '/api/calendar/events'
+            : `/api/calendar/events?offset=${calendarDateOffset}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        calendarConnected = data.connected;
+        calendarEvents = data.events || [];
+
+        updateCalendarToggleButton();
+        renderCalendarSidebar();
+    } catch (error) {
+        console.error('Failed to load calendar events:', error);
+        calendarConnected = false;
+        calendarEvents = [];
+        updateCalendarToggleButton();
+        renderCalendarSidebar();
+    }
+}
+
+function changeCalendarDay(delta) {
+    calendarDateOffset += delta;
+    loadCalendarEvents();
+}
+
+function goToCalendarToday() {
+    calendarDateOffset = 0;
+    loadCalendarEvents();
+}
+
+function toggleCalendarSidebar() {
+    calendarVisible = !calendarVisible;
+    renderCalendarSidebar();
+    updateCalendarToggleButton();
+}
+
+function updateCalendarToggleButton() {
+    const btn = document.getElementById('calendar-toggle-btn');
+    if (btn) {
+        // Only show button when calendar is connected
+        if (calendarConnected) {
+            btn.classList.remove('hidden');
+        } else {
+            btn.classList.add('hidden');
+        }
+        btn.textContent = calendarVisible ? 'Hide Cal' : 'Show Cal';
+    }
+}
+
+function renderCalendarSidebar() {
+    const sidebar = document.getElementById('calendar-sidebar');
+    const timeline = document.getElementById('calendar-timeline');
+    const dateHeader = document.getElementById('calendar-date');
+
+    if (!sidebar || !timeline) return;
+
+    // Only show on Current tab when connected and visible
+    if (currentTab !== 'current' || !calendarConnected || !calendarVisible) {
+        sidebar.classList.add('hidden');
+        return;
+    }
+
+    sidebar.classList.remove('hidden');
+
+    // Set date header with navigation
+    const displayDate = new Date();
+    displayDate.setDate(displayDate.getDate() + calendarDateOffset);
+    const options = { weekday: 'short', month: 'short', day: 'numeric' };
+    const dateStr = displayDate.toLocaleDateString('en-US', options);
+    const isToday = calendarDateOffset === 0;
+
+    dateHeader.innerHTML = `
+        <button class="calendar-nav-btn" onclick="changeCalendarDay(-1)" title="Previous day">‹</button>
+        <span class="calendar-date-text ${isToday ? '' : 'not-today'}" onclick="goToCalendarToday()" title="${isToday ? '' : 'Click to go to today'}">${isToday ? 'Today' : dateStr}</span>
+        <button class="calendar-nav-btn" onclick="changeCalendarDay(1)" title="Next day">›</button>
+    `;
+
+    if (calendarEvents.length === 0) {
+        timeline.innerHTML = '<div class="calendar-empty">No events today</div>';
+        return;
+    }
+
+    // Sort events by start time
+    const sortedEvents = [...calendarEvents].sort((a, b) => {
+        if (a.isAllDay && !b.isAllDay) return -1;
+        if (!a.isAllDay && b.isAllDay) return 1;
+        return new Date(a.start) - new Date(b.start);
+    });
+
+    const now = new Date();
+    const viewingToday = calendarDateOffset === 0;
+    let html = '';
+
+    for (const event of sortedEvents) {
+        const startTime = new Date(event.start);
+        const endTime = new Date(event.end);
+
+        // Determine event state (only mark past/current if viewing today)
+        let eventClass = 'calendar-event';
+        if (event.isAllDay) {
+            eventClass += ' all-day';
+        } else if (viewingToday && now >= startTime && now <= endTime) {
+            eventClass += ' current';
+        } else if (viewingToday && now > endTime) {
+            eventClass += ' past';
+        }
+
+        html += renderCalendarEvent(event, eventClass);
+    }
+
+    timeline.innerHTML = html;
+}
+
+function renderCalendarEvent(event, className) {
+    let timeStr = '';
+    if (event.isAllDay) {
+        timeStr = 'All day';
+    } else {
+        const startTime = new Date(event.start);
+        const endTime = new Date(event.end);
+        const formatTime = (d) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        timeStr = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+    }
+
+    let meetLink = '';
+    if (event.hangoutLink) {
+        meetLink = `<a href="${event.hangoutLink}" target="_blank" class="calendar-meet-link">Join Meet</a>`;
+    }
+
+    const title = event.htmlLink
+        ? `<a href="${event.htmlLink}" target="_blank">${escapeHtml(event.summary)}</a>`
+        : escapeHtml(event.summary);
+
+    return `
+        <div class="${className}">
+            <div class="calendar-event-time">${timeStr}</div>
+            <div class="calendar-event-title">${title}</div>
+            ${meetLink}
+        </div>
+    `;
+}
+
 async function syncToConfluence() {
     const syncBtn = document.getElementById('sync-btn');
     const originalText = syncBtn.textContent;
@@ -671,6 +971,13 @@ async function syncToConfluence() {
     syncBtn.classList.add('disabled');
 
     try {
+        // Save notes first in case there are pending changes
+        if (notesSaveTimeout) {
+            clearTimeout(notesSaveTimeout);
+            notesSaveTimeout = null;
+        }
+        await saveNotes();
+
         const response = await fetch('/api/sync-confluence', { method: 'POST' });
         const data = await response.json();
 
