@@ -344,8 +344,229 @@
     --card-btn-hover: #0f3a0f;
 }
 
-/* Light theme adjustments (5, 8, 9) */
-[data-theme="5"], [data-theme="8"], [data-theme="9"] {
+/* Theme 13: Emerald City (Dark - Wizard of Oz) */
+[data-theme="13"] {
+    --bg-color: #0a1a10;
+    --surface-color: #0f2818;
+    --card-color: #1a3a24;
+    --accent-color: #ffd700;
+    --blocked-color: #ffd700;
+    --text-color: #d0f0d8;
+    --text-muted: #6a9a78;
+    --logo-gradient-start: #50c878;
+    --logo-gradient-mid: #50c878;
+    --logo-gradient-end: #50c878;
+    --logo-glow: rgba(80, 200, 120, 0.6);
+    --current-period-color: #2e8b57;
+    --blocked-section-color: #1a4a28;
+    --banner-bg: rgba(80, 200, 120, 0.15);
+    --banner-text: #50c878;
+    --link-color: #50c878;
+    --calendar-event-border: #2e8b57;
+    --calendar-current-color: #50c878;
+    --calendar-tentative-color: #ffd700;
+    --card-hover-border: #50c878;
+    --card-hover-shadow: 0 0 15px rgba(80, 200, 120, 0.3);
+    --card-btn-bg: #1a4a28;
+    --card-btn-border: #2a5a38;
+    --card-btn-hover: #2a6a40;
+}
+
+/* Emerald City: magical glow effect */
+[data-theme="13"] header h1 {
+    font-family: 'Georgia', serif;
+    font-weight: 700;
+    letter-spacing: 2px;
+    animation: emerald-shimmer 3s ease-in-out infinite;
+    background: #50c878;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+@keyframes emerald-shimmer {
+    0%, 100% {
+        text-shadow: 0 0 20px rgba(80, 200, 120, 0.8),
+                     0 0 40px rgba(255, 215, 0, 0.3);
+        filter: drop-shadow(0 0 10px rgba(80, 200, 120, 0.5));
+    }
+    50% {
+        text-shadow: 0 0 30px rgba(80, 200, 120, 1),
+                     0 0 60px rgba(255, 215, 0, 0.6);
+        filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.4));
+    }
+}
+
+[data-theme="13"] .card {
+    border: 1px solid #2a5a38;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(80, 200, 120, 0.1);
+}
+
+[data-theme="13"] .card:hover {
+    border-color: #50c878;
+    box-shadow: 0 0 20px rgba(80, 200, 120, 0.25);
+}
+
+[data-theme="13"] .column {
+    border: 1px solid rgba(80, 200, 120, 0.2);
+}
+
+[data-theme="13"] .action-btn.confirm {
+    background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
+    border-color: #daa520;
+    color: #1a1a10;
+}
+
+[data-theme="13"] .action-btn.confirm:hover {
+    filter: brightness(1.1);
+}
+
+/* Theme 14: Whiteboard Post-Its (Light) */
+[data-theme="14"] {
+    --bg-color: #e8e8e8;
+    --surface-color: #f5f5f5;
+    --card-color: #fff9b0;
+    --accent-color: #e53935;
+    --blocked-color: #e53935;
+    --text-color: #333333;
+    --text-muted: #666666;
+    --logo-gradient-start: #e53935;
+    --logo-gradient-mid: #ff7043;
+    --logo-gradient-end: #e53935;
+    --logo-glow: rgba(229, 57, 53, 0.3);
+    --current-period-color: #1e88e5;
+    --blocked-section-color: #ffab91;
+    --banner-bg: rgba(0, 0, 0, 0.06);
+    --banner-text: #666666;
+    --link-color: #1e88e5;
+    --calendar-event-border: #1e88e5;
+    --calendar-current-color: #43a047;
+    --calendar-tentative-color: #fb8c00;
+    --card-hover-border: #333333;
+    --card-hover-shadow: 2px 4px 8px rgba(0, 0, 0, 0.15);
+    --card-btn-bg: #f0e68c;
+    --card-btn-border: #ddd685;
+    --card-btn-hover: #e6dc7a;
+}
+
+/* Whiteboard: handwritten post-it styling */
+[data-theme="14"] body {
+    background: #e0e0e0;
+    background-image:
+        linear-gradient(90deg, rgba(200, 200, 200, 0.3) 1px, transparent 1px),
+        linear-gradient(rgba(200, 200, 200, 0.3) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+[data-theme="14"] header {
+    background: #f8f8f8;
+    border-bottom: 3px solid #444444;
+}
+
+[data-theme="14"] header h1 {
+    font-family: 'Permanent Marker', 'Comic Sans MS', cursive;
+    font-weight: 400;
+    letter-spacing: 1px;
+    animation: none;
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: #222222;
+    color: #222222;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="14"] .card {
+    border-radius: 1px;
+    box-shadow:
+        2px 3px 5px rgba(0, 0, 0, 0.2),
+        0 0 1px rgba(0, 0, 0, 0.1);
+    border: none;
+    transform: rotate(-1deg);
+    position: relative;
+    font-family: 'Comic Sans MS', 'Segoe Print', cursive, sans-serif;
+}
+
+/* Varied rotations and colors for post-its */
+[data-theme="14"] .card:nth-child(4n+1) {
+    background: #fff9b0;
+    transform: rotate(-1.5deg);
+}
+
+[data-theme="14"] .card:nth-child(4n+2) {
+    background: #b0e0ff;
+    transform: rotate(1deg);
+}
+
+[data-theme="14"] .card:nth-child(4n+3) {
+    background: #ffb0d0;
+    transform: rotate(-0.5deg);
+}
+
+[data-theme="14"] .card:nth-child(4n) {
+    background: #b0ffb0;
+    transform: rotate(1.5deg);
+}
+
+[data-theme="14"] .card:hover {
+    transform: rotate(0deg) translateY(-2px);
+    box-shadow: 4px 6px 12px rgba(0, 0, 0, 0.25);
+    z-index: 10;
+}
+
+[data-theme="14"] .card-text {
+    line-height: 1.5;
+}
+
+[data-theme="14"] .column {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #aaaaaa;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="14"] .column-header {
+    background: #f5f5f5;
+    border-bottom: 2px solid #cccccc;
+    font-family: 'Permanent Marker', 'Comic Sans MS', cursive, sans-serif;
+    font-size: 0.82rem;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+[data-theme="14"] .action-btn {
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+[data-theme="14"] .action-btn.confirm {
+    background: #43a047;
+    border-color: #43a047;
+    color: white;
+}
+
+[data-theme="14"] .action-btn.confirm:hover {
+    background: #388e3c;
+    filter: none;
+}
+
+[data-theme="14"] .tab {
+    border-radius: 4px 4px 0 0;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+[data-theme="14"] .card-btn {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="14"] .card-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* Light theme adjustments (5, 8, 9, 14) */
+[data-theme="5"], [data-theme="8"], [data-theme="9"], [data-theme="14"] {
     --scrollbar-thumb: rgba(0, 0, 0, 0.2);
     --scrollbar-hover: rgba(0, 0, 0, 0.3);
     --border-alpha: 0.15;
@@ -361,8 +582,8 @@
     --card-border-hover: rgba(0, 0, 0, 0.25);
 }
 
-/* Dark theme adjustments (1, 2, 3, 4, 6, 7, 10, 11, 12) */
-:root, [data-theme="1"], [data-theme="2"], [data-theme="3"], [data-theme="4"], [data-theme="6"], [data-theme="7"], [data-theme="10"], [data-theme="11"], [data-theme="12"] {
+/* Dark theme adjustments (1, 2, 3, 4, 6, 7, 10, 11, 12, 13) */
+:root, [data-theme="1"], [data-theme="2"], [data-theme="3"], [data-theme="4"], [data-theme="6"], [data-theme="7"], [data-theme="10"], [data-theme="11"], [data-theme="12"], [data-theme="13"] {
     --scrollbar-thumb: rgba(255, 255, 255, 0.2);
     --scrollbar-hover: rgba(255, 255, 255, 0.3);
     --border-alpha: 0.2;
