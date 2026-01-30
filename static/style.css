@@ -573,6 +573,17 @@ header h1 {
     border: 1px solid rgba(168, 212, 255, 0.1);
 }
 
+[data-theme="10"] .action-btn.confirm {
+    background: #3a6a90;
+    border-color: #3a6a90;
+    color: #e0f0ff;
+}
+
+[data-theme="10"] .action-btn.confirm:hover {
+    background: #4a7aa0;
+    filter: none;
+}
+
 /* Portal 2 theme: abandoned Aperture facility, orange/blue portals */
 [data-theme="11"] header h1 {
     font-family: 'Segoe UI', 'Roboto', sans-serif;
@@ -713,6 +724,17 @@ header h1 {
 
 [data-theme="12"] .card-btn {
     border-radius: 0;
+}
+
+[data-theme="12"] .action-btn.confirm {
+    background: #0a5500;
+    border-color: #0a5500;
+    color: #14ff00;
+}
+
+[data-theme="12"] .action-btn.confirm:hover {
+    background: #0d6600;
+    filter: none;
 }
 
 /* Fallout scanline overlay effect */
@@ -1157,12 +1179,14 @@ main {
 }
 
 .action-btn.confirm {
-    background: #2563eb;
-    border-color: #2563eb;
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
 }
 
 .action-btn.confirm:hover {
-    background: #1d4ed8;
+    background: var(--accent-color);
+    filter: brightness(0.85);
 }
 
 .action-btn.cancel {
@@ -1258,15 +1282,6 @@ main {
     margin-top: 20px;
 }
 
-.action-btn.confirm {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: white;
-}
-
-.action-btn.confirm:hover {
-    background: #1d4ed8;
-}
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
