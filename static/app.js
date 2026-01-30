@@ -36,16 +36,42 @@ let calendarVisible = true;
 let currentTheme = 1;
 let currentDraggedTaskId = null;
 
-const THEME_COUNT = 8;
+const THEME_COUNT = 12;
 const THEME_NAMES = {
     1: 'Deep Space',
-    2: 'Forest Depths',
-    3: 'Midnight Ocean',
+    2: 'Minecraft',
+    3: 'Knight Rider',
     4: 'Amethyst Dusk',
     5: 'Warm Sand',
     6: 'Ember Glow',
     7: 'SNES Classic',
-    8: 'Parchment'
+    8: 'Parchment',
+    9: 'Super Famicom',
+    10: 'Snowy Night',
+    11: 'Portal 2',
+    12: 'Fallout'
+};
+
+const THEME_TYPES = {
+    1: 'Dark', 2: 'Dark', 3: 'Dark', 4: 'Dark',
+    5: 'Light', 6: 'Dark', 7: 'Dark', 8: 'Light',
+    9: 'Light', 10: 'Dark', 11: 'Dark', 12: 'Dark'
+};
+
+// Preview colors for theme selector (bg, surface, accent)
+const THEME_COLORS = {
+    1: ['#1a1a2e', '#16213e', '#ea580c'],
+    2: ['#1a2618', '#2d4a28', '#7cb342'],
+    3: ['#0a0a0a', '#1a1a1a', '#ff1a1a'],
+    4: ['#1a1625', '#2d2640', '#a78bfa'],
+    5: ['#c9c0b0', '#ddd6c6', '#c2410c'],
+    6: ['#1c1917', '#292524', '#f97316'],
+    7: ['#1a1a24', '#2d2d3d', '#9d8cd6'],
+    8: ['#c8d0d8', '#dce4eb', '#4a6fa5'],
+    9: ['#a8a8b8', '#c8c8d4', '#6b5b95'],
+    10: ['#0a0c10', '#12151a', '#a8d4ff'],
+    11: ['#0d0d0d', '#1a1a1a', '#ff6b00'],
+    12: ['#0a0a0a', '#0d1a0d', '#14ff00']
 };
 
 // Initialize
@@ -76,12 +102,47 @@ async function loadTheme() {
 
 function applyTheme(themeNum) {
     document.body.setAttribute('data-theme', themeNum);
-    updateThemeTooltip();
+    updateThemeButton();
 }
 
-async function cycleTheme() {
-    currentTheme = (currentTheme % THEME_COUNT) + 1;
+function showThemeModal() {
+    const modal = document.getElementById('theme-modal');
+    const grid = document.getElementById('theme-grid');
+
+    // Build theme options
+    let html = '';
+    for (let i = 1; i <= THEME_COUNT; i++) {
+        const colors = THEME_COLORS[i];
+        const selected = i === currentTheme ? 'selected' : '';
+        const gradient = `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
+
+        html += `
+            <button class="theme-option ${selected}" onclick="selectTheme(${i})" data-theme-num="${i}">
+                <div class="theme-preview" style="background: ${gradient}"></div>
+                <div class="theme-info">
+                    <div class="theme-name">${THEME_NAMES[i]}</div>
+                    <div class="theme-type">${THEME_TYPES[i]}</div>
+                </div>
+            </button>
+        `;
+    }
+
+    grid.innerHTML = html;
+    modal.classList.remove('hidden');
+}
+
+function closeThemeModal() {
+    document.getElementById('theme-modal').classList.add('hidden');
+}
+
+async function selectTheme(themeNum) {
+    currentTheme = themeNum;
     applyTheme(currentTheme);
+
+    // Update selection in modal
+    document.querySelectorAll('.theme-option').forEach(opt => {
+        opt.classList.toggle('selected', parseInt(opt.dataset.themeNum) === themeNum);
+    });
 
     try {
         await fetch('/api/theme', {
@@ -92,12 +153,14 @@ async function cycleTheme() {
     } catch (error) {
         console.error('Failed to save theme:', error);
     }
+
+    closeThemeModal();
 }
 
-function updateThemeTooltip() {
-    const tooltip = document.querySelector('.theme-tooltip');
-    if (tooltip) {
-        tooltip.textContent = `Theme ${currentTheme}: ${THEME_NAMES[currentTheme]}`;
+function updateThemeButton() {
+    const btn = document.getElementById('theme-btn');
+    if (btn) {
+        btn.textContent = THEME_NAMES[currentTheme];
     }
 }
 
@@ -1127,4 +1190,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    // Theme modal backdrop click
+    const themeModal = document.getElementById('theme-modal');
+    if (themeModal) {
+        themeModal.addEventListener('click', (e) => {
+            if (e.target === themeModal) {
+                closeThemeModal();
+            }
+        });
+    }
 });

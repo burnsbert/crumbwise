@@ -18,7 +18,7 @@
             <div class="header-actions">
                 <button id="new-week-btn" class="action-btn" title="Start a new week">New Week</button>
                 <button id="undo-btn" class="action-btn undo disabled" title="Undo last new week">Undo</button>
-                <button id="theme-btn" class="action-btn theme-btn" onclick="cycleTheme()">Theme<span class="theme-tooltip">Theme 1</span></button>
+                <button id="theme-btn" class="action-btn theme-btn" onclick="showThemeModal()">Deep Space</button>
                 <button id="calendar-toggle-btn" class="action-btn calendar-toggle hidden" onclick="toggleCalendarSidebar()">Hide Cal</button>
                 <button id="sync-btn" class="action-btn sync disabled" title="Sync to Confluence">Sync</button>
             </div>
@@ -72,6 +72,19 @@
                 <button class="action-btn" onclick="moveToSection('TODO THIS WEEK')">This Week</button>
                 <button class="action-btn" onclick="moveToSection('IN PROGRESS TODAY')">In Progress</button>
                 <button class="action-btn cancel" onclick="closeMoveModals()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Selection Modal -->
+    <div id="theme-modal" class="modal hidden">
+        <div class="modal-content theme-modal-content">
+            <h2>Select Theme</h2>
+            <div id="theme-grid" class="theme-grid">
+                <!-- Theme options populated by JavaScript -->
+            </div>
+            <div class="modal-actions">
+                <button class="action-btn cancel" onclick="closeThemeModal()">Close</button>
             </div>
         </div>
     </div>

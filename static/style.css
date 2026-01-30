@@ -18,39 +18,78 @@
     --logo-gradient-mid: #f97316;
     --logo-gradient-end: #ea580c;
     --logo-glow: rgba(234, 88, 12, 0.4);
+    --current-period-color: #2563eb;
+    --blocked-section-color: #1e3a5f;
+    --banner-bg: rgba(71, 85, 105, 0.4);
+    --banner-text: #94A3B8;
+    --link-color: #60a5fa;
+    --calendar-event-border: #2563eb;
+    --calendar-current-color: #22c55e;
+    --calendar-tentative-color: #eab308;
+    --card-hover-border: rgba(255, 255, 255, 0.4);
+    --card-hover-shadow: none;
+    --card-btn-bg: #1a4a7a;
+    --card-btn-border: #2a5a8a;
+    --card-btn-hover: #2a6a9a;
     --border-radius: 8px;
     --column-width: 265px;
     --gap: 16px;
 }
 
-/* Theme 2: Forest Depths (Dark - Nature/Green) */
+/* Theme 2: Minecraft (Dark - Creeper Green) */
 [data-theme="2"] {
-    --bg-color: #1a2419;
-    --surface-color: #243022;
-    --card-color: #2d3d2a;
-    --accent-color: #4ade80;
-    --blocked-color: #4ade80;
-    --text-color: #e8f0e8;
-    --text-muted: #7a9178;
-    --logo-gradient-start: #22c55e;
-    --logo-gradient-mid: #4ade80;
-    --logo-gradient-end: #22c55e;
-    --logo-glow: rgba(34, 197, 94, 0.4);
+    --bg-color: #1a2618;
+    --surface-color: #2d4a28;
+    --card-color: #3d5c32;
+    --accent-color: #7cb342;
+    --blocked-color: #7cb342;
+    --text-color: #d4e8c8;
+    --text-muted: #8aaa78;
+    --logo-gradient-start: #5d8c3e;
+    --logo-gradient-mid: #7cb342;
+    --logo-gradient-end: #5d8c3e;
+    --logo-glow: rgba(124, 179, 66, 0.5);
+    --current-period-color: #5d8c3e;
+    --blocked-section-color: #2d4020;
+    --banner-bg: rgba(93, 140, 62, 0.35);
+    --banner-text: #8bc34a;
+    --link-color: #8bc34a;
+    --calendar-event-border: #5d8c3e;
+    --calendar-current-color: #a5d662;
+    --calendar-tentative-color: #cddc39;
+    --card-hover-border: #7cb342;
+    --card-hover-shadow: none;
+    --card-btn-bg: #4a6838;
+    --card-btn-border: #5d8040;
+    --card-btn-hover: #6a9048;
 }
 
-/* Theme 3: Midnight Ocean (Dark - Cool/Blue) */
+/* Theme 3: Knight Rider (Dark - 80s Red Scanner) */
 [data-theme="3"] {
-    --bg-color: #0f172a;
-    --surface-color: #1e293b;
-    --card-color: #334155;
-    --accent-color: #38bdf8;
-    --blocked-color: #38bdf8;
-    --text-color: #e2e8f0;
-    --text-muted: #64748b;
-    --logo-gradient-start: #0ea5e9;
-    --logo-gradient-mid: #38bdf8;
-    --logo-gradient-end: #0ea5e9;
-    --logo-glow: rgba(14, 165, 233, 0.4);
+    --bg-color: #0a0a0a;
+    --surface-color: #1a1a1a;
+    --card-color: #2a2a2a;
+    --accent-color: #ff1a1a;
+    --blocked-color: #ff1a1a;
+    --text-color: #e8e8e8;
+    --text-muted: #808080;
+    --logo-gradient-start: #ff1a1a;
+    --logo-gradient-mid: #ff4444;
+    --logo-gradient-end: #ff1a1a;
+    --logo-glow: rgba(255, 26, 26, 0.6);
+    --current-period-color: #cc0000;
+    --blocked-section-color: #4a0000;
+    --banner-bg: rgba(255, 26, 26, 0.15);
+    --banner-text: #cc6666;
+    --link-color: #ff4444;
+    --calendar-event-border: #cc0000;
+    --calendar-current-color: #ff6666;
+    --calendar-tentative-color: #ffaa00;
+    --card-hover-border: #ff1a1a;
+    --card-hover-shadow: 0 0 10px rgba(255, 26, 26, 0.3);
+    --card-btn-bg: #3a3a3a;
+    --card-btn-border: #4a4a4a;
+    --card-btn-hover: #4a4a4a;
 }
 
 /* Theme 4: Amethyst Dusk (Dark - Purple/Violet) */
@@ -66,21 +105,47 @@
     --logo-gradient-mid: #a78bfa;
     --logo-gradient-end: #8b5cf6;
     --logo-glow: rgba(139, 92, 246, 0.4);
+    --current-period-color: #7c3aed;
+    --blocked-section-color: #4c1d95;
+    --banner-bg: rgba(109, 76, 156, 0.35);
+    --banner-text: #a090c8;
+    --link-color: #a78bfa;
+    --calendar-event-border: #7c3aed;
+    --calendar-current-color: #c4b5fd;
+    --calendar-tentative-color: #fbbf24;
+    --card-hover-border: #a78bfa;
+    --card-hover-shadow: 0 0 8px rgba(167, 139, 250, 0.25);
+    --card-btn-bg: #4a4068;
+    --card-btn-border: #5a5078;
+    --card-btn-hover: #6a6088;
 }
 
 /* Theme 5: Warm Sand (Light - Warm/Neutral) */
 [data-theme="5"] {
-    --bg-color: #faf7f2;
-    --surface-color: #f0ebe0;
-    --card-color: #ffffff;
+    --bg-color: #c9c0b0;
+    --surface-color: #ddd6c6;
+    --card-color: #f8f5f0;
     --accent-color: #c2410c;
     --blocked-color: #c2410c;
     --text-color: #292524;
-    --text-muted: #78716c;
+    --text-muted: #6b655c;
     --logo-gradient-start: #c2410c;
     --logo-gradient-mid: #ea580c;
     --logo-gradient-end: #c2410c;
     --logo-glow: rgba(194, 65, 12, 0.3);
+    --current-period-color: #b45309;
+    --blocked-section-color: #78350f;
+    --banner-bg: rgba(120, 90, 60, 0.25);
+    --banner-text: #8a7560;
+    --link-color: #b45309;
+    --calendar-event-border: #c2410c;
+    --calendar-current-color: #16a34a;
+    --calendar-tentative-color: #ca8a04;
+    --card-hover-border: #c2410c;
+    --card-hover-shadow: 0 2px 8px rgba(194, 65, 12, 0.15);
+    --card-btn-bg: #d8c8b0;
+    --card-btn-border: #c4b498;
+    --card-btn-hover: #c8b8a0;
 }
 
 /* Theme 6: Ember Glow (Dark - Warm/Red) */
@@ -96,6 +161,16 @@
     --logo-gradient-mid: #f97316;
     --logo-gradient-end: #dc2626;
     --logo-glow: rgba(249, 115, 22, 0.4);
+    --current-period-color: #2563eb;
+    --blocked-section-color: #1e3a5f;
+    --banner-bg: rgba(71, 85, 105, 0.4);
+    --banner-text: #94A3B8;
+    --link-color: #60a5fa;
+    --calendar-event-border: #2563eb;
+    --calendar-current-color: #22c55e;
+    --calendar-tentative-color: #eab308;
+    --card-hover-border: rgba(255, 255, 255, 0.4);
+    --card-hover-shadow: none;
     --card-btn-bg: #4a3f3d;
     --card-btn-border: #5c4f4c;
     --card-btn-hover: #6a5a56;
@@ -114,37 +189,166 @@
     --logo-gradient-mid: #9d8cd6;
     --logo-gradient-end: #c4b5e8;
     --logo-glow: rgba(157, 140, 214, 0.4);
+    --current-period-color: #6b5b95;
+    --blocked-section-color: #3d3560;
+    --banner-bg: rgba(90, 80, 120, 0.4);
+    --banner-text: #9090b0;
+    --link-color: #a090d0;
+    --calendar-event-border: #6b5b95;
+    --calendar-current-color: #a0d0a0;
+    --calendar-tentative-color: #d0c060;
+    --card-hover-border: #9d8cd6;
+    --card-hover-shadow: 0 0 6px rgba(157, 140, 214, 0.3);
     --card-btn-bg: #4a4a6a;
     --card-btn-border: #5a5a7a;
     --card-btn-hover: #6a6a8a;
 }
 
-/* Theme 8: Parchment (Light - Warm/Classic) */
+/* Theme 8: Parchment (Light - Blue/Classic) */
 [data-theme="8"] {
-    --bg-color: #f5f0e6;
-    --surface-color: #ebe4d4;
-    --card-color: #fffdf8;
-    --accent-color: #8b5a2b;
-    --blocked-color: #8b5a2b;
-    --text-color: #3d3225;
-    --text-muted: #7a6d5c;
-    --logo-gradient-start: #8b5a2b;
-    --logo-gradient-mid: #b8860b;
-    --logo-gradient-end: #8b5a2b;
-    --logo-glow: rgba(139, 90, 43, 0.3);
-    --card-btn-bg: #e8dcc8;
-    --card-btn-border: #d4c4a8;
-    --card-btn-hover: #d8c8b0;
+    --bg-color: #c8d0d8;
+    --surface-color: #dce4eb;
+    --card-color: #f5f8fd;
+    --accent-color: #4a6fa5;
+    --blocked-color: #4a6fa5;
+    --text-color: #2a3540;
+    --text-muted: #5c6d7a;
+    --logo-gradient-start: #4a6fa5;
+    --logo-gradient-mid: #6890c0;
+    --logo-gradient-end: #4a6fa5;
+    --logo-glow: rgba(74, 111, 165, 0.3);
+    --current-period-color: #3a5a8a;
+    --blocked-section-color: #2d4a6a;
+    --banner-bg: rgba(60, 80, 110, 0.2);
+    --banner-text: #5a7090;
+    --link-color: #3a6ea5;
+    --calendar-event-border: #4a6fa5;
+    --calendar-current-color: #16a34a;
+    --calendar-tentative-color: #ca8a04;
+    --card-hover-border: #4a6fa5;
+    --card-hover-shadow: 0 2px 8px rgba(74, 111, 165, 0.15);
+    --card-btn-bg: #d0dce8;
+    --card-btn-border: #b8c8d8;
+    --card-btn-hover: #c0d0e0;
 }
 
-/* Light theme adjustments (5, 8) */
-[data-theme="5"], [data-theme="8"] {
+/* Theme 9: Super Famicom (Light - Retro Console) */
+[data-theme="9"] {
+    --bg-color: #a8a8b8;
+    --surface-color: #c8c8d4;
+    --card-color: #dcdce8;
+    --accent-color: #6b5b95;
+    --blocked-color: #6b5b95;
+    --text-color: #2a2a3a;
+    --text-muted: #4a4a60;
+    --logo-gradient-start: #4f4f8f;
+    --logo-gradient-mid: #4f4f8f;
+    --logo-gradient-end: #4f4f8f;
+    --logo-glow: rgba(79, 79, 143, 0.3);
+    --current-period-color: #5b4b85;
+    --blocked-section-color: #3d3560;
+    --banner-bg: rgba(70, 70, 100, 0.25);
+    --banner-text: #5a5a78;
+    --link-color: #5b4b85;
+    --calendar-event-border: #5b4b85;
+    --calendar-current-color: #22a060;
+    --calendar-tentative-color: #b8a030;
+    --card-hover-border: #6b5b95;
+    --card-hover-shadow: 0 2px 6px rgba(107, 91, 149, 0.2);
+    --card-btn-bg: #b8b8c8;
+    --card-btn-border: #a0a0b4;
+    --card-btn-hover: #c4c4d4;
+}
+
+/* Theme 10: Snowy Night (Dark - Winter Evening) */
+[data-theme="10"] {
+    --bg-color: #0a0c10;
+    --surface-color: #12151a;
+    --card-color: #1a1e24;
+    --accent-color: #a8d4ff;
+    --blocked-color: #a8d4ff;
+    --text-color: #e0e4e8;
+    --text-muted: #6a7078;
+    --logo-gradient-start: #ffffff;
+    --logo-gradient-mid: #a8d4ff;
+    --logo-gradient-end: #ffffff;
+    --logo-glow: rgba(168, 212, 255, 0.5);
+    --current-period-color: #4a90c2;
+    --blocked-section-color: #1a2a3a;
+    --banner-bg: rgba(168, 212, 255, 0.1);
+    --banner-text: #7090a8;
+    --link-color: #a8d4ff;
+    --calendar-event-border: #4a90c2;
+    --calendar-current-color: #6dd4a0;
+    --calendar-tentative-color: #f0c060;
+    --card-hover-border: #a8d4ff;
+    --card-hover-shadow: 0 0 15px rgba(168, 212, 255, 0.2);
+    --card-btn-bg: #1e2228;
+    --card-btn-border: #2a3038;
+    --card-btn-hover: #262c34;
+}
+
+/* Theme 11: Portal 2 (Dark - Abandoned Aperture) */
+[data-theme="11"] {
+    --bg-color: #0d0d0d;
+    --surface-color: #1a1a1a;
+    --card-color: #252525;
+    --accent-color: #ff6b00;
+    --blocked-color: #00a2ff;
+    --text-color: #e0e0e0;
+    --text-muted: #808080;
+    --logo-gradient-start: #ff6b00;
+    --logo-gradient-mid: #ffffff;
+    --logo-gradient-end: #00a2ff;
+    --logo-glow: rgba(255, 107, 0, 0.5);
+    --current-period-color: #00a2ff;
+    --blocked-section-color: #cc5500;
+    --banner-bg: rgba(0, 162, 255, 0.15);
+    --banner-text: #4db8ff;
+    --link-color: #00a2ff;
+    --calendar-event-border: #00a2ff;
+    --calendar-current-color: #4caf50;
+    --calendar-tentative-color: #ff6b00;
+    --card-hover-border: #00a2ff;
+    --card-hover-shadow: 0 0 12px rgba(0, 162, 255, 0.4), 0 0 12px rgba(255, 107, 0, 0.4);
+    --card-btn-bg: #333333;
+    --card-btn-border: #444444;
+    --card-btn-hover: #404040;
+}
+
+/* Theme 12: Fallout (Dark - Pip-Boy Terminal) */
+[data-theme="12"] {
+    --bg-color: #0a0a0a;
+    --surface-color: #0d1a0d;
+    --card-color: #0f2010;
+    --accent-color: #14ff00;
+    --blocked-color: #14ff00;
+    --text-color: #14ff00;
+    --text-muted: #0a8800;
+    --logo-gradient-start: #0a8800;
+    --logo-gradient-mid: #14ff00;
+    --logo-gradient-end: #0a8800;
+    --logo-glow: rgba(20, 255, 0, 0.6);
+    --current-period-color: #0d6600;
+    --blocked-section-color: #0a4400;
+    --banner-bg: rgba(20, 255, 0, 0.1);
+    --banner-text: #0c9900;
+    --link-color: #14ff00;
+    --calendar-event-border: #0d6600;
+    --calendar-current-color: #14ff00;
+    --calendar-tentative-color: #b8ff00;
+    --card-hover-border: #14ff00;
+    --card-hover-shadow: 0 0 10px rgba(20, 255, 0, 0.3);
+    --card-btn-bg: #0d2a0d;
+    --card-btn-border: #0a5500;
+    --card-btn-hover: #0f3a0f;
+}
+
+/* Light theme adjustments (5, 8, 9) */
+[data-theme="5"], [data-theme="8"], [data-theme="9"] {
     --scrollbar-thumb: rgba(0, 0, 0, 0.2);
     --scrollbar-hover: rgba(0, 0, 0, 0.3);
     --border-alpha: 0.15;
-    --card-btn-bg: #e2e8f0;
-    --card-btn-border: #cbd5e1;
-    --card-btn-hover: #d1d5db;
     --header-border: rgba(0, 0, 0, 0.1);
     --btn-bg: rgba(0, 0, 0, 0.08);
     --btn-border: rgba(0, 0, 0, 0.15);
@@ -157,8 +361,8 @@
     --card-border-hover: rgba(0, 0, 0, 0.25);
 }
 
-/* Dark theme adjustments (1, 2, 3, 4, 6, 7) */
-:root, [data-theme="1"], [data-theme="2"], [data-theme="3"], [data-theme="4"], [data-theme="6"], [data-theme="7"] {
+/* Dark theme adjustments (1, 2, 3, 4, 6, 7, 10, 11, 12) */
+:root, [data-theme="1"], [data-theme="2"], [data-theme="3"], [data-theme="4"], [data-theme="6"], [data-theme="7"], [data-theme="10"], [data-theme="11"], [data-theme="12"] {
     --scrollbar-thumb: rgba(255, 255, 255, 0.2);
     --scrollbar-hover: rgba(255, 255, 255, 0.3);
     --border-alpha: 0.2;
@@ -237,29 +441,14 @@ header {
 }
 
 .action-btn.theme-btn {
-    position: relative;
+    min-width: 110px;
+    text-align: center;
 }
 
-.action-btn.theme-btn .theme-tooltip {
-    position: absolute;
-    bottom: -28px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--card-color);
-    color: var(--text-color);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-    z-index: 100;
-    border: 1px solid var(--btn-border);
-}
-
-.action-btn.theme-btn:hover .theme-tooltip {
-    opacity: 1;
+/* Fallout theme needs wider theme button for monospace font */
+[data-theme="12"] .action-btn.theme-btn {
+    min-width: 90px;
+    font-size: 0.65rem;
 }
 
 .action-btn.disabled {
@@ -284,6 +473,265 @@ header h1 {
     animation: gradient-shift 3s ease infinite;
     text-shadow: 0 0 30px var(--logo-glow);
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* Disable logo animation for Super Famicom theme */
+[data-theme="9"] header h1 {
+    animation: none;
+    background-size: 100% 100%;
+}
+
+/* Knight Rider theme: KITT scanner effect */
+[data-theme="3"] header h1 {
+    animation: kitt-scanner 2s ease-in-out infinite;
+    text-shadow: 0 0 20px rgba(255, 26, 26, 0.8),
+                 0 0 40px rgba(255, 26, 26, 0.4);
+}
+
+@keyframes kitt-scanner {
+    0%, 100% {
+        text-shadow: 0 0 20px rgba(255, 26, 26, 0.8),
+                     0 0 40px rgba(255, 26, 26, 0.4),
+                     -20px 0 30px rgba(255, 26, 26, 0);
+    }
+    50% {
+        text-shadow: 0 0 30px rgba(255, 26, 26, 1),
+                     0 0 60px rgba(255, 26, 26, 0.6),
+                     20px 0 30px rgba(255, 26, 26, 0.3);
+    }
+}
+
+[data-theme="3"] .card {
+    border-color: #3a3a3a;
+}
+
+/* Minecraft theme: pixelated styling */
+[data-theme="2"] header {
+    min-height: 72px;
+}
+
+[data-theme="2"] header h1 {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 2.2rem;
+}
+
+[data-theme="2"] .card {
+    border-radius: 0;
+    border-color: #2d4020;
+    box-shadow:
+        4px 4px 0 0 #1a2618,
+        inset 2px 2px 0 0 rgba(255,255,255,0.1);
+}
+
+[data-theme="2"] .column {
+    border-radius: 0;
+}
+
+[data-theme="2"] .action-btn {
+    border-radius: 0;
+}
+
+[data-theme="2"] .tab {
+    border-radius: 0;
+}
+
+[data-theme="2"] .add-task-btn {
+    border-radius: 0;
+}
+
+[data-theme="2"] .calendar-sidebar {
+    border-radius: 0;
+}
+
+[data-theme="2"] .calendar-event {
+    border-radius: 0;
+}
+
+[data-theme="2"] .card-btn {
+    border-radius: 0;
+}
+
+/* Snowy Night theme: soft, wintry styling */
+[data-theme="10"] header h1 {
+    text-shadow: 0 0 20px rgba(168, 212, 255, 0.6),
+                 0 0 40px rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="10"] .card {
+    border: 1px solid rgba(168, 212, 255, 0.2);
+}
+
+[data-theme="10"] .card:hover {
+    border-color: rgba(168, 212, 255, 0.5);
+    box-shadow: 0 0 20px rgba(168, 212, 255, 0.15);
+}
+
+[data-theme="10"] .column {
+    border: 1px solid rgba(168, 212, 255, 0.1);
+}
+
+/* Portal 2 theme: abandoned Aperture facility, orange/blue portals */
+[data-theme="11"] header h1 {
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-size: 1.8rem;
+    background: linear-gradient(90deg, #00a2ff 0%, #00a2ff 58%, #ff6b00 58%, #ff6b00 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: none;
+    filter: drop-shadow(-2px 0 15px rgba(0, 162, 255, 0.5)) drop-shadow(2px 0 15px rgba(255, 107, 0, 0.5));
+}
+
+[data-theme="11"] .card {
+    border: 1px solid #333333;
+}
+
+[data-theme="11"] .card:hover {
+    border-color: #00a2ff;
+    box-shadow:
+        0 0 15px rgba(0, 162, 255, 0.4),
+        0 0 15px rgba(255, 107, 0, 0.4);
+}
+
+[data-theme="11"] .column {
+    border: 1px solid #333333;
+}
+
+[data-theme="11"] .column-header {
+    border-bottom: 1px solid #333333;
+}
+
+[data-theme="11"] .action-btn {
+    font-weight: 400;
+    letter-spacing: 1px;
+}
+
+/* Fallout theme: Pip-Boy terminal aesthetic */
+[data-theme="12"] {
+    font-family: 'Courier New', 'Consolas', monospace;
+}
+
+[data-theme="12"] header {
+    border-bottom: 1px solid #0a5500;
+}
+
+[data-theme="12"] header h1 {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    animation: terminal-flicker 4s ease-in-out infinite;
+}
+
+@keyframes terminal-flicker {
+    0%, 100% {
+        opacity: 1;
+        text-shadow: 0 0 10px rgba(20, 255, 0, 0.8),
+                     0 0 20px rgba(20, 255, 0, 0.4),
+                     0 0 40px rgba(20, 255, 0, 0.2);
+    }
+    92% {
+        opacity: 1;
+    }
+    93% {
+        opacity: 0.8;
+    }
+    94% {
+        opacity: 1;
+    }
+    96% {
+        opacity: 0.9;
+    }
+    97% {
+        opacity: 1;
+    }
+}
+
+[data-theme="12"] .card {
+    border: 1px solid #0a5500;
+    border-radius: 0;
+    box-shadow:
+        inset 0 0 10px rgba(20, 255, 0, 0.05),
+        0 0 5px rgba(20, 255, 0, 0.1);
+}
+
+[data-theme="12"] .card:hover {
+    box-shadow:
+        inset 0 0 15px rgba(20, 255, 0, 0.1),
+        0 0 10px rgba(20, 255, 0, 0.2);
+}
+
+[data-theme="12"] .card-text {
+    text-shadow: 0 0 8px rgba(20, 255, 0, 0.4);
+}
+
+[data-theme="12"] .column {
+    border-radius: 0;
+    border: 1px solid #0a5500;
+}
+
+[data-theme="12"] .column-header {
+    border-bottom: 1px solid #0a5500;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+[data-theme="12"] .action-btn {
+    border-radius: 0;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    padding: 6px 10px;
+}
+
+[data-theme="12"] .tab {
+    border-radius: 0;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    font-size: 0.8rem;
+}
+
+[data-theme="12"] .add-task-btn {
+    border-radius: 0;
+}
+
+[data-theme="12"] .calendar-sidebar {
+    border-radius: 0;
+    border: 1px solid #0a5500;
+}
+
+[data-theme="12"] .calendar-event {
+    border-radius: 0;
+}
+
+[data-theme="12"] .card-btn {
+    border-radius: 0;
+}
+
+/* Fallout scanline overlay effect */
+[data-theme="12"]::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.1) 0px,
+        rgba(0, 0, 0, 0.1) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    z-index: 9999;
 }
 
 /* Tabs */
@@ -437,22 +885,25 @@ main {
 }
 
 .week-date-banner {
-    background: rgba(71, 85, 105, 0.4);
+    background: var(--banner-bg);
     padding: 6px 12px;
     font-size: 0.8rem;
     font-weight: 500;
-    color: #94A3B8;
+    color: var(--banner-text);
     text-align: center;
     border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+    min-height: 32px;
+    line-height: 1.4;
+    box-sizing: border-box;
 }
 
 /* Current period highlight in History */
 .column.current-period {
-    border: 2px solid #2563eb;
+    border: 2px solid var(--current-period-color);
 }
 
 .column.current-period .column-header {
-    background: #2563eb;
+    background: var(--current-period-color);
     color: white;
 }
 
@@ -460,13 +911,13 @@ main {
     background: rgba(255,255,255,0.3);
 }
 
-/* Blocked section - darker blue framing */
+/* Blocked section - darker framing */
 .column.blocked-section {
-    border: 2px solid #1e3a5f;
+    border: 2px solid var(--blocked-section-color);
 }
 
 .column.blocked-section .column-header {
-    background: #1e3a5f;
+    background: var(--blocked-section-color);
     color: white;
 }
 
@@ -503,7 +954,8 @@ main {
 }
 
 .card:hover {
-    border: 1px solid var(--card-border-hover);
+    border-color: var(--card-hover-border);
+    box-shadow: var(--card-hover-shadow);
 }
 
 .card:active {
@@ -521,7 +973,7 @@ main {
 }
 
 .card-text a {
-    color: #64b5f6;
+    color: var(--link-color);
     text-decoration: none;
 }
 
@@ -739,7 +1191,7 @@ main {
 }
 
 .settings-help a {
-    color: #60a5fa;
+    color: var(--link-color);
 }
 
 .form-group {
@@ -906,7 +1358,7 @@ main {
 
 .calendar-date-text.not-today {
     cursor: pointer;
-    color: #60a5fa;
+    color: var(--link-color);
 }
 
 .calendar-date-text.not-today:hover {
@@ -932,15 +1384,15 @@ main {
     border-radius: 6px;
     padding: 10px 12px;
     margin-bottom: 8px;
-    border-left: 3px solid #2563eb;
+    border-left: 3px solid var(--calendar-event-border);
 }
 
 .calendar-event.all-day {
-    border-left-color: #7c3aed;
+    border-left-color: var(--accent-color);
 }
 
 .calendar-event.current {
-    border-left-color: #22c55e;
+    border-left-color: var(--calendar-current-color);
     background: rgba(34, 197, 94, 0.1);
 }
 
@@ -954,12 +1406,12 @@ main {
 }
 
 .calendar-event.tentative {
-    border-left-color: #eab308;
+    border-left-color: var(--calendar-tentative-color);
 }
 
 .tentative-indicator {
     display: inline-block;
-    background: #eab308;
+    background: var(--calendar-tentative-color);
     color: #000;
     width: 16px;
     height: 16px;
@@ -996,7 +1448,7 @@ main {
     display: inline-block;
     margin-top: 6px;
     font-size: 0.75rem;
-    color: #60a5fa;
+    color: var(--link-color);
     text-decoration: none;
 }
 
@@ -1091,7 +1543,7 @@ main {
 }
 
 .setup-instructions a {
-    color: #60a5fa;
+    color: var(--link-color);
 }
 
 .setup-note {
@@ -1117,5 +1569,74 @@ main {
 }
 
 .setup-instructions-inline a {
-    color: #60a5fa;
+    color: var(--link-color);
+}
+
+/* Theme selection modal */
+.theme-modal-content {
+    max-width: 500px;
+}
+
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.theme-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--card-color);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+}
+
+.theme-option:hover {
+    background: var(--btn-hover-bg);
+    border-color: var(--btn-hover-border);
+}
+
+.theme-option.selected {
+    border-color: var(--accent-color);
+    background: rgba(var(--accent-color), 0.1);
+}
+
+.theme-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.theme-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.theme-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.theme-type {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Minecraft theme: pixelated option */
+[data-theme="2"] .theme-option {
+    border-radius: 0;
+}
+
+/* Fallout theme: terminal option */
+[data-theme="12"] .theme-option {
+    border-radius: 0;
 }

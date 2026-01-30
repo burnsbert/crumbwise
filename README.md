@@ -79,18 +79,22 @@ The "Current" tab is designed around a weekly workflow:
 
 ### Themes
 
-Click the **Theme** button in the header to cycle through 8 color themes:
+Click the **Theme** button in the header to open the theme selector:
 
 | Theme | Type | Description |
 |-------|------|-------------|
 | Deep Space | Dark | Navy blue with orange accents (default) |
-| Forest Depths | Dark | Deep woodland greens |
-| Midnight Ocean | Dark | Cool blues |
+| Minecraft | Dark | Creeper green with pixelated styling |
+| Knight Rider | Dark | Black with red scanner glow effect |
 | Amethyst Dusk | Dark | Rich purples |
 | Warm Sand | Light | Cream with terracotta accents |
 | Ember Glow | Dark | Charcoal with red-orange accents |
 | SNES Classic | Dark | Retro gaming gray-purple |
-| Parchment | Light | Warm sepia tones |
+| Parchment | Light | Cool blue-gray tones |
+| Super Famicom | Light | Blue-gray console colors |
+| Snowy Night | Dark | Dark winter night with icy blue accents |
+| Portal 2 | Dark | Abandoned Aperture with split blue/orange logo |
+| Fallout | Dark | Pip-Boy terminal green with scanlines |
 
 Your theme preference is saved automatically.
 
