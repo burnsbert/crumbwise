@@ -1,10 +1,16 @@
 // Crumbwise - Frontend Application
 
+// Sections that are locked - can reorder within but not move items to/from other sections
+const LOCKED_SECTIONS = ['PROJECTS', 'COMPLETED PROJECTS'];
+
+// Sections that contain projects with color indices
+const PROJECT_SECTIONS = ['PROJECTS', 'COMPLETED PROJECTS'];
+
 const SECTION_CONFIG = {
     current: {
         // Flow: Week After Next -> Next Week -> This Week -> In Progress -> Done This Week
         columns: ['TODO FOLLOWING WEEK', 'TODO NEXT WEEK', 'TODO THIS WEEK', 'IN PROGRESS TODAY', 'DONE THIS WEEK'],
-        secondary: ['BIG ONGOING PROJECTS', 'FOLLOW UPS', 'BLOCKED'],
+        secondary: ['PROJECTS', 'FOLLOW UPS', 'BLOCKED'],
         hasNotes: true
     },
     research: {
@@ -35,6 +41,7 @@ let calendarDateOffset = 0; // 0 = today, -1 = yesterday, 1 = tomorrow, etc.
 let calendarVisible = true;
 let currentTheme = 1;
 let currentDraggedTaskId = null;
+let currentDraggedFromSection = null;
 
 const THEME_COUNT = 16;
 const THEME_NAMES = {
@@ -210,6 +217,9 @@ async function loadTasks() {
         // Build history columns dynamically from task data
         updateHistoryColumns();
 
+        // Check if any tasks are assigned to projects (for Post-It theme styling)
+        updateProjectAssignmentClass();
+
         renderBoard();
         updateUndoButton(undoData.canUndo);
     } catch (error) {
@@ -219,7 +229,7 @@ async function loadTasks() {
 
 function updateHistoryColumns() {
     // Find all history sections (DONE Q* and DONE 20*)
-    const historyColumns = Object.keys(tasks)
+    const doneColumns = Object.keys(tasks)
         .filter(section => section.startsWith('DONE Q') || section.startsWith('DONE 20'))
         .filter(section => section !== 'DONE THIS WEEK')
         .sort((a, b) => {
@@ -230,7 +240,12 @@ function updateHistoryColumns() {
             return b.localeCompare(a);
         });
 
-    SECTION_CONFIG.history.columns = historyColumns;
+    // COMPLETED PROJECTS goes second (after current quarter)
+    if (doneColumns.length > 0) {
+        SECTION_CONFIG.history.columns = [doneColumns[0], 'COMPLETED PROJECTS', ...doneColumns.slice(1)];
+    } else {
+        SECTION_CONFIG.history.columns = ['COMPLETED PROJECTS'];
+    }
 }
 
 function renderBoard() {
@@ -288,14 +303,19 @@ function renderBoard() {
 
     // Initialize sortable on all column-tasks
     document.querySelectorAll('.column-tasks').forEach(el => {
+        const section = el.closest('.column')?.dataset.section;
+        const isLocked = LOCKED_SECTIONS.includes(section);
+
         const sortable = new Sortable(el, {
-            group: 'tasks',
+            // Locked sections get their own group so items can't move to/from other sections
+            group: isLocked ? `locked-${section}` : 'tasks',
             animation: 150,
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
             dragClass: 'sortable-drag',
             onStart: (evt) => {
                 currentDraggedTaskId = evt.item.dataset.id;
+                currentDraggedFromSection = evt.from.closest('.column')?.dataset.section;
             },
             onEnd: handleDragEnd
         });
@@ -324,6 +344,16 @@ function renderBoard() {
 
             const taskId = currentDraggedTaskId;
             const section = header.closest('.column').dataset.section;
+            const fromSection = currentDraggedFromSection;
+
+            // Block cross-section moves involving locked sections
+            if (fromSection !== section) {
+                if (LOCKED_SECTIONS.includes(fromSection) || LOCKED_SECTIONS.includes(section)) {
+                    currentDraggedTaskId = null;
+                    currentDraggedFromSection = null;
+                    return;
+                }
+            }
 
             // Count tasks excluding the one being moved (in case it's from same section)
             const sectionTasks = (tasks[section] || []).filter(t => t.id !== taskId);
@@ -339,6 +369,7 @@ function renderBoard() {
                     })
                 });
                 currentDraggedTaskId = null;  // Clear after handling
+                currentDraggedFromSection = null;
                 await loadTasks();
             } catch (error) {
                 console.error('Failed to move to section:', error);
@@ -346,6 +377,118 @@ function renderBoard() {
             }
         });
     });
+
+    // Setup project hover highlighting
+    setupProjectHoverHighlighting();
+
+    // Setup project drop zones for task assignment
+    setupProjectDropZones();
+}
+
+function setupProjectHoverHighlighting() {
+    // Find all project cards
+    document.querySelectorAll('[data-section="PROJECTS"] .card, [data-section="COMPLETED PROJECTS"] .card').forEach(projectCard => {
+        const projectId = projectCard.dataset.id;
+
+        projectCard.addEventListener('mouseenter', () => {
+            // Highlight all tasks assigned to this project
+            document.querySelectorAll(`.card[data-assigned-project="${projectId}"]`).forEach(taskCard => {
+                taskCard.classList.add('project-highlight');
+            });
+            projectCard.classList.add('project-highlight');
+        });
+
+        projectCard.addEventListener('mouseleave', () => {
+            // Remove highlight
+            document.querySelectorAll('.card.project-highlight').forEach(card => {
+                card.classList.remove('project-highlight');
+            });
+        });
+    });
+}
+
+function setupProjectDropZones() {
+    // Use event delegation on the board for project assignment drops
+    // This ensures new cards automatically get the handlers
+    const board = document.getElementById('board');
+    const followups = document.getElementById('followups-columns');
+
+    // Remove old handlers if any (to prevent duplicates)
+    board.removeEventListener('dragover', handleProjectDragOver);
+    board.removeEventListener('dragleave', handleProjectDragLeave);
+    board.removeEventListener('drop', handleProjectDrop);
+    followups?.removeEventListener('dragover', handleProjectDragOver);
+    followups?.removeEventListener('dragleave', handleProjectDragLeave);
+    followups?.removeEventListener('drop', handleProjectDrop);
+
+    // Add delegated handlers
+    board.addEventListener('dragover', handleProjectDragOver);
+    board.addEventListener('dragleave', handleProjectDragLeave);
+    board.addEventListener('drop', handleProjectDrop);
+    followups?.addEventListener('dragover', handleProjectDragOver);
+    followups?.addEventListener('dragleave', handleProjectDragLeave);
+    followups?.addEventListener('drop', handleProjectDrop);
+}
+
+function handleProjectDragOver(e) {
+    const card = e.target.closest('.card');
+    if (!card) return;
+
+    const cardSection = card.closest('.column')?.dataset.section;
+    const cardId = card.dataset.id;
+
+    // Case 1: Dragging a task over a project card
+    if (cardSection === 'PROJECTS' && currentDraggedTaskId && !PROJECT_SECTIONS.includes(currentDraggedFromSection)) {
+        e.preventDefault();
+        card.classList.add('drop-target');
+    }
+
+    // Case 2: Dragging a project over a task card
+    if (!PROJECT_SECTIONS.includes(cardSection) && currentDraggedTaskId && currentDraggedFromSection === 'PROJECTS') {
+        e.preventDefault();
+        card.classList.add('drop-target');
+    }
+}
+
+function handleProjectDragLeave(e) {
+    const card = e.target.closest('.card');
+    if (card) {
+        card.classList.remove('drop-target');
+    }
+}
+
+async function handleProjectDrop(e) {
+    const card = e.target.closest('.card');
+    if (!card) return;
+
+    const cardSection = card.closest('.column')?.dataset.section;
+    const cardId = card.dataset.id;
+
+    // Case 1: Dropping a task on a project - assign task to project
+    if (cardSection === 'PROJECTS' && currentDraggedTaskId && !PROJECT_SECTIONS.includes(currentDraggedFromSection)) {
+        e.preventDefault();
+        e.stopPropagation();
+        card.classList.remove('drop-target');
+
+        const projectId = cardId;
+        const taskId = currentDraggedTaskId;
+        await assignToProject(taskId, projectId);
+        currentDraggedTaskId = null;
+        currentDraggedFromSection = null;
+    }
+
+    // Case 2: Dropping a project on a task - assign task to project
+    if (!PROJECT_SECTIONS.includes(cardSection) && currentDraggedTaskId && currentDraggedFromSection === 'PROJECTS') {
+        e.preventDefault();
+        e.stopPropagation();
+        card.classList.remove('drop-target');
+
+        const projectId = currentDraggedTaskId;
+        const taskId = cardId;
+        await assignToProject(taskId, projectId);
+        currentDraggedTaskId = null;
+        currentDraggedFromSection = null;
+    }
 }
 
 function renderSettingsPage() {
@@ -426,8 +569,8 @@ function renderColumn(section, isSecondary = false) {
         .join('');
 
     const columnClass = isSecondary ? 'column secondary' : 'column';
-    const sectionClass = isSecondary || section === 'DONE THIS WEEK' || section === 'RESEARCH DONE' || section === currentQuarter ? 'blocked-section' :
-                         section === 'IN PROGRESS TODAY' || section === 'RESEARCH IN PROGRESS' ? 'current-period' :
+    const sectionClass = (isSecondary && !PROJECT_SECTIONS.includes(section)) || section === 'DONE THIS WEEK' || section === 'RESEARCH DONE' || section === currentQuarter || section === 'COMPLETED PROJECTS' ? 'blocked-section' :
+                         section === 'IN PROGRESS TODAY' || section === 'RESEARCH IN PROGRESS' || section === 'PROJECTS' ? 'current-period' :
                          (section.startsWith('DONE Q') || section.startsWith('DONE 20')) && section !== currentQuarter && section !== 'DONE THIS WEEK' ? 'past-period' : '';
 
     // Add date banner for TODO week sections
@@ -455,7 +598,7 @@ function renderCard(task, section) {
     const textWithLinks = linkify(escapeHtml(task.text));
 
     // Determine which move button to show based on section
-    // Only main columns + BLOCKED get move buttons (not BIG ONGOING PROJECTS or FOLLOW UPS)
+    // Only main columns + BLOCKED get move buttons (not PROJECTS or FOLLOW UPS)
     const currentWithMove = [...SECTION_CONFIG.current.columns, 'BLOCKED'];
     const backlogSections = SECTION_CONFIG.backlog.columns;
 
@@ -464,17 +607,80 @@ function renderCard(task, section) {
         moveButton = `<button class="card-btn move" onclick="event.stopPropagation(); showMoveToBacklog('${task.id}')" title="Move to Backlog">&gt;&gt;</button>`;
     } else if (backlogSections.includes(section)) {
         moveButton = `<button class="card-btn move" onclick="event.stopPropagation(); showMoveToCurrent('${task.id}')" title="Move to Current">&lt;&lt;</button>`;
+    } else if (section === 'PROJECTS') {
+        moveButton = `<button class="card-btn move complete-project" onclick="event.stopPropagation(); completeProject('${task.id}')" title="Complete Project">&gt;&gt;</button>`;
+    } else if (section === 'COMPLETED PROJECTS') {
+        moveButton = `<button class="card-btn move uncomplete-project" onclick="event.stopPropagation(); uncompleteProject('${task.id}')" title="Reactivate Project">&lt;&lt;</button>`;
     }
 
+    // Assign project button for non-project tasks
+    let assignButton = '';
+    if (!PROJECT_SECTIONS.includes(section)) {
+        assignButton = `<button class="card-btn assign-project" onclick="event.stopPropagation(); showAssignProjectModal('${task.id}')" title="Assign to project">◐</button>`;
+    }
+
+    // Color assignment button for project cards
+    let colorButton = '';
+    if (section === 'PROJECTS') {
+        colorButton = `<button class="card-btn assign-color" onclick="event.stopPropagation(); showAssignColorModal('${task.id}', ${task.color_index || 1})" title="Change color">●</button>`;
+    }
+
+    // Add color stripe for project sections OR assigned tasks
+    const isProject = PROJECT_SECTIONS.includes(section);
+    let colorIndex = null;
+    let projectStripe = '';
+    let projectClass = '';
+
+    if (isProject) {
+        colorIndex = task.color_index || 1;
+        projectStripe = `<div class="project-stripe" data-color="${colorIndex}"></div>`;
+        projectClass = 'project-card';
+    } else if (task.assigned_project) {
+        // Look up the project's color
+        colorIndex = getProjectColorIndex(task.assigned_project);
+        if (colorIndex) {
+            projectStripe = `<div class="project-stripe" data-color="${colorIndex}"></div>`;
+            projectClass = 'project-card assigned-task';
+        }
+    }
+
+    // Add data attribute for project color (used by Post-It theme)
+    const projectColorAttr = colorIndex ? `data-project-color="${colorIndex}"` : '';
+
     return `
-        <div class="card ${completedClass}" data-id="${task.id}" onclick="handleCardClick(event, '${task.id}')">
+        <div class="card ${completedClass} ${projectClass}" data-id="${task.id}" data-assigned-project="${task.assigned_project || ''}" ${projectColorAttr} onclick="handleCardClick(event, '${task.id}')">
+            ${projectStripe}
             <div class="card-actions">
+                ${colorButton}
+                ${assignButton}
                 ${moveButton}
                 <button class="card-btn delete" onclick="event.stopPropagation(); deleteCard('${task.id}')" title="Delete">×</button>
             </div>
             <div class="card-text">${textWithLinks}</div>
         </div>
     `;
+}
+
+// Get a project's color index by its ID
+function getProjectColorIndex(projectId) {
+    for (const sectionName of PROJECT_SECTIONS) {
+        const sectionTasks = tasks[sectionName] || [];
+        for (const project of sectionTasks) {
+            if (project.id === projectId) {
+                return project.color_index || 1;
+            }
+        }
+    }
+    return null;
+}
+
+// Update body class based on whether any tasks are assigned to projects
+// Used by Post-It theme to decide between uniform yellow vs rotating colors
+function updateProjectAssignmentClass() {
+    const hasAssignedTasks = Object.values(tasks).some(sectionTasks =>
+        sectionTasks.some(task => task.assigned_project)
+    );
+    document.body.classList.toggle('has-project-assignments', hasAssignedTasks);
 }
 
 function escapeHtml(text) {
@@ -617,16 +823,247 @@ async function deleteCard(taskId) {
     }
 }
 
+// Project completion (moves between PROJECTS and COMPLETED PROJECTS)
+async function completeProject(taskId) {
+    try {
+        await fetch(`/api/tasks/${taskId}/complete`, { method: 'POST' });
+        await loadTasks();
+    } catch (error) {
+        console.error('Failed to complete project:', error);
+    }
+}
+
+async function uncompleteProject(taskId) {
+    try {
+        await fetch(`/api/tasks/${taskId}/complete`, { method: 'POST' });
+        await loadTasks();
+    } catch (error) {
+        console.error('Failed to uncomplete project:', error);
+    }
+}
+
+// Project assignment
+async function assignToProject(taskId, projectId) {
+    try {
+        // Save scroll positions before reload
+        const scrollPositions = saveScrollPositions();
+
+        await fetch(`/api/tasks/${taskId}/assign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId })
+        });
+        await loadTasks();
+
+        // Restore scroll positions after reload
+        restoreScrollPositions(scrollPositions);
+    } catch (error) {
+        console.error('Failed to assign to project:', error);
+    }
+}
+
+// Save scroll positions of all scrollable column containers
+function saveScrollPositions() {
+    const positions = {};
+    document.querySelectorAll('.column-tasks').forEach(el => {
+        const section = el.dataset.section;
+        if (section && el.scrollTop > 0) {
+            positions[section] = el.scrollTop;
+        }
+    });
+    // Also save the main board scroll
+    const board = document.getElementById('board');
+    if (board && board.scrollLeft > 0) {
+        positions['__board__'] = board.scrollLeft;
+    }
+    return positions;
+}
+
+// Restore scroll positions after re-render
+function restoreScrollPositions(positions) {
+    requestAnimationFrame(() => {
+        document.querySelectorAll('.column-tasks').forEach(el => {
+            const section = el.dataset.section;
+            if (section && positions[section]) {
+                el.scrollTop = positions[section];
+            }
+        });
+        const board = document.getElementById('board');
+        if (board && positions['__board__']) {
+            board.scrollLeft = positions['__board__'];
+        }
+    });
+}
+
+async function unassignFromProject(taskId) {
+    try {
+        const scrollPositions = saveScrollPositions();
+        await fetch(`/api/tasks/${taskId}/unassign`, { method: 'POST' });
+        await loadTasks();
+        restoreScrollPositions(scrollPositions);
+    } catch (error) {
+        console.error('Failed to unassign from project:', error);
+    }
+}
+
+// Show modal to assign task to a project
+function showAssignProjectModal(taskId) {
+    // Get all active projects
+    const projects = tasks['PROJECTS'] || [];
+
+    // Find current assignment
+    let currentAssignment = null;
+    for (const section of Object.values(tasks)) {
+        const task = section.find(t => t.id === taskId);
+        if (task) {
+            currentAssignment = task.assigned_project;
+            break;
+        }
+    }
+
+    // Build project options
+    const projectOptions = projects.map(p => {
+        const isSelected = currentAssignment === p.id ? 'selected' : '';
+        return `
+            <div class="project-option ${isSelected}" data-project-id="${p.id}" onclick="selectProjectOption(this, '${taskId}', '${p.id}')">
+                <div class="project-stripe" data-color="${p.color_index || 1}"></div>
+                <span>${escapeHtml(p.text)}</span>
+            </div>
+        `;
+    }).join('');
+
+    const noProjectSelected = !currentAssignment ? 'selected' : '';
+
+    const modalHtml = `
+        <div id="assign-project-modal" class="modal">
+            <div class="modal-content assign-project-modal-content">
+                <h3>Assign to Project</h3>
+                <div class="project-options">
+                    <div class="project-option ${noProjectSelected}" data-project-id="" onclick="selectProjectOption(this, '${taskId}', '')">
+                        <div class="no-project-indicator">○</div>
+                        <span>No Project</span>
+                    </div>
+                    ${projectOptions}
+                </div>
+                <div class="modal-actions">
+                    <button class="action-btn" onclick="closeAssignProjectModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    document.getElementById('assign-project-modal')?.remove();
+
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+async function selectProjectOption(element, taskId, projectId) {
+    // Update selection visually
+    document.querySelectorAll('.project-option').forEach(el => el.classList.remove('selected'));
+    element.classList.add('selected');
+
+    // Save scroll positions before any changes
+    const scrollPositions = saveScrollPositions();
+
+    // Assign or unassign (these functions handle their own scroll preservation,
+    // but we close modal first to avoid issues)
+    closeAssignProjectModal();
+
+    if (projectId) {
+        await fetch(`/api/tasks/${taskId}/assign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId })
+        });
+    } else {
+        await fetch(`/api/tasks/${taskId}/unassign`, { method: 'POST' });
+    }
+
+    await loadTasks();
+    restoreScrollPositions(scrollPositions);
+}
+
+function closeAssignProjectModal() {
+    document.getElementById('assign-project-modal')?.remove();
+}
+
+// Show modal to assign color to a project
+function showAssignColorModal(projectId, currentColor) {
+    // Build color options (1-10)
+    const colorOptions = [];
+    for (let i = 1; i <= 10; i++) {
+        const isSelected = currentColor === i ? 'selected' : '';
+        colorOptions.push(`
+            <div class="color-option ${isSelected}" data-color="${i}" onclick="selectColorOption('${projectId}', ${i})">
+                <div class="color-swatch" data-color="${i}"></div>
+            </div>
+        `);
+    }
+
+    const modalHtml = `
+        <div id="assign-color-modal" class="modal">
+            <div class="modal-content assign-color-modal-content">
+                <h3>Assign Color</h3>
+                <div class="color-options">
+                    ${colorOptions.join('')}
+                </div>
+                <div class="modal-actions">
+                    <button class="action-btn" onclick="closeAssignColorModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    document.getElementById('assign-color-modal')?.remove();
+
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+async function selectColorOption(projectId, colorIndex) {
+    const scrollPositions = saveScrollPositions();
+    closeAssignColorModal();
+
+    try {
+        await fetch(`/api/tasks/${projectId}/color`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ color_index: colorIndex })
+        });
+        await loadTasks();
+        restoreScrollPositions(scrollPositions);
+    } catch (error) {
+        console.error('Failed to change color:', error);
+    }
+}
+
+function closeAssignColorModal() {
+    document.getElementById('assign-color-modal')?.remove();
+}
+
 // Drag and drop
 async function handleDragEnd(event) {
     // Skip if already handled by header drop
     if (!currentDraggedTaskId) return;
 
     const taskId = event.item.dataset.id;
+    const fromSection = event.from.dataset.section;
     const newSection = event.to.dataset.section;
     const newIndex = event.newIndex;
 
     currentDraggedTaskId = null;  // Clear after handling
+    currentDraggedFromSection = null;
+
+    // Block cross-section moves involving locked sections (extra safety)
+    if (fromSection !== newSection) {
+        if (LOCKED_SECTIONS.includes(fromSection) || LOCKED_SECTIONS.includes(newSection)) {
+            await loadTasks(); // Reload to reset state
+            return;
+        }
+    }
 
     try {
         await fetch('/api/tasks/reorder', {

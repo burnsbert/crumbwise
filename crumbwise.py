@@ -90,7 +90,7 @@ SECTIONS = {
     "TODO THIS WEEK": {"tab": "current", "order": 2},
     "IN PROGRESS TODAY": {"tab": "current", "order": 3},
     "DONE THIS WEEK": {"tab": "current", "order": 4},
-    "BIG ONGOING PROJECTS": {"tab": "current", "order": 0, "area": "secondary"},
+    "PROJECTS": {"tab": "current", "order": 0, "area": "secondary", "locked": True},
     "FOLLOW UPS": {"tab": "current", "order": 1, "area": "secondary"},
     "BLOCKED": {"tab": "current", "order": 2, "area": "secondary"},
     "PROBLEMS TO SOLVE": {"tab": "research", "order": 1},
@@ -100,8 +100,12 @@ SECTIONS = {
     "BACKLOG HIGH PRIORITY": {"tab": "backlog", "order": 0},
     "BACKLOG MEDIUM PRIORITY": {"tab": "backlog", "order": 1},
     "BACKLOG LOW PRIORITY": {"tab": "backlog", "order": 2},
+    "COMPLETED PROJECTS": {"tab": "history", "order": 99},  # Before yearly done sections
     "DONE 2025": {"tab": "history", "order": 100},  # High order so current quarters come first
 }
+
+# Sections that use project metadata (color_index)
+PROJECT_SECTIONS = ["PROJECTS", "COMPLETED PROJECTS"]
 
 
 def get_dynamic_sections():
@@ -113,6 +117,29 @@ def get_dynamic_sections():
     return sections
 
 
+def migrate_section_renames():
+    """Migrate renamed sections in existing tasks file."""
+    if not TASKS_FILE.exists():
+        return
+
+    renames = {
+        "BIG ONGOING PROJECTS": "PROJECTS",
+    }
+
+    content = TASKS_FILE.read_text()
+    modified = False
+
+    for old_name, new_name in renames.items():
+        old_header = f"## {old_name}"
+        new_header = f"## {new_name}"
+        if old_header in content:
+            content = content.replace(old_header, new_header)
+            modified = True
+
+    if modified:
+        TASKS_FILE.write_text(content)
+
+
 def ensure_data_file():
     """Create the data file with default sections if it doesn't exist."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -121,6 +148,8 @@ def ensure_data_file():
         for section in sorted(SECTIONS.keys(), key=lambda s: (SECTIONS[s]["tab"], SECTIONS[s]["order"])):
             content.append(f"## {section}\n\n")
         TASKS_FILE.write_text("\n".join(content))
+    else:
+        migrate_section_renames()
 
 
 def parse_tasks():
@@ -143,18 +172,34 @@ def parse_tasks():
             current_tasks = []
             continue
 
-        # Check for task item
-        task_match = re.match(r"^- \[([ xX])\] (.+)$", line)
+        # Check for task item - extract metadata if present
+        # Format for projects: - [ ] Project name <!-- project:color_index -->
+        # Format for assigned tasks: - [ ] Task text <!-- assigned:project_id -->
+        task_match = re.match(r"^- \[([ xX])\] (.+?)(?:\s*<!--\s*(project|assigned):([^>]+?)\s*-->)?$", line)
         if task_match and current_section:
             completed = task_match.group(1).lower() == "x"
             text = task_match.group(2).strip()
-            # Generate a stable ID from content (or use existing if we add ID support later)
+            meta_type = task_match.group(3)  # 'project' or 'assigned'
+            meta_value = task_match.group(4)
+
+            # Generate a stable ID from content
             task_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{current_section}:{text}"))
-            current_tasks.append({
+
+            task = {
                 "id": task_id,
                 "text": text,
                 "completed": completed,
-            })
+            }
+
+            # Add color_index for project sections
+            if current_section in PROJECT_SECTIONS and meta_type == "project" and meta_value:
+                task["color_index"] = int(meta_value)
+
+            # Add assigned_project for tasks linked to a project
+            if meta_type == "assigned" and meta_value:
+                task["assigned_project"] = meta_value
+
+            current_tasks.append(task)
 
     # Save last section
     if current_section:
@@ -165,7 +210,67 @@ def parse_tasks():
         if section not in sections:
             sections[section] = []
 
+    # Migrate projects without color_index
+    migrate_project_colors(sections)
+
     return sections
+
+
+def get_next_project_color(sections):
+    """Get the best available project color using smart assignment.
+
+    Priority:
+    1. First unclaimed color (1-10) across all projects
+    2. Color not used by any active (non-completed) project
+    3. Color with fewest active project claimants
+    """
+    # Gather all used colors and active project colors
+    all_used_colors = set()
+    active_color_counts = {}  # color -> count of active projects using it
+
+    for section_name in PROJECT_SECTIONS:
+        is_active = section_name == "PROJECTS"
+        for task in sections.get(section_name, []):
+            color = task.get("color_index")
+            if color:
+                all_used_colors.add(color)
+                if is_active:
+                    active_color_counts[color] = active_color_counts.get(color, 0) + 1
+
+    # Priority 1: Find first unclaimed color
+    for i in range(1, 11):
+        if i not in all_used_colors:
+            return i
+
+    # Priority 2: Find color not used by active projects
+    for i in range(1, 11):
+        if i not in active_color_counts:
+            return i
+
+    # Priority 3: Find color with fewest active claimants
+    min_count = min(active_color_counts.values())
+    for i in range(1, 11):
+        if active_color_counts.get(i, 0) == min_count:
+            return i
+
+    return 1  # Fallback
+
+
+def migrate_project_colors(sections):
+    """Assign color indices to projects that don't have one."""
+    needs_save = False
+
+    for section_name in PROJECT_SECTIONS:
+        if section_name not in sections:
+            continue
+
+        for task in sections[section_name]:
+            if "color_index" not in task:
+                task["color_index"] = get_next_project_color(sections)
+                needs_save = True
+
+    if needs_save:
+        save_tasks(sections)
 
 
 def save_tasks(sections):
@@ -195,7 +300,14 @@ def save_tasks(sections):
         tasks = sections.get(section, [])
         for task in tasks:
             checkbox = "x" if task.get("completed") else " "
-            lines.append(f"- [{checkbox}] {task['text']}")
+            line = f"- [{checkbox}] {task['text']}"
+            # Add project metadata for project sections
+            if section in PROJECT_SECTIONS and task.get("color_index"):
+                line += f" <!-- project:{task['color_index']} -->"
+            # Add assigned project metadata for tasks linked to projects
+            elif task.get("assigned_project"):
+                line += f" <!-- assigned:{task['assigned_project']} -->"
+            lines.append(line)
 
         lines.append("")
 
@@ -253,6 +365,11 @@ def add_task():
         "text": text,
         "completed": False,
     }
+
+    # Assign color_index for project sections using smart assignment
+    if section in PROJECT_SECTIONS:
+        new_task["color_index"] = get_next_project_color(sections)
+
     sections[section].append(new_task)
     save_tasks(sections)
     clear_undo()
@@ -319,13 +436,24 @@ def delete_task(task_id):
 
 @app.route("/api/tasks/<task_id>/complete", methods=["POST"])
 def toggle_complete(task_id):
-    """Toggle task completion status."""
+    """Toggle task completion status. Projects move between PROJECTS and COMPLETED PROJECTS."""
     sections = parse_tasks()
 
     for section, tasks in sections.items():
         for task in tasks:
             if task["id"] == task_id:
                 task["completed"] = not task["completed"]
+
+                # Handle project completion - move between PROJECTS and COMPLETED PROJECTS
+                if section == "PROJECTS" and task["completed"]:
+                    # Move to COMPLETED PROJECTS
+                    tasks.remove(task)
+                    sections["COMPLETED PROJECTS"].append(task)
+                elif section == "COMPLETED PROJECTS" and not task["completed"]:
+                    # Move back to PROJECTS
+                    tasks.remove(task)
+                    sections["PROJECTS"].append(task)
+
                 save_tasks(sections)
                 clear_undo()
                 return jsonify(task)
@@ -370,6 +498,105 @@ def reorder_tasks():
     save_tasks(sections)
     clear_undo()
     return jsonify({"success": True})
+
+
+@app.route("/api/tasks/<task_id>/assign", methods=["POST"])
+def assign_to_project(task_id):
+    """Assign a task to a project."""
+    data = request.json
+    project_id = data.get("projectId")
+
+    if not project_id:
+        return jsonify({"error": "projectId required"}), 400
+
+    sections = parse_tasks()
+
+    # Find the task
+    found_task = None
+    for section, tasks in sections.items():
+        for task in tasks:
+            if task["id"] == task_id:
+                found_task = task
+                break
+        if found_task:
+            break
+
+    if not found_task:
+        return jsonify({"error": "Task not found"}), 404
+
+    # Verify the project exists
+    project_exists = False
+    for section_name in PROJECT_SECTIONS:
+        for project in sections.get(section_name, []):
+            if project["id"] == project_id:
+                project_exists = True
+                break
+        if project_exists:
+            break
+
+    if not project_exists:
+        return jsonify({"error": "Project not found"}), 404
+
+    found_task["assigned_project"] = project_id
+    save_tasks(sections)
+    clear_undo()
+    return jsonify(found_task)
+
+
+@app.route("/api/tasks/<task_id>/unassign", methods=["POST"])
+def unassign_from_project(task_id):
+    """Remove a task's project assignment."""
+    sections = parse_tasks()
+
+    for section, tasks in sections.items():
+        for task in tasks:
+            if task["id"] == task_id:
+                if "assigned_project" in task:
+                    del task["assigned_project"]
+                save_tasks(sections)
+                clear_undo()
+                return jsonify(task)
+
+    return jsonify({"error": "Task not found"}), 404
+
+
+@app.route("/api/tasks/<task_id>/color", methods=["POST"])
+def set_project_color(task_id):
+    """Set a project's color index."""
+    data = request.json
+    color_index = data.get("color_index")
+
+    if not color_index or color_index < 1 or color_index > 10:
+        return jsonify({"error": "color_index must be 1-10"}), 400
+
+    sections = parse_tasks()
+
+    # Find the project in PROJECT_SECTIONS
+    for section_name in PROJECT_SECTIONS:
+        for task in sections.get(section_name, []):
+            if task["id"] == task_id:
+                task["color_index"] = color_index
+                save_tasks(sections)
+                clear_undo()
+                return jsonify(task)
+
+    return jsonify({"error": "Project not found"}), 404
+
+
+@app.route("/api/projects/reassign-colors", methods=["POST"])
+def reassign_project_colors():
+    """Reassign all active project colors sequentially (1 through N)."""
+    sections = parse_tasks()
+
+    # Reassign active projects to colors 1-N
+    active_projects = sections.get("PROJECTS", [])
+    for i, project in enumerate(active_projects):
+        project["color_index"] = (i % 10) + 1
+
+    save_tasks(sections)
+    clear_undo()
+
+    return jsonify({"reassigned": len(active_projects)})
 
 
 @app.route("/api/new-week", methods=["POST"])
@@ -516,7 +743,7 @@ def generate_confluence_content(sections):
         ("DONE THIS WEEK", "DONE THIS WEEK"),
         ("PROBLEMS TO SOLVE", "PROBLEMS TO SOLVE"),
         ("THINGS TO RESEARCH", "THINGS TO RESEARCH"),
-        ("BIG ONGOING PROJECTS", "BIG ONGOING PROJECTS"),
+        ("PROJECTS", "PROJECTS"),
         ("FOLLOW UPS", "FOLLOW UPS"),
         ("BLOCKED", "BLOCKED"),
         ("IN PROGRESS TODAY", "IN PROGRESS TODAY"),

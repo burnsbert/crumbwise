@@ -34,6 +34,17 @@
     --border-radius: 8px;
     --column-width: 265px;
     --gap: 16px;
+    /* Project colors - distinct hues across the spectrum */
+    --project-color-1: #ef4444;  /* Red */
+    --project-color-2: #f97316;  /* Orange */
+    --project-color-3: #eab308;  /* Yellow */
+    --project-color-4: #22c55e;  /* Green */
+    --project-color-5: #06b6d4;  /* Cyan */
+    --project-color-6: #3b82f6;  /* Blue */
+    --project-color-7: #8b5cf6;  /* Purple */
+    --project-color-8: #ec4899;  /* Pink */
+    --project-color-9: #84cc16;  /* Lime */
+    --project-color-10: #14b8a6; /* Teal */
 }
 
 /* Theme 2: Minecraft (Dark - Creeper Green) */
@@ -566,6 +577,36 @@
     background: rgba(255, 255, 255, 0.9);
 }
 
+/* Whiteboard: unassigned tasks are yellow when there are project assignments */
+/* If no tasks are assigned to projects, fall back to rotating colors (nth-child) */
+[data-theme="14"].has-project-assignments .card:not([data-project-color]) {
+    background: #fff9b0 !important;  /* Yellow post-it */
+}
+
+/* Whiteboard: project-assigned cards use consistent post-it colors */
+/* Spread colors evenly - especially 5,6,7 which are commonly used */
+[data-theme="14"] .card[data-project-color="5"],
+[data-theme="14"] .card[data-project-color="9"],
+[data-theme="14"] .card[data-project-color="10"] {
+    background: #fff9b0 !important;  /* Yellow card */
+}
+
+[data-theme="14"] .card[data-project-color="1"],
+[data-theme="14"] .card[data-project-color="6"] {
+    background: #b0e0ff !important;  /* Blue card */
+}
+
+[data-theme="14"] .card[data-project-color="2"],
+[data-theme="14"] .card[data-project-color="7"] {
+    background: #ffb0d0 !important;  /* Pink card */
+}
+
+[data-theme="14"] .card[data-project-color="3"],
+[data-theme="14"] .card[data-project-color="4"],
+[data-theme="14"] .card[data-project-color="8"] {
+    background: #b0ffb0 !important;  /* Green card */
+}
+
 /* Theme 15: Blueprint (Dark) */
 [data-theme="15"] {
     --bg-color: #1a3a5c;
@@ -761,6 +802,221 @@ body[data-theme="15"] {
     --tab-hover-bg: rgba(255, 255, 255, 0.1);
     --column-border: rgba(255, 255, 255, 0.1);
     --card-border-hover: rgba(255, 255, 255, 0.4);
+}
+
+/* Project colors per theme - maximally distinct hues */
+[data-theme="2"] {
+    /* Minecraft - earthy/nature tones */
+    --project-color-1: #e53935;  /* Red */
+    --project-color-2: #fb8c00;  /* Orange */
+    --project-color-3: #fdd835;  /* Yellow */
+    --project-color-4: #7cb342;  /* Green */
+    --project-color-5: #00acc1;  /* Cyan */
+    --project-color-6: #1e88e5;  /* Blue */
+    --project-color-7: #8e24aa;  /* Purple */
+    --project-color-8: #d81b60;  /* Pink */
+    --project-color-9: #c0ca33;  /* Lime */
+    --project-color-10: #00897b; /* Teal */
+}
+
+[data-theme="3"] {
+    /* Knight Rider - red/orange spectrum with high contrast */
+    --project-color-1: #ff0000;  /* Bright red */
+    --project-color-2: #ff6600;  /* Orange */
+    --project-color-3: #ffcc00;  /* Gold */
+    --project-color-4: #00ff00;  /* Green */
+    --project-color-5: #00ffff;  /* Cyan */
+    --project-color-6: #0066ff;  /* Blue */
+    --project-color-7: #9900ff;  /* Purple */
+    --project-color-8: #ff0099;  /* Magenta */
+    --project-color-9: #99ff00;  /* Lime */
+    --project-color-10: #ff3366; /* Coral */
+}
+
+[data-theme="4"] {
+    /* Amethyst Dusk - jewel tones */
+    --project-color-1: #e53935;  /* Ruby */
+    --project-color-2: #ff7043;  /* Coral */
+    --project-color-3: #ffd54f;  /* Amber */
+    --project-color-4: #66bb6a;  /* Emerald */
+    --project-color-5: #26c6da;  /* Turquoise */
+    --project-color-6: #42a5f5;  /* Sapphire */
+    --project-color-7: #ab47bc;  /* Amethyst */
+    --project-color-8: #ec407a;  /* Rose */
+    --project-color-9: #9ccc65;  /* Peridot */
+    --project-color-10: #7e57c2; /* Violet */
+}
+
+[data-theme="5"] {
+    /* Warm Sand - desert/earth tones */
+    --project-color-1: #c62828;  /* Terracotta */
+    --project-color-2: #ef6c00;  /* Burnt orange */
+    --project-color-3: #f9a825;  /* Mustard */
+    --project-color-4: #558b2f;  /* Olive */
+    --project-color-5: #00838f;  /* Ocean */
+    --project-color-6: #1565c0;  /* Navy */
+    --project-color-7: #6a1b9a;  /* Plum */
+    --project-color-8: #ad1457;  /* Burgundy */
+    --project-color-9: #827717;  /* Khaki */
+    --project-color-10: #00695c; /* Teal */
+}
+
+[data-theme="6"] {
+    /* Ember Glow - warm with contrast */
+    --project-color-1: #ef4444;  /* Red */
+    --project-color-2: #f97316;  /* Orange */
+    --project-color-3: #eab308;  /* Yellow */
+    --project-color-4: #22c55e;  /* Green */
+    --project-color-5: #06b6d4;  /* Cyan */
+    --project-color-6: #3b82f6;  /* Blue */
+    --project-color-7: #8b5cf6;  /* Purple */
+    --project-color-8: #ec4899;  /* Pink */
+    --project-color-9: #84cc16;  /* Lime */
+    --project-color-10: #14b8a6; /* Teal */
+}
+
+[data-theme="7"] {
+    /* SNES Classic - retro gaming colors */
+    --project-color-1: #e53935;  /* Mario red */
+    --project-color-2: #ff7043;  /* DK orange */
+    --project-color-3: #ffca28;  /* Coin gold */
+    --project-color-4: #66bb6a;  /* Yoshi green */
+    --project-color-5: #26c6da;  /* Ice blue */
+    --project-color-6: #5c6bc0;  /* Blue */
+    --project-color-7: #ab47bc;  /* Purple */
+    --project-color-8: #ec407a;  /* Kirby pink */
+    --project-color-9: #9ccc65;  /* Pipe green */
+    --project-color-10: #29b6f6; /* Sky blue */
+}
+
+[data-theme="8"] {
+    /* Crystal Fog - cool pastels with distinction */
+    --project-color-1: #e57373;  /* Light red */
+    --project-color-2: #ffb74d;  /* Light orange */
+    --project-color-3: #fff176;  /* Light yellow */
+    --project-color-4: #81c784;  /* Light green */
+    --project-color-5: #4dd0e1;  /* Light cyan */
+    --project-color-6: #64b5f6;  /* Light blue */
+    --project-color-7: #ba68c8;  /* Light purple */
+    --project-color-8: #f06292;  /* Light pink */
+    --project-color-9: #aed581;  /* Light lime */
+    --project-color-10: #4db6ac; /* Light teal */
+}
+
+[data-theme="9"] {
+    /* Super Famicom - Japanese console colors */
+    --project-color-1: #e53935;  /* Red button */
+    --project-color-2: #fb8c00;  /* Orange */
+    --project-color-3: #fdd835;  /* Yellow button */
+    --project-color-4: #43a047;  /* Green button */
+    --project-color-5: #00acc1;  /* Cyan */
+    --project-color-6: #1e88e5;  /* Blue button */
+    --project-color-7: #7b1fa2;  /* Purple */
+    --project-color-8: #d81b60;  /* Pink */
+    --project-color-9: #c0ca33;  /* Lime */
+    --project-color-10: #00897b; /* Teal */
+}
+
+[data-theme="10"] {
+    /* Snowy Night - cool winter tones */
+    --project-color-1: #ef5350;  /* Winter berry */
+    --project-color-2: #ff7043;  /* Sunset */
+    --project-color-3: #ffca28;  /* Warm light */
+    --project-color-4: #66bb6a;  /* Evergreen */
+    --project-color-5: #4dd0e1;  /* Ice */
+    --project-color-6: #42a5f5;  /* Twilight */
+    --project-color-7: #ab47bc;  /* Aurora */
+    --project-color-8: #ec407a;  /* Frostbite */
+    --project-color-9: #9ccc65;  /* Pine */
+    --project-color-10: #26c6da; /* Glacier */
+}
+
+[data-theme="11"] {
+    /* Portal 2 - test chamber colors */
+    --project-color-1: #ff6b00;  /* Portal orange */
+    --project-color-2: #ffaa00;  /* Yellow */
+    --project-color-3: #ffee00;  /* Bright yellow */
+    --project-color-4: #00ff00;  /* Green */
+    --project-color-5: #00ccff;  /* Light blue */
+    --project-color-6: #00a2ff;  /* Portal blue */
+    --project-color-7: #aa00ff;  /* Purple */
+    --project-color-8: #ff00aa;  /* Magenta */
+    --project-color-9: #aaff00;  /* Lime */
+    --project-color-10: #00ffaa; /* Teal */
+}
+
+[data-theme="12"] {
+    /* Fallout - pip-boy greens with variety */
+    --project-color-1: #ff4444;  /* Danger red */
+    --project-color-2: #ff8800;  /* Warning orange */
+    --project-color-3: #ffff00;  /* Caution yellow */
+    --project-color-4: #14ff00;  /* Pip-boy green */
+    --project-color-5: #00ffcc;  /* Cyan */
+    --project-color-6: #00aaff;  /* Blue */
+    --project-color-7: #aa00ff;  /* Purple */
+    --project-color-8: #ff00aa;  /* Magenta */
+    --project-color-9: #88ff00;  /* Lime */
+    --project-color-10: #00ff88; /* Mint */
+}
+
+[data-theme="13"] {
+    /* Emerald City - Oz colors */
+    --project-color-1: #e53935;  /* Ruby red */
+    --project-color-2: #ff7043;  /* Poppy orange */
+    --project-color-3: #ffd700;  /* Yellow brick */
+    --project-color-4: #50c878;  /* Emerald */
+    --project-color-5: #00bcd4;  /* Cyan */
+    --project-color-6: #2196f3;  /* Sky blue */
+    --project-color-7: #9c27b0;  /* Purple */
+    --project-color-8: #e91e63;  /* Pink */
+    --project-color-9: #8bc34a;  /* Lime */
+    --project-color-10: #009688; /* Teal */
+}
+
+[data-theme="14"] {
+    /* Whiteboard Post-Its - saturated stripes for contrast on pastel cards */
+    /* Blue card stripes (1, 6) - warm on cool */
+    --project-color-1: #dc2626;  /* Bold red */
+    --project-color-6: #ea580c;  /* Burnt orange */
+    /* Pink card stripes (2, 7) - cool/contrast on warm */
+    --project-color-2: #059669;  /* Emerald */
+    --project-color-7: #7c3aed;  /* Violet */
+    /* Green card stripes (3, 4, 8) - warm on cool */
+    --project-color-3: #ca8a04;  /* Gold */
+    --project-color-4: #dc2626;  /* Red */
+    --project-color-8: #db2777;  /* Magenta */
+    /* Yellow card stripes (5, 9, 10) - cool on warm */
+    --project-color-5: #2563eb;  /* Royal blue */
+    --project-color-9: #7c3aed;  /* Violet */
+    --project-color-10: #0891b2; /* Cyan */
+}
+
+[data-theme="15"] {
+    /* Blueprint - technical drawing colors */
+    --project-color-1: #e53935;  /* Error red */
+    --project-color-2: #fb8c00;  /* Warning orange */
+    --project-color-3: #fdd835;  /* Highlight yellow */
+    --project-color-4: #43a047;  /* Approved green */
+    --project-color-5: #00acc1;  /* Dimension cyan */
+    --project-color-6: #1976d2;  /* Blueprint blue */
+    --project-color-7: #7b1fa2;  /* Note purple */
+    --project-color-8: #d81b60;  /* Markup pink */
+    --project-color-9: #7cb342;  /* Draft lime */
+    --project-color-10: #00838f; /* Section teal */
+}
+
+[data-theme="16"] {
+    /* Coffee Shop - warm cafe tones */
+    --project-color-1: #c62828;  /* Cranberry */
+    --project-color-2: #ef6c00;  /* Pumpkin */
+    --project-color-3: #f9a825;  /* Honey */
+    --project-color-4: #558b2f;  /* Matcha */
+    --project-color-5: #00838f;  /* Teal mug */
+    --project-color-6: #1565c0;  /* Blueberry */
+    --project-color-7: #6a1b9a;  /* Grape */
+    --project-color-8: #ad1457;  /* Raspberry */
+    --project-color-9: #9e9d24;  /* Pistachio */
+    --project-color-10: #00695c; /* Mint */
 }
 
 body {
@@ -1452,6 +1708,171 @@ main {
 .card-btn.delete:hover {
     background: var(--accent-color);
     color: white;
+}
+
+/* Project cards with color stripe */
+.card.project-card {
+    padding-left: 20px;
+    position: relative;
+}
+
+.project-stripe {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    border-radius: 6px 0 0 6px;
+}
+
+.project-stripe[data-color="1"] { background: var(--project-color-1); }
+.project-stripe[data-color="2"] { background: var(--project-color-2); }
+.project-stripe[data-color="3"] { background: var(--project-color-3); }
+.project-stripe[data-color="4"] { background: var(--project-color-4); }
+.project-stripe[data-color="5"] { background: var(--project-color-5); }
+.project-stripe[data-color="6"] { background: var(--project-color-6); }
+.project-stripe[data-color="7"] { background: var(--project-color-7); }
+.project-stripe[data-color="8"] { background: var(--project-color-8); }
+.project-stripe[data-color="9"] { background: var(--project-color-9); }
+.project-stripe[data-color="10"] { background: var(--project-color-10); }
+
+/* Match stripe border-radius to card shape for themes with custom shapes */
+[data-theme="2"] .project-stripe { border-radius: 0; }   /* Minecraft */
+[data-theme="12"] .project-stripe { border-radius: 0; }  /* Fallout */
+[data-theme="14"] .project-stripe { border-radius: 1px 0 0 1px; }  /* Whiteboard */
+[data-theme="15"] .project-stripe { border-radius: 0; }  /* Blueprint */
+
+/* Project hover highlighting */
+.card.project-highlight {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* Drop target when dragging task over project */
+.card.drop-target {
+    outline: 3px dashed var(--accent-color);
+    outline-offset: 2px;
+    background: rgba(var(--accent-color-rgb, 234, 88, 12), 0.1);
+}
+
+/* Assign project button */
+.card-btn.assign-project {
+    font-size: 0.85rem;
+}
+
+/* Assign project modal */
+.assign-project-modal-content {
+    max-width: 300px;
+}
+
+.assign-project-modal-content h3 {
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+}
+
+.project-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.project-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    background: var(--surface-color);
+    border: 2px solid transparent;
+    transition: all 0.15s;
+}
+
+.project-option:hover {
+    background: var(--card-color);
+}
+
+.project-option.selected {
+    border-color: var(--accent-color);
+    background: var(--card-color);
+}
+
+.project-option .project-stripe {
+    position: relative;
+    width: 6px;
+    height: 24px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.no-project-indicator {
+    width: 6px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Assign color modal */
+.assign-color-modal-content {
+    max-width: 280px;
+}
+
+.assign-color-modal-content h3 {
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+}
+
+.color-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+    justify-content: center;
+}
+
+.color-option {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+}
+
+.color-option:hover {
+    background: var(--card-color);
+}
+
+.color-option.selected {
+    border-color: var(--accent-color);
+    background: var(--card-color);
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+}
+
+.color-swatch[data-color="1"] { background: var(--project-color-1); }
+.color-swatch[data-color="2"] { background: var(--project-color-2); }
+.color-swatch[data-color="3"] { background: var(--project-color-3); }
+.color-swatch[data-color="4"] { background: var(--project-color-4); }
+.color-swatch[data-color="5"] { background: var(--project-color-5); }
+.color-swatch[data-color="6"] { background: var(--project-color-6); }
+.color-swatch[data-color="7"] { background: var(--project-color-7); }
+.color-swatch[data-color="8"] { background: var(--project-color-8); }
+.color-swatch[data-color="9"] { background: var(--project-color-9); }
+.color-swatch[data-color="10"] { background: var(--project-color-10); }
+
+/* Assign color button */
+.card-btn.assign-color {
+    font-size: 0.7rem;
 }
 
 /* Add task */

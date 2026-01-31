@@ -28,10 +28,10 @@ This is an example task file. Copy this to `tasks.md` to get started.
 
 - [ ] Task blocked by external dependency
 
-## BIG ONGOING PROJECTS
+## PROJECTS
 
-- [ ] Long-running project 1
-- [ ] Long-running project 2
+- [ ] Long-running project 1 <!-- project:1 -->
+- [ ] Long-running project 2 <!-- project:2 -->
 
 ## PROBLEMS TO SOLVE
 
