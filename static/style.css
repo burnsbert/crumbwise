@@ -595,11 +595,12 @@
 }
 
 /* Blueprint: technical drawing styling */
-[data-theme="15"] body {
+[data-theme="15"] {
     background-image:
         linear-gradient(rgba(126, 200, 227, 0.12) 1px, transparent 1px),
         linear-gradient(90deg, rgba(126, 200, 227, 0.12) 1px, transparent 1px);
     background-size: 20px 20px;
+    background-attachment: fixed;
 }
 
 [data-theme="15"] header h1 {
