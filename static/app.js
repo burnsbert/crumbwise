@@ -90,6 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
     calendarDateOffset = 0; // Always start on today
     loadCalendarEvents();
     checkCalendarConnectionFromUrl();
+
+    // Auto-refresh calendar display every minute to update past/current event styling
+    setInterval(() => {
+        renderCalendarSidebar();
+    }, 60000);
 });
 
 // Theme functions
