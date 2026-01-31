@@ -38,7 +38,7 @@ let currentDraggedTaskId = null;
 
 const THEME_COUNT = 16;
 const THEME_NAMES = {
-    1: 'Deep Space',
+    1: 'Deep Blue',
     2: 'Minecraft',
     3: 'Knight Rider',
     4: 'Amethyst Dusk',
