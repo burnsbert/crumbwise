@@ -595,6 +595,13 @@
 }
 
 /* Blueprint: technical drawing styling */
+[data-theme="15"] main {
+    background-image:
+        linear-gradient(rgba(126, 200, 227, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(126, 200, 227, 0.12) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
 [data-theme="15"] header h1 {
     font-family: 'Courier New', monospace;
     font-weight: 700;
@@ -610,10 +617,6 @@
 [data-theme="15"] .column {
     border-radius: 0;
     border: 1px solid rgba(126, 200, 227, 0.3);
-    background-image:
-        linear-gradient(rgba(126, 200, 227, 0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(126, 200, 227, 0.08) 1px, transparent 1px);
-    background-size: 20px 20px;
 }
 
 [data-theme="15"] .column-header {
@@ -621,6 +624,11 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     border-bottom: 1px solid rgba(126, 200, 227, 0.4);
+    background: var(--surface-color);
+}
+
+[data-theme="15"] .column.current-period .column-header {
+    background: var(--current-period-color);
 }
 
 [data-theme="15"] .action-btn {
