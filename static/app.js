@@ -36,7 +36,7 @@ let calendarVisible = true;
 let currentTheme = 1;
 let currentDraggedTaskId = null;
 
-const THEME_COUNT = 14;
+const THEME_COUNT = 16;
 const THEME_NAMES = {
     1: 'Deep Space',
     2: 'Minecraft',
@@ -45,20 +45,22 @@ const THEME_NAMES = {
     5: 'Warm Sand',
     6: 'Ember Glow',
     7: 'SNES Classic',
-    8: 'Parchment',
+    8: 'Overcast',
     9: 'Super Famicom',
     10: 'Snowy Night',
     11: 'Portal 2',
     12: 'Fallout',
     13: 'Emerald City',
-    14: 'Whiteboard Post-Its'
+    14: 'Whiteboard Post-Its',
+    15: 'Blueprint',
+    16: 'Coffee Shop'
 };
 
 const THEME_TYPES = {
     1: 'Dark', 2: 'Dark', 3: 'Dark', 4: 'Dark',
     5: 'Light', 6: 'Dark', 7: 'Dark', 8: 'Light',
     9: 'Light', 10: 'Dark', 11: 'Dark', 12: 'Dark',
-    13: 'Dark', 14: 'Light'
+    13: 'Dark', 14: 'Light', 15: 'Dark', 16: 'Light'
 };
 
 // Preview colors for theme selector (bg, surface, accent)
@@ -76,7 +78,9 @@ const THEME_COLORS = {
     11: ['#0d0d0d', '#1a1a1a', '#ff6b00'],
     12: ['#0a0a0a', '#0d1a0d', '#14ff00'],
     13: ['#0f2818', '#1a3a24', '#50c878'],
-    14: ['#e8e8e8', '#ffffff', '#fff9b0']
+    14: ['#e8e8e8', '#ffffff', '#fff9b0'],
+    15: ['#1a3a5c', '#1e4268', '#7ec8e3'],
+    16: ['#f5f0e6', '#ebe4d6', '#8b5a2b']
 };
 
 // Initialize

@@ -900,8 +900,8 @@ def set_theme():
     """Set theme number."""
     data = request.json
     theme = data.get('theme', 1)
-    # Validate theme is between 1 and 14
-    theme = max(1, min(14, int(theme)))
+    # Validate theme is between 1 and 16
+    theme = max(1, min(16, int(theme)))
     settings = load_settings()
     settings['theme'] = theme
     save_settings(settings)

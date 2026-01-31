@@ -204,7 +204,7 @@
     --card-btn-hover: #6a6a8a;
 }
 
-/* Theme 8: Parchment (Light - Blue/Classic) */
+/* Theme 8: Overcast (Light - Blue/Classic) */
 [data-theme="8"] {
     --bg-color: #c8d0d8;
     --surface-color: #dce4eb;
@@ -566,8 +566,137 @@
     background: rgba(255, 255, 255, 0.9);
 }
 
-/* Light theme adjustments (5, 8, 9, 14) */
-[data-theme="5"], [data-theme="8"], [data-theme="9"], [data-theme="14"] {
+/* Theme 15: Blueprint (Dark) */
+[data-theme="15"] {
+    --bg-color: #1a3a5c;
+    --surface-color: #1e4268;
+    --card-color: #234b74;
+    --accent-color: #7ec8e3;
+    --blocked-color: #e8a87c;
+    --text-color: #e8f4f8;
+    --text-muted: #8eb8d4;
+    --logo-gradient-start: #ffffff;
+    --logo-gradient-mid: #7ec8e3;
+    --logo-gradient-end: #ffffff;
+    --logo-glow: rgba(126, 200, 227, 0.5);
+    --current-period-color: #4a90c2;
+    --blocked-section-color: #2a5a7c;
+    --banner-bg: rgba(126, 200, 227, 0.15);
+    --banner-text: #8eb8d4;
+    --link-color: #7ec8e3;
+    --calendar-event-border: #7ec8e3;
+    --calendar-current-color: #7ec8e3;
+    --calendar-tentative-color: #e8a87c;
+    --card-hover-border: rgba(255, 255, 255, 0.5);
+    --card-hover-shadow: none;
+    --card-btn-bg: #2a5a8a;
+    --card-btn-border: #3a6a9a;
+    --card-btn-hover: #4a7aaa;
+}
+
+/* Blueprint: technical drawing styling */
+[data-theme="15"] body {
+    background-image:
+        linear-gradient(rgba(126, 200, 227, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(126, 200, 227, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+[data-theme="15"] header h1 {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+[data-theme="15"] .card {
+    border: 1px solid rgba(126, 200, 227, 0.4);
+    border-radius: 0;
+}
+
+[data-theme="15"] .column {
+    border-radius: 0;
+    border: 1px dashed rgba(126, 200, 227, 0.3);
+}
+
+[data-theme="15"] .column-header {
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(126, 200, 227, 0.4);
+}
+
+[data-theme="15"] .action-btn {
+    border-radius: 0;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+[data-theme="15"] .tab {
+    border-radius: 0;
+    font-family: 'Courier New', monospace;
+}
+
+/* Theme 16: Coffee Shop (Light) */
+[data-theme="16"] {
+    --bg-color: #f5f0e6;
+    --surface-color: #ebe4d6;
+    --card-color: #fff8f0;
+    --accent-color: #8b5a2b;
+    --blocked-color: #c17f59;
+    --text-color: #3d2b1f;
+    --text-muted: #7a6558;
+    --logo-gradient-start: #6f4e37;
+    --logo-gradient-mid: #a67c52;
+    --logo-gradient-end: #6f4e37;
+    --logo-glow: rgba(139, 90, 43, 0.3);
+    --current-period-color: #6f4e37;
+    --blocked-section-color: #d4a574;
+    --banner-bg: rgba(139, 90, 43, 0.1);
+    --banner-text: #7a6558;
+    --link-color: #8b5a2b;
+    --calendar-event-border: #8b5a2b;
+    --calendar-current-color: #6f4e37;
+    --calendar-tentative-color: #c17f59;
+    --card-hover-border: rgba(139, 90, 43, 0.4);
+    --card-hover-shadow: 0 2px 8px rgba(139, 90, 43, 0.15);
+    --card-btn-bg: #d4a574;
+    --card-btn-border: #c49464;
+    --card-btn-hover: #b48454;
+}
+
+/* Coffee Shop: warm, cozy styling */
+[data-theme="16"] .card {
+    border: 1px solid rgba(139, 90, 43, 0.15);
+    box-shadow: 0 1px 3px rgba(139, 90, 43, 0.08);
+}
+
+[data-theme="16"] .column {
+    background: rgba(255, 248, 240, 0.5);
+    border: 1px solid rgba(139, 90, 43, 0.1);
+}
+
+[data-theme="16"] .column-header {
+    border-bottom: 2px solid rgba(139, 90, 43, 0.2);
+}
+
+[data-theme="16"] header {
+    border-bottom: 1px solid rgba(139, 90, 43, 0.15);
+}
+
+[data-theme="16"] .action-btn.confirm {
+    background: #6f4e37;
+    border-color: #5a3d2b;
+    color: #fff8f0;
+}
+
+[data-theme="16"] .action-btn.confirm:hover {
+    background: #5a3d2b;
+}
+
+/* Light theme adjustments (5, 8, 9, 14, 16) */
+[data-theme="5"], [data-theme="8"], [data-theme="9"], [data-theme="14"], [data-theme="16"] {
     --scrollbar-thumb: rgba(0, 0, 0, 0.2);
     --scrollbar-hover: rgba(0, 0, 0, 0.3);
     --border-alpha: 0.15;
@@ -583,8 +712,8 @@
     --card-border-hover: rgba(0, 0, 0, 0.25);
 }
 
-/* Dark theme adjustments (1, 2, 3, 4, 6, 7, 10, 11, 12, 13) */
-:root, [data-theme="1"], [data-theme="2"], [data-theme="3"], [data-theme="4"], [data-theme="6"], [data-theme="7"], [data-theme="10"], [data-theme="11"], [data-theme="12"], [data-theme="13"] {
+/* Dark theme adjustments (1, 2, 3, 4, 6, 7, 10, 11, 12, 13, 15) */
+:root, [data-theme="1"], [data-theme="2"], [data-theme="3"], [data-theme="4"], [data-theme="6"], [data-theme="7"], [data-theme="10"], [data-theme="11"], [data-theme="12"], [data-theme="13"], [data-theme="15"] {
     --scrollbar-thumb: rgba(255, 255, 255, 0.2);
     --scrollbar-hover: rgba(255, 255, 255, 0.3);
     --border-alpha: 0.2;
