@@ -69,24 +69,24 @@
     --bg-color: #0a0a0a;
     --surface-color: #1a1a1a;
     --card-color: #2a2a2a;
-    --accent-color: #ff1a1a;
-    --blocked-color: #ff1a1a;
+    --accent-color: #ff0808;
+    --blocked-color: #ff0808;
     --text-color: #e8e8e8;
     --text-muted: #808080;
-    --logo-gradient-start: #ff1a1a;
-    --logo-gradient-mid: #ff2a2a;
-    --logo-gradient-end: #ff1a1a;
-    --logo-glow: rgba(255, 26, 26, 0.6);
-    --current-period-color: #cc0000;
+    --logo-gradient-start: #ff0000;
+    --logo-gradient-mid: #ff1010;
+    --logo-gradient-end: #ff0000;
+    --logo-glow: rgba(255, 0, 0, 0.6);
+    --current-period-color: #dd0000;
     --blocked-section-color: #4a0000;
-    --banner-bg: rgba(255, 26, 26, 0.15);
+    --banner-bg: rgba(255, 0, 0, 0.15);
     --banner-text: #cc6666;
-    --link-color: #ff2a2a;
+    --link-color: #ff1010;
     --calendar-event-border: #cc0000;
-    --calendar-current-color: #ff4040;
+    --calendar-current-color: #ff2020;
     --calendar-tentative-color: #ffaa00;
-    --card-hover-border: #ff1a1a;
-    --card-hover-shadow: 0 0 10px rgba(255, 26, 26, 0.3);
+    --card-hover-border: #ff0808;
+    --card-hover-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
     --card-btn-bg: #3a3a3a;
     --card-btn-border: #4a4a4a;
     --card-btn-hover: #4a4a4a;
@@ -831,20 +831,20 @@ header h1 {
 /* Knight Rider theme: KITT scanner effect */
 [data-theme="3"] header h1 {
     animation: kitt-scanner 2s ease-in-out infinite;
-    text-shadow: 0 0 20px rgba(255, 26, 26, 0.8),
-                 0 0 40px rgba(255, 26, 26, 0.4);
+    text-shadow: 0 0 20px rgba(255, 0, 0, 0.8),
+                 0 0 40px rgba(255, 0, 0, 0.4);
 }
 
 @keyframes kitt-scanner {
     0%, 100% {
-        text-shadow: 0 0 20px rgba(255, 26, 26, 0.8),
-                     0 0 40px rgba(255, 26, 26, 0.4),
-                     -20px 0 30px rgba(255, 26, 26, 0);
+        text-shadow: 0 0 20px rgba(255, 0, 0, 0.8),
+                     0 0 40px rgba(255, 0, 0, 0.4),
+                     -20px 0 30px rgba(255, 0, 0, 0);
     }
     50% {
-        text-shadow: 0 0 30px rgba(255, 26, 26, 1),
-                     0 0 60px rgba(255, 26, 26, 0.6),
-                     20px 0 30px rgba(255, 26, 26, 0.3);
+        text-shadow: 0 0 30px rgba(255, 0, 0, 1),
+                     0 0 60px rgba(255, 0, 0, 0.6),
+                     20px 0 30px rgba(255, 0, 0, 0.3);
     }
 }
 
