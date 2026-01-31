@@ -461,7 +461,7 @@
 
 [data-theme="14"] header {
     background: #f8f8f8;
-    border-bottom: 3px solid #444444;
+    border-bottom: none;
 }
 
 [data-theme="14"] header h1 {
@@ -474,7 +474,8 @@
     background-clip: unset;
     -webkit-text-fill-color: #222222;
     color: #222222;
-    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+    text-shadow: none;
+    filter: none;
 }
 
 [data-theme="14"] .card {
