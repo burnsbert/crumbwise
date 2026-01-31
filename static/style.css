@@ -595,7 +595,7 @@
 }
 
 /* Blueprint: technical drawing styling */
-[data-theme="15"] main {
+[data-theme="15"] body {
     background-image:
         linear-gradient(rgba(126, 200, 227, 0.12) 1px, transparent 1px),
         linear-gradient(90deg, rgba(126, 200, 227, 0.12) 1px, transparent 1px);
