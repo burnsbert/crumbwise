@@ -653,6 +653,10 @@ body[data-theme="15"] {
     font-family: 'Courier New', monospace;
 }
 
+[data-theme="15"] .tab.active {
+    background: rgba(26, 58, 92, 0.7);
+}
+
 /* Theme 16: Coffee Shop (Light) */
 [data-theme="16"] {
     --bg-color: #f5f0e6;
