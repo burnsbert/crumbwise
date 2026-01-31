@@ -624,7 +624,7 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     border-bottom: 1px solid rgba(126, 200, 227, 0.4);
-    background: var(--surface-color);
+    background: var(--card-color);
 }
 
 [data-theme="15"] .column.current-period .column-header {
