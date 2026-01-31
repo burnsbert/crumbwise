@@ -45,7 +45,7 @@ const THEME_NAMES = {
     5: 'Warm Sand',
     6: 'Ember Glow',
     7: 'SNES Classic',
-    8: 'Overcast',
+    8: 'Crystal Fog',
     9: 'Super Famicom',
     10: 'Snowy Night',
     11: 'Portal 2',
