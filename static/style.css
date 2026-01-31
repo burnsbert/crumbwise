@@ -607,6 +607,14 @@
     font-weight: 700;
     letter-spacing: 3px;
     text-transform: uppercase;
+    animation: none;
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: #e8f4f8;
+    color: #e8f4f8;
+    text-shadow: none;
+    filter: none;
 }
 
 [data-theme="15"] .card {
