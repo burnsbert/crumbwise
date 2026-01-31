@@ -595,13 +595,6 @@
 }
 
 /* Blueprint: technical drawing styling */
-[data-theme="15"] body {
-    background-image:
-        linear-gradient(rgba(126, 200, 227, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(126, 200, 227, 0.1) 1px, transparent 1px);
-    background-size: 20px 20px;
-}
-
 [data-theme="15"] header h1 {
     font-family: 'Courier New', monospace;
     font-weight: 700;
@@ -616,7 +609,11 @@
 
 [data-theme="15"] .column {
     border-radius: 0;
-    border: 1px dashed rgba(126, 200, 227, 0.3);
+    border: 1px solid rgba(126, 200, 227, 0.3);
+    background-image:
+        linear-gradient(rgba(126, 200, 227, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(126, 200, 227, 0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
 }
 
 [data-theme="15"] .column-header {
@@ -629,8 +626,7 @@
 [data-theme="15"] .action-btn {
     border-radius: 0;
     font-family: 'Courier New', monospace;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    font-size: 0.75rem;
 }
 
 [data-theme="15"] .tab {
