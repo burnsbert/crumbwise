@@ -654,7 +654,7 @@ body[data-theme="15"] {
 }
 
 [data-theme="15"] .tab.active {
-    background: rgba(26, 58, 92, 0.7);
+    background: rgba(26, 58, 92, 0.5);
 }
 
 /* Theme 16: Coffee Shop (Light) */
