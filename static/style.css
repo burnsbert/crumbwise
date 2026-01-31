@@ -653,8 +653,20 @@ body[data-theme="15"] {
     font-family: 'Courier New', monospace;
 }
 
+[data-theme="15"] header {
+    background: rgba(30, 66, 104, 0.5);
+}
+
 [data-theme="15"] .tab.active {
     background: rgba(26, 58, 92, 0.5);
+}
+
+[data-theme="15"] .notes-area {
+    background: rgba(30, 66, 104, 0.7);
+}
+
+[data-theme="15"] .calendar-sidebar {
+    background: rgba(30, 66, 104, 0.7);
 }
 
 /* Theme 16: Coffee Shop (Light) */
