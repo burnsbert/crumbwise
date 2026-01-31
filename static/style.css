@@ -627,6 +627,7 @@ body[data-theme="15"] {
 [data-theme="15"] .column {
     border-radius: 0;
     border: 1px solid rgba(126, 200, 227, 0.3);
+    background: rgba(30, 66, 104, 0.7);
 }
 
 [data-theme="15"] .column-header {
