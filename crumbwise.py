@@ -752,6 +752,7 @@ def generate_confluence_content(sections):
     # Use None as a marker for horizontal rules
     section_order = [
         ("PROJECTS", "PROJECTS"),
+        None,  # HR below projects
         ("DONE THIS WEEK", "DONE THIS WEEK"),
         ("FOLLOW UPS", "FOLLOW UPS"),
         ("BLOCKED", "BLOCKED"),
@@ -803,6 +804,7 @@ def generate_confluence_content(sections):
             html_parts.append('<p><em>(empty)</em></p>')
 
     # Add notes section at the end
+    html_parts.append('<hr/>')
     notes = ""
     if NOTES_FILE.exists():
         notes = NOTES_FILE.read_text().strip()
