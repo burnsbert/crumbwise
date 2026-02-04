@@ -14,7 +14,8 @@ A local-first task management app with a visual kanban-style board UI. Tasks are
   - **Settings**: Configure integrations and preferences
 - **Weekly Workflow**: "New Week" button advances your weekly columns with undo support
 - **Notes Area**: Freeform text area on the Current tab for quick notes
-- **8 Color Themes**: Click the Theme button to cycle through dark and light themes
+- **16 Color Themes**: Dark and light themes including Minecraft, Knight Rider, Portal 2, Fallout, and more
+- **Projects**: Color-coded projects with task assignment via drag-and-drop
 - **Google Calendar Integration**: See today's meetings in a timeline sidebar
 - **Confluence Sync**: Optional integration to sync tasks to a Confluence page
 - **No Cloud Required**: Everything runs locally on your machine
@@ -66,6 +67,7 @@ A local-first task management app with a visual kanban-style board UI. Tasks are
 - **Move a task**: Drag and drop between columns
 - **Delete a task**: Hover over a task and click the X button
 - **Add links**: Include URLs in task text - they become clickable links
+- **Assign to project**: Drag a task onto a project (or vice versa) to assign it, or use the ◐ button
 
 ### Weekly Workflow
 
@@ -83,18 +85,22 @@ Click the **Theme** button in the header to open the theme selector:
 
 | Theme | Type | Description |
 |-------|------|-------------|
-| Deep Space | Dark | Navy blue with orange accents (default) |
+| Blue Notes | Dark | Navy blue with orange accents (default) |
 | Minecraft | Dark | Creeper green with pixelated styling |
 | Knight Rider | Dark | Black with red scanner glow effect |
 | Amethyst Dusk | Dark | Rich purples |
-| Warm Sand | Light | Cream with terracotta accents |
+| Warm Sand | Light | Warm tan with terracotta accents |
 | Ember Glow | Dark | Charcoal with red-orange accents |
 | SNES Classic | Dark | Retro gaming gray-purple |
-| Parchment | Light | Cool blue-gray tones |
+| Crystal Fog | Light | Cool blue-gray tones |
 | Super Famicom | Light | Blue-gray console colors |
 | Snowy Night | Dark | Dark winter night with icy blue accents |
 | Portal 2 | Dark | Abandoned Aperture with split blue/orange logo |
 | Fallout | Dark | Pip-Boy terminal green with scanlines |
+| Emerald City | Dark | Wizard of Oz inspired with emerald green and gold |
+| Whiteboard Post-Its | Light | Colorful post-it notes on whiteboard grid |
+| Blueprint | Dark | Technical drawing blue with grid lines |
+| Coffee Shop | Light | Warm browns and cream, cozy cafe feel |
 
 Your theme preference is saved automatically.
 
