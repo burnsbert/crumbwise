@@ -840,7 +840,8 @@ def sync_confluence():
         response = requests.get(
             api_url,
             auth=auth,
-            headers={"Accept": "application/json"}
+            headers={"Accept": "application/json"},
+            timeout=30
         )
 
         if response.status_code != 200:
@@ -878,7 +879,8 @@ def sync_confluence():
                 "Accept": "application/json",
                 "Content-Type": "application/json"
             },
-            json=update_data
+            json=update_data,
+            timeout=30
         )
 
         if response.status_code == 200:
