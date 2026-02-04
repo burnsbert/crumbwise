@@ -749,7 +749,9 @@ def generate_confluence_content(sections):
     html_parts = []
 
     # Define the order for Confluence export
+    # Use None as a marker for horizontal rules
     section_order = [
+        ("PROJECTS", "PROJECTS"),
         ("DONE THIS WEEK", "DONE THIS WEEK"),
         ("FOLLOW UPS", "FOLLOW UPS"),
         ("BLOCKED", "BLOCKED"),
@@ -757,12 +759,14 @@ def generate_confluence_content(sections):
         ("TODO THIS WEEK", "TODO THIS WEEK"),
         ("TODO NEXT WEEK", "TODO NEXT WEEK"),
         ("TODO FOLLOWING WEEK", "TODO FOLLOWING WEEK"),
+        None,  # HR before backlog
         ("BACKLOG HIGH PRIORITY", "BACKLOG HIGH PRIORITY"),
         ("BACKLOG MEDIUM PRIORITY", "BACKLOG MEDIUM PRIORITY"),
         ("BACKLOG LOW PRIORITY", "BACKLOG LOW PRIORITY"),
+        None,  # HR after backlog
         ("PROBLEMS TO SOLVE", "PROBLEMS TO SOLVE"),
         ("THINGS TO RESEARCH", "THINGS TO RESEARCH"),
-        ("PROJECTS", "PROJECTS"),
+        None,  # HR after research
     ]
 
     # Add current quarter
@@ -773,7 +777,13 @@ def generate_confluence_content(sections):
     if "DONE 2025" in sections:
         section_order.append(("DONE 2025", "DONE 2025"))
 
-    for section_key, section_title in section_order:
+    for item in section_order:
+        # Handle horizontal rule markers
+        if item is None:
+            html_parts.append('<hr/>')
+            continue
+
+        section_key, section_title = item
         tasks = sections.get(section_key, [])
         html_parts.append(f'<h2>{section_title}</h2>')
 
