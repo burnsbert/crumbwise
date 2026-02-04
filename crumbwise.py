@@ -173,17 +173,24 @@ def parse_tasks():
             continue
 
         # Check for task item - extract metadata if present
-        # Format for projects: - [ ] Project name <!-- project:color_index -->
-        # Format for assigned tasks: - [ ] Task text <!-- assigned:project_id -->
-        task_match = re.match(r"^- \[([ xX])\] (.+?)(?:\s*<!--\s*(project|assigned):([^>]+?)\s*-->)?$", line)
+        # Format: - [ ] Task text <!-- id:uuid [project:N] [assigned:uuid] -->
+        # Legacy format (no id): - [ ] Task text <!-- project:N --> or <!-- assigned:uuid -->
+        task_match = re.match(r"^- \[([ xX])\] (.+?)(?:\s*<!--\s*(.+?)\s*-->)?$", line)
         if task_match and current_section:
             completed = task_match.group(1).lower() == "x"
             text = task_match.group(2).strip()
-            meta_type = task_match.group(3)  # 'project' or 'assigned'
-            meta_value = task_match.group(4)
+            meta_str = task_match.group(3) or ""
 
-            # Generate a stable ID from content
-            task_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{current_section}:{text}"))
+            # Parse metadata key:value pairs
+            meta = {}
+            for m in re.finditer(r"(\w+):([^\s]+)", meta_str):
+                meta[m.group(1)] = m.group(2)
+
+            # Get or generate task ID
+            task_id = meta.get("id")
+            if not task_id:
+                # Generate new ID for legacy tasks without one
+                task_id = str(uuid.uuid4())
 
             task = {
                 "id": task_id,
@@ -192,12 +199,12 @@ def parse_tasks():
             }
 
             # Add color_index for project sections
-            if current_section in PROJECT_SECTIONS and meta_type == "project" and meta_value:
-                task["color_index"] = int(meta_value)
+            if current_section in PROJECT_SECTIONS and "project" in meta:
+                task["color_index"] = int(meta["project"])
 
             # Add assigned_project for tasks linked to a project
-            if meta_type == "assigned" and meta_value:
-                task["assigned_project"] = meta_value
+            if "assigned" in meta:
+                task["assigned_project"] = meta["assigned"]
 
             current_tasks.append(task)
 
@@ -301,12 +308,15 @@ def save_tasks(sections):
         for task in tasks:
             checkbox = "x" if task.get("completed") else " "
             line = f"- [{checkbox}] {task['text']}"
-            # Add project metadata for project sections
+
+            # Build metadata comment with id and optional project/assigned
+            meta_parts = [f"id:{task['id']}"]
             if section in PROJECT_SECTIONS and task.get("color_index"):
-                line += f" <!-- project:{task['color_index']} -->"
-            # Add assigned project metadata for tasks linked to projects
+                meta_parts.append(f"project:{task['color_index']}")
             elif task.get("assigned_project"):
-                line += f" <!-- assigned:{task['assigned_project']} -->"
+                meta_parts.append(f"assigned:{task['assigned_project']}")
+
+            line += f" <!-- {' '.join(meta_parts)} -->"
             lines.append(line)
 
         lines.append("")

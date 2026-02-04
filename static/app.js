@@ -472,9 +472,12 @@ async function handleProjectDrop(e) {
 
         const projectId = cardId;
         const taskId = currentDraggedTaskId;
-        await assignToProject(taskId, projectId);
+
+        // Clear BEFORE async operation to prevent race with handleDragEnd
         currentDraggedTaskId = null;
         currentDraggedFromSection = null;
+
+        await assignToProject(taskId, projectId);
     }
 
     // Case 2: Dropping a project on a task - assign task to project
@@ -485,9 +488,12 @@ async function handleProjectDrop(e) {
 
         const projectId = currentDraggedTaskId;
         const taskId = cardId;
-        await assignToProject(taskId, projectId);
+
+        // Clear BEFORE async operation to prevent race with handleDragEnd
         currentDraggedTaskId = null;
         currentDraggedFromSection = null;
+
+        await assignToProject(taskId, projectId);
     }
 }
 
