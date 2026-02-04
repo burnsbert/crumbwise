@@ -748,12 +748,9 @@ def generate_confluence_content(sections):
     """Generate Confluence storage format HTML from tasks."""
     html_parts = []
 
-    # Define the order matching the user's original Confluence format
+    # Define the order for Confluence export
     section_order = [
         ("DONE THIS WEEK", "DONE THIS WEEK"),
-        ("PROBLEMS TO SOLVE", "PROBLEMS TO SOLVE"),
-        ("THINGS TO RESEARCH", "THINGS TO RESEARCH"),
-        ("PROJECTS", "PROJECTS"),
         ("FOLLOW UPS", "FOLLOW UPS"),
         ("BLOCKED", "BLOCKED"),
         ("IN PROGRESS TODAY", "IN PROGRESS TODAY"),
@@ -763,6 +760,9 @@ def generate_confluence_content(sections):
         ("BACKLOG HIGH PRIORITY", "BACKLOG HIGH PRIORITY"),
         ("BACKLOG MEDIUM PRIORITY", "BACKLOG MEDIUM PRIORITY"),
         ("BACKLOG LOW PRIORITY", "BACKLOG LOW PRIORITY"),
+        ("PROBLEMS TO SOLVE", "PROBLEMS TO SOLVE"),
+        ("THINGS TO RESEARCH", "THINGS TO RESEARCH"),
+        ("PROJECTS", "PROJECTS"),
     ]
 
     # Add current quarter
