@@ -220,6 +220,9 @@ def parse_tasks():
     # Migrate projects without color_index
     migrate_project_colors(sections)
 
+    # Fix any orphaned project assignments (from uuid5->uuid4 ID change)
+    migrate_orphaned_assignments(sections)
+
     return sections
 
 
@@ -275,6 +278,51 @@ def migrate_project_colors(sections):
             if "color_index" not in task:
                 task["color_index"] = get_next_project_color(sections)
                 needs_save = True
+
+    if needs_save:
+        save_tasks(sections)
+
+
+def migrate_orphaned_assignments(sections):
+    """Fix task assignments that point to old uuid5-based project IDs.
+
+    When task ID generation changed from uuid5 to uuid4, project IDs changed
+    but task assignments still pointed to the old IDs. This migration:
+    1. Builds a mapping from old uuid5 IDs to current project IDs
+    2. Updates any orphaned assignments to use the current project ID
+    """
+    # Build set of valid (current) project IDs
+    valid_project_ids = set()
+    # Build mapping from project text to current ID
+    project_text_to_id = {}
+
+    for section_name in PROJECT_SECTIONS:
+        for project in sections.get(section_name, []):
+            valid_project_ids.add(project["id"])
+            project_text_to_id[project["text"]] = project["id"]
+
+    # Build mapping from old uuid5 IDs to current project IDs
+    old_to_new_id = {}
+    for project_text, current_id in project_text_to_id.items():
+        # Generate what the old uuid5-based ID would have been
+        for section_name in PROJECT_SECTIONS:
+            old_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{section_name}:{project_text}"))
+            if old_id != current_id:  # Only map if different
+                old_to_new_id[old_id] = current_id
+
+    # Find and fix orphaned assignments
+    needs_save = False
+    for section_name, tasks in sections.items():
+        if section_name in PROJECT_SECTIONS:
+            continue  # Projects don't have assignments
+
+        for task in tasks:
+            assigned = task.get("assigned_project")
+            if assigned and assigned not in valid_project_ids:
+                # This is an orphaned assignment - try to fix it
+                if assigned in old_to_new_id:
+                    task["assigned_project"] = old_to_new_id[assigned]
+                    needs_save = True
 
     if needs_save:
         save_tasks(sections)
