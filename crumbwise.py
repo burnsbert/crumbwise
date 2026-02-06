@@ -1027,10 +1027,26 @@ def calendar_status():
     """Check Google Calendar connection status."""
     settings = load_settings()
     has_config = bool(settings.get('google_client_id') and settings.get('google_client_secret'))
+    has_credentials = bool(settings.get('google_credentials'))
     creds = get_google_credentials()
+
+    # If we have stored credentials but get_google_credentials returned None,
+    # the token refresh failed — user needs to reconnect
+    needs_reconnect = has_credentials and creds is None
+
+    # If creds were returned, verify they actually work with a lightweight API call
+    if creds and not needs_reconnect:
+        try:
+            service = build('calendar', 'v3', credentials=creds)
+            service.calendarList().get(calendarId='primary').execute()
+        except Exception:
+            needs_reconnect = True
+            creds = None
+
     return jsonify({
         "has_config": has_config,
-        "connected": creds is not None
+        "connected": creds is not None,
+        "needs_reconnect": needs_reconnect
     })
 
 

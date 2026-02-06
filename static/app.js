@@ -1288,7 +1288,16 @@ async function loadGoogleCalendarStatus() {
         const response = await fetch('/api/calendar/status');
         const data = await response.json();
 
-        if (data.connected) {
+        if (data.needs_reconnect) {
+            statusDiv.innerHTML = `
+                <div class="calendar-connected">
+                    <span class="status-indicator disconnected"></span>
+                    <span>Calendar session expired</span>
+                    <button id="connect-google-btn" class="action-btn confirm" style="margin-left: 12px;">Reconnect</button>
+                    <button id="disconnect-google-btn" class="action-btn cancel" style="margin-left: 8px;">Disconnect</button>
+                </div>
+            `;
+        } else if (data.connected) {
             statusDiv.innerHTML = `
                 <div class="calendar-connected">
                     <span class="status-indicator connected"></span>
