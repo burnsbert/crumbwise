@@ -330,14 +330,14 @@ function renderBoard() {
         const column = header.closest('.column');
         header.addEventListener('dragover', (e) => {
             e.preventDefault();
-            column.classList.add('drag-over');
+            header.classList.add('header-drop-target');
         });
         header.addEventListener('dragleave', () => {
-            column.classList.remove('drag-over');
+            header.classList.remove('header-drop-target');
         });
         header.addEventListener('drop', async (e) => {
             e.preventDefault();
-            column.classList.remove('drag-over');
+            header.classList.remove('header-drop-target');
 
             // Use the tracked dragged task ID
             if (!currentDraggedTaskId) return;
@@ -346,11 +346,13 @@ function renderBoard() {
             const section = header.closest('.column').dataset.section;
             const fromSection = currentDraggedFromSection;
 
+            // Clear BEFORE async work so handleDragEnd sees null and exits early
+            currentDraggedTaskId = null;
+            currentDraggedFromSection = null;
+
             // Block cross-section moves involving locked sections
             if (fromSection !== section) {
                 if (LOCKED_SECTIONS.includes(fromSection) || LOCKED_SECTIONS.includes(section)) {
-                    currentDraggedTaskId = null;
-                    currentDraggedFromSection = null;
                     return;
                 }
             }
@@ -368,8 +370,6 @@ function renderBoard() {
                         index: sectionTasks.length + 1  // Put at end
                     })
                 });
-                currentDraggedTaskId = null;  // Clear after handling
-                currentDraggedFromSection = null;
                 await loadTasks();
             } catch (error) {
                 console.error('Failed to move to section:', error);
