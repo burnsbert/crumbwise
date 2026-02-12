@@ -45,6 +45,13 @@
     --project-color-8: #ec4899;  /* Pink */
     --project-color-9: #84cc16;  /* Lime */
     --project-color-10: #14b8a6; /* Teal */
+    /* Two-tone project colors (11-16) */
+    --project-color-11a: #ef4444; --project-color-11b: #3b82f6;  /* Red + Blue */
+    --project-color-12a: #f59e0b; --project-color-12b: #0d9488;  /* Amber + Deep teal */
+    --project-color-13a: #fbbf24; --project-color-13b: #7c3aed;  /* Gold + Purple */
+    --project-color-14a: #ec4899; --project-color-14b: #16a34a;  /* Pink + Green */
+    --project-color-15a: #a3e635; --project-color-15b: #f87171;  /* Lime + Coral */
+    --project-color-16a: #22d3ee; --project-color-16b: #64748b;  /* Cyan + Slate */
 }
 
 /* Theme 2: Minecraft (Dark - Creeper Green) */
@@ -607,6 +614,21 @@
     background: #b0ffb0 !important;  /* Green card */
 }
 
+[data-theme="14"] .card[data-project-color="11"],
+[data-theme="14"] .card[data-project-color="14"] {
+    background: #b0e0ff !important;  /* Blue card */
+}
+
+[data-theme="14"] .card[data-project-color="12"],
+[data-theme="14"] .card[data-project-color="15"] {
+    background: #ffb0d0 !important;  /* Pink card */
+}
+
+[data-theme="14"] .card[data-project-color="13"],
+[data-theme="14"] .card[data-project-color="16"] {
+    background: #b0ffb0 !important;  /* Green card */
+}
+
 /* Theme 15: Blueprint (Dark) */
 [data-theme="15"] {
     --bg-color: #1a3a5c;
@@ -817,6 +839,12 @@ body[data-theme="15"] {
     --project-color-8: #d81b60;  /* Pink */
     --project-color-9: #c0ca33;  /* Lime */
     --project-color-10: #00897b; /* Teal */
+    --project-color-11a: #e53935; --project-color-11b: #1e88e5;  /* Redstone + Lapis */
+    --project-color-12a: #ffb300; --project-color-12b: #00897b;  /* Gold ore + Sea green */
+    --project-color-13a: #fdd835; --project-color-13b: #8e24aa;  /* Glowstone + Nether */
+    --project-color-14a: #d81b60; --project-color-14b: #7cb342;  /* Pink + Leaf */
+    --project-color-15a: #c0ca33; --project-color-15b: #d32f2f;  /* Lime + Brick red */
+    --project-color-16a: #00bcd4; --project-color-16b: #546e7a;  /* Diamond cyan + Stone */
 }
 
 [data-theme="3"] {
@@ -831,6 +859,12 @@ body[data-theme="15"] {
     --project-color-8: #ff0099;  /* Magenta */
     --project-color-9: #99ff00;  /* Lime */
     --project-color-10: #ff3366; /* Coral */
+    --project-color-11a: #ff0000; --project-color-11b: #0066ff;  /* Red + Blue */
+    --project-color-12a: #ffaa00; --project-color-12b: #00cc99;  /* Gold + Teal */
+    --project-color-13a: #ffff00; --project-color-13b: #9900ff;  /* Yellow + Purple */
+    --project-color-14a: #ff0099; --project-color-14b: #00ff00;  /* Magenta + Green */
+    --project-color-15a: #99ff00; --project-color-15b: #ff3366;  /* Lime + Neon coral */
+    --project-color-16a: #00ffcc; --project-color-16b: #778899;  /* Neon cyan + Steel */
 }
 
 [data-theme="4"] {
@@ -845,6 +879,12 @@ body[data-theme="15"] {
     --project-color-8: #ec407a;  /* Rose */
     --project-color-9: #9ccc65;  /* Peridot */
     --project-color-10: #7e57c2; /* Violet */
+    --project-color-11a: #e53935; --project-color-11b: #42a5f5;  /* Ruby + Sapphire */
+    --project-color-12a: #ffa726; --project-color-12b: #26a69a;  /* Topaz + Jade */
+    --project-color-13a: #ffd54f; --project-color-13b: #ab47bc;  /* Amber + Amethyst */
+    --project-color-14a: #ec407a; --project-color-14b: #66bb6a;  /* Rose + Emerald */
+    --project-color-15a: #9ccc65; --project-color-15b: #ef5350;  /* Peridot + Garnet */
+    --project-color-16a: #4dd0e1; --project-color-16b: #78909c;  /* Aquamarine + Moonstone */
 }
 
 [data-theme="5"] {
@@ -859,6 +899,12 @@ body[data-theme="15"] {
     --project-color-8: #ad1457;  /* Burgundy */
     --project-color-9: #827717;  /* Khaki */
     --project-color-10: #00695c; /* Teal */
+    --project-color-11a: #c62828; --project-color-11b: #1565c0;  /* Terracotta + Navy */
+    --project-color-12a: #e65100; --project-color-12b: #00695c;  /* Burnt sienna + Teal */
+    --project-color-13a: #f9a825; --project-color-13b: #6a1b9a;  /* Mustard + Plum */
+    --project-color-14a: #ad1457; --project-color-14b: #558b2f;  /* Burgundy + Olive */
+    --project-color-15a: #827717; --project-color-15b: #c62828;  /* Khaki + Clay red */
+    --project-color-16a: #0097a7; --project-color-16b: #546e7a;  /* Ocean cyan + Slate */
 }
 
 [data-theme="6"] {
@@ -873,6 +919,12 @@ body[data-theme="15"] {
     --project-color-8: #ec4899;  /* Pink */
     --project-color-9: #84cc16;  /* Lime */
     --project-color-10: #14b8a6; /* Teal */
+    --project-color-11a: #ef4444; --project-color-11b: #3b82f6;  /* Red + Blue */
+    --project-color-12a: #f59e0b; --project-color-12b: #0d9488;  /* Amber + Deep teal */
+    --project-color-13a: #fbbf24; --project-color-13b: #7c3aed;  /* Gold + Purple */
+    --project-color-14a: #ec4899; --project-color-14b: #16a34a;  /* Pink + Green */
+    --project-color-15a: #a3e635; --project-color-15b: #f87171;  /* Lime + Coral */
+    --project-color-16a: #22d3ee; --project-color-16b: #64748b;  /* Cyan + Slate */
 }
 
 [data-theme="7"] {
@@ -887,6 +939,12 @@ body[data-theme="15"] {
     --project-color-8: #ec407a;  /* Kirby pink */
     --project-color-9: #9ccc65;  /* Pipe green */
     --project-color-10: #29b6f6; /* Sky blue */
+    --project-color-11a: #e53935; --project-color-11b: #5c6bc0;  /* Mario red + Blue */
+    --project-color-12a: #ffca28; --project-color-12b: #26a69a;  /* Coin + Teal */
+    --project-color-13a: #ffee58; --project-color-13b: #ab47bc;  /* Star + Purple */
+    --project-color-14a: #ec407a; --project-color-14b: #66bb6a;  /* Kirby + Yoshi */
+    --project-color-15a: #9ccc65; --project-color-15b: #ef5350;  /* Pipe + Fire flower */
+    --project-color-16a: #4dd0e1; --project-color-16b: #78909c;  /* Ice power + Cartridge */
 }
 
 [data-theme="8"] {
@@ -901,6 +959,12 @@ body[data-theme="15"] {
     --project-color-8: #f06292;  /* Light pink */
     --project-color-9: #aed581;  /* Light lime */
     --project-color-10: #4db6ac; /* Light teal */
+    --project-color-11a: #e57373; --project-color-11b: #64b5f6;  /* Light red + Light blue */
+    --project-color-12a: #ffcc80; --project-color-12b: #4db6ac;  /* Light orange + Light teal */
+    --project-color-13a: #fff176; --project-color-13b: #ba68c8;  /* Light yellow + Light purple */
+    --project-color-14a: #f06292; --project-color-14b: #81c784;  /* Light pink + Light green */
+    --project-color-15a: #aed581; --project-color-15b: #ef9a9a;  /* Light lime + Light coral */
+    --project-color-16a: #80deea; --project-color-16b: #90a4ae;  /* Light cyan + Light slate */
 }
 
 [data-theme="9"] {
@@ -915,6 +979,12 @@ body[data-theme="15"] {
     --project-color-8: #d81b60;  /* Pink */
     --project-color-9: #c0ca33;  /* Lime */
     --project-color-10: #00897b; /* Teal */
+    --project-color-11a: #e53935; --project-color-11b: #1e88e5;  /* Red + Blue */
+    --project-color-12a: #fb8c00; --project-color-12b: #00897b;  /* Orange + Teal */
+    --project-color-13a: #fdd835; --project-color-13b: #7b1fa2;  /* Yellow + Purple */
+    --project-color-14a: #d81b60; --project-color-14b: #43a047;  /* Pink + Green */
+    --project-color-15a: #c0ca33; --project-color-15b: #d32f2f;  /* Lime + Red */
+    --project-color-16a: #00bcd4; --project-color-16b: #546e7a;  /* Cyan + Gray */
 }
 
 [data-theme="10"] {
@@ -929,6 +999,12 @@ body[data-theme="15"] {
     --project-color-8: #ec407a;  /* Frostbite */
     --project-color-9: #9ccc65;  /* Pine */
     --project-color-10: #26c6da; /* Glacier */
+    --project-color-11a: #ef5350; --project-color-11b: #42a5f5;  /* Berry + Twilight */
+    --project-color-12a: #ffca28; --project-color-12b: #26c6da;  /* Warm light + Glacier */
+    --project-color-13a: #fff176; --project-color-13b: #ab47bc;  /* Starlight + Aurora */
+    --project-color-14a: #ec407a; --project-color-14b: #66bb6a;  /* Frostbite + Evergreen */
+    --project-color-15a: #9ccc65; --project-color-15b: #ef5350;  /* Pine + Cardinal */
+    --project-color-16a: #4dd0e1; --project-color-16b: #78909c;  /* Frost cyan + Slate */
 }
 
 [data-theme="11"] {
@@ -943,6 +1019,12 @@ body[data-theme="15"] {
     --project-color-8: #ff00aa;  /* Magenta */
     --project-color-9: #aaff00;  /* Lime */
     --project-color-10: #00ffaa; /* Teal */
+    --project-color-11a: #ff6b00; --project-color-11b: #00a2ff;  /* Portal orange + Portal blue */
+    --project-color-12a: #ffaa00; --project-color-12b: #00ffaa;  /* Yellow + Teal */
+    --project-color-13a: #ffee00; --project-color-13b: #aa00ff;  /* Bright yellow + Purple */
+    --project-color-14a: #ff00aa; --project-color-14b: #00ff00;  /* Magenta + Green */
+    --project-color-15a: #aaff00; --project-color-15b: #ff3366;  /* Lime + Neon coral */
+    --project-color-16a: #00ffcc; --project-color-16b: #778899;  /* Turquoise + Steel */
 }
 
 [data-theme="12"] {
@@ -957,6 +1039,12 @@ body[data-theme="15"] {
     --project-color-8: #ff00aa;  /* Magenta */
     --project-color-9: #88ff00;  /* Lime */
     --project-color-10: #00ff88; /* Mint */
+    --project-color-11a: #ff4444; --project-color-11b: #00aaff;  /* Danger red + Blue */
+    --project-color-12a: #ff8800; --project-color-12b: #00ff88;  /* Warning + Mint */
+    --project-color-13a: #ffff00; --project-color-13b: #aa00ff;  /* Caution + Purple */
+    --project-color-14a: #ff00aa; --project-color-14b: #14ff00;  /* Magenta + Pip-boy */
+    --project-color-15a: #88ff00; --project-color-15b: #ff3366;  /* Lime + Danger coral */
+    --project-color-16a: #00ffcc; --project-color-16b: #778899;  /* Neon cyan + Steel */
 }
 
 [data-theme="13"] {
@@ -971,6 +1059,12 @@ body[data-theme="15"] {
     --project-color-8: #e91e63;  /* Pink */
     --project-color-9: #8bc34a;  /* Lime */
     --project-color-10: #009688; /* Teal */
+    --project-color-11a: #e53935; --project-color-11b: #2196f3;  /* Ruby + Sky */
+    --project-color-12a: #ff7043; --project-color-12b: #009688;  /* Poppy + Teal */
+    --project-color-13a: #ffd700; --project-color-13b: #9c27b0;  /* Gold + Purple */
+    --project-color-14a: #e91e63; --project-color-14b: #50c878;  /* Pink + Emerald */
+    --project-color-15a: #8bc34a; --project-color-15b: #e53935;  /* Lime + Ruby slipper */
+    --project-color-16a: #00bcd4; --project-color-16b: #607d8b;  /* Cyan + Slate */
 }
 
 [data-theme="14"] {
@@ -989,6 +1083,12 @@ body[data-theme="15"] {
     --project-color-5: #2563eb;  /* Royal blue */
     --project-color-9: #7c3aed;  /* Violet */
     --project-color-10: #0891b2; /* Cyan */
+    --project-color-11a: #dc2626; --project-color-11b: #2563eb;  /* Bold red + Royal blue */
+    --project-color-12a: #ea580c; --project-color-12b: #0891b2;  /* Orange + Cyan */
+    --project-color-13a: #ca8a04; --project-color-13b: #7c3aed;  /* Gold + Violet */
+    --project-color-14a: #db2777; --project-color-14b: #059669;  /* Magenta + Emerald */
+    --project-color-15a: #65a30d; --project-color-15b: #dc2626;  /* Green + Bold coral */
+    --project-color-16a: #06b6d4; --project-color-16b: #64748b;  /* Cyan + Slate */
 }
 
 [data-theme="15"] {
@@ -1003,6 +1103,12 @@ body[data-theme="15"] {
     --project-color-8: #d81b60;  /* Markup pink */
     --project-color-9: #7cb342;  /* Draft lime */
     --project-color-10: #00838f; /* Section teal */
+    --project-color-11a: #e53935; --project-color-11b: #1976d2;  /* Error red + Blueprint blue */
+    --project-color-12a: #fb8c00; --project-color-12b: #00838f;  /* Warning + Section teal */
+    --project-color-13a: #fdd835; --project-color-13b: #7b1fa2;  /* Highlight + Note purple */
+    --project-color-14a: #d81b60; --project-color-14b: #43a047;  /* Markup pink + Approved green */
+    --project-color-15a: #7cb342; --project-color-15b: #c62828;  /* Draft lime + Markup red */
+    --project-color-16a: #00bcd4; --project-color-16b: #546e7a;  /* Dimension cyan + Steel */
 }
 
 [data-theme="16"] {
@@ -1017,6 +1123,12 @@ body[data-theme="15"] {
     --project-color-8: #ad1457;  /* Raspberry */
     --project-color-9: #9e9d24;  /* Pistachio */
     --project-color-10: #00695c; /* Mint */
+    --project-color-11a: #c62828; --project-color-11b: #1565c0;  /* Cranberry + Blueberry */
+    --project-color-12a: #ef6c00; --project-color-12b: #00695c;  /* Pumpkin + Mint */
+    --project-color-13a: #f9a825; --project-color-13b: #6a1b9a;  /* Honey + Grape */
+    --project-color-14a: #ad1457; --project-color-14b: #558b2f;  /* Raspberry + Matcha */
+    --project-color-15a: #9e9d24; --project-color-15b: #c62828;  /* Pistachio + Cherry */
+    --project-color-16a: #0097a7; --project-color-16b: #546e7a;  /* Teal cyan + Slate */
 }
 
 body {
@@ -1736,7 +1848,7 @@ main {
 
 /* Project cards with color stripe */
 .card.project-card {
-    padding-left: 20px;
+    padding-left: 24px;
     position: relative;
 }
 
@@ -1745,7 +1857,7 @@ main {
     left: 0;
     top: 0;
     bottom: 0;
-    width: 6px;
+    width: 10px;
     border-radius: 6px 0 0 6px;
 }
 
@@ -1759,6 +1871,13 @@ main {
 .project-stripe[data-color="8"] { background: var(--project-color-8); }
 .project-stripe[data-color="9"] { background: var(--project-color-9); }
 .project-stripe[data-color="10"] { background: var(--project-color-10); }
+/* Two-tone stripes (11-16): vertical split */
+.project-stripe[data-color="11"] { background: linear-gradient(to right, var(--project-color-11a) 50%, var(--project-color-11b) 50%); }
+.project-stripe[data-color="12"] { background: linear-gradient(to right, var(--project-color-12a) 50%, var(--project-color-12b) 50%); }
+.project-stripe[data-color="13"] { background: linear-gradient(to right, var(--project-color-13a) 50%, var(--project-color-13b) 50%); }
+.project-stripe[data-color="14"] { background: linear-gradient(to right, var(--project-color-14a) 50%, var(--project-color-14b) 50%); }
+.project-stripe[data-color="15"] { background: linear-gradient(to right, var(--project-color-15a) 50%, var(--project-color-15b) 50%); }
+.project-stripe[data-color="16"] { background: linear-gradient(to right, var(--project-color-16a) 50%, var(--project-color-16b) 50%); }
 
 /* Match stripe border-radius to card shape for themes with custom shapes */
 [data-theme="2"] .project-stripe { border-radius: 0; }   /* Minecraft */
@@ -1893,6 +2012,13 @@ main {
 .color-swatch[data-color="8"] { background: var(--project-color-8); }
 .color-swatch[data-color="9"] { background: var(--project-color-9); }
 .color-swatch[data-color="10"] { background: var(--project-color-10); }
+/* Two-tone swatches (11-16): vertical split */
+.color-swatch[data-color="11"] { background: linear-gradient(to right, var(--project-color-11a) 50%, var(--project-color-11b) 50%); }
+.color-swatch[data-color="12"] { background: linear-gradient(to right, var(--project-color-12a) 50%, var(--project-color-12b) 50%); }
+.color-swatch[data-color="13"] { background: linear-gradient(to right, var(--project-color-13a) 50%, var(--project-color-13b) 50%); }
+.color-swatch[data-color="14"] { background: linear-gradient(to right, var(--project-color-14a) 50%, var(--project-color-14b) 50%); }
+.color-swatch[data-color="15"] { background: linear-gradient(to right, var(--project-color-15a) 50%, var(--project-color-15b) 50%); }
+.color-swatch[data-color="16"] { background: linear-gradient(to right, var(--project-color-16a) 50%, var(--project-color-16b) 50%); }
 
 /* Assign color button */
 .card-btn.assign-color {

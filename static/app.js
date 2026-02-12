@@ -997,9 +997,9 @@ function closeAssignProjectModal() {
 
 // Show modal to assign color to a project
 function showAssignColorModal(projectId, currentColor) {
-    // Build color options (1-10)
+    // Build color options (1-16)
     const colorOptions = [];
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 16; i++) {
         const isSelected = currentColor === i ? 'selected' : '';
         colorOptions.push(`
             <div class="color-option ${isSelected}" data-color="${i}" onclick="selectColorOption('${projectId}', ${i})">
