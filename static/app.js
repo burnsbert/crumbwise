@@ -688,8 +688,13 @@ function renderTimestampTooltip(task) {
     return lines.join('\n');
 }
 
+function isDoneSection(section) {
+    if (!section) return false;
+    return section === 'COMPLETED PROJECTS' || section.startsWith('DONE');
+}
+
 function renderCard(task, section) {
-    const completedClass = task.completed ? 'completed' : '';
+    const completedClass = (task.completed || isDoneSection(section)) ? 'completed' : '';
     const textWithLinks = linkify(escapeHtml(task.text));
 
     // Determine which move button to show based on section
@@ -1219,7 +1224,7 @@ function renderTimelineTaskList(taskList) {
     }
 
     return taskList.map(task => {
-        const completedClass = task.completed ? 'completed' : '';
+        const completedClass = (task.completed || isDoneSection(task.section)) ? 'completed' : '';
         const sectionLabel = task.section || '';
         const taskText = escapeHtml(task.text);
 
