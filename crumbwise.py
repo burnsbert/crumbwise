@@ -708,6 +708,7 @@ def assign_to_project(task_id):
 
     found_task["assigned_project"] = project_id
     found_task["updated"] = now_iso()  # Set updated timestamp
+    found_task.pop("order_index", None)  # Clear stale order_index from previous project
 
     # Check if any tasks assigned to this project have order_index
     # If yes, set order_index = max + 1 for the newly assigned task
