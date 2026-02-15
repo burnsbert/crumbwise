@@ -599,6 +599,56 @@ function renderColumn(section, isSecondary = false) {
     `;
 }
 
+function timeAgo(isoString) {
+    if (!isoString) return null;
+
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return null;
+
+    const now = new Date();
+    const diffMs = now - date;
+
+    // Handle future dates gracefully
+    if (diffMs < 0) return 'just now';
+
+    const seconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const weeks = Math.floor(days / 7);
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
+
+    if (seconds < 60) return 'just now';
+    if (minutes === 1) return '1 minute ago';
+    if (minutes < 60) return `${minutes} minutes ago`;
+    if (hours === 1) return '1 hour ago';
+    if (hours < 24) return `${hours} hours ago`;
+    if (days === 1) return '1 day ago';
+    if (days < 7) return `${days} days ago`;
+    if (weeks === 1) return '1 week ago';
+    if (weeks < 5) return `${weeks} weeks ago`;
+    if (months === 1) return '1 month ago';
+    if (months < 12) return `${months} months ago`;
+    if (years === 1) return '1 year ago';
+    return `${years} years ago`;
+}
+
+function renderTimestampTooltip(task) {
+    const lines = [];
+    const created = timeAgo(task.created);
+    const inProgress = timeAgo(task.in_progress);
+    const updated = timeAgo(task.updated);
+    const completedAt = timeAgo(task.completed_at);
+
+    if (created) lines.push(`Created: ${created}`);
+    if (inProgress) lines.push(`In progress: ${inProgress}`);
+    if (updated) lines.push(`Updated: ${updated}`);
+    if (completedAt) lines.push(`Completed: ${completedAt}`);
+
+    return lines.join('\n');
+}
+
 function renderCard(task, section) {
     const completedClass = task.completed ? 'completed' : '';
     const textWithLinks = linkify(escapeHtml(task.text));
@@ -631,6 +681,12 @@ function renderCard(task, section) {
         colorButton = `<button class="card-btn assign-color" onclick="event.stopPropagation(); showAssignColorModal('${task.id}', ${task.color_index || 1})" title="Change color">●</button>`;
     }
 
+    // Timeline button for project cards (both active and completed)
+    let timelineButton = '';
+    if (PROJECT_SECTIONS.includes(section)) {
+        timelineButton = `<button class="card-btn timeline" onclick="event.stopPropagation(); showProjectTimeline('${task.id}')" title="Project timeline">&#128337;</button>`;
+    }
+
     // Add color stripe for project sections OR assigned tasks
     const isProject = PROJECT_SECTIONS.includes(section);
     let colorIndex = null;
@@ -653,16 +709,26 @@ function renderCard(task, section) {
     // Add data attribute for project color (used by Post-It theme)
     const projectColorAttr = colorIndex ? `data-project-color="${colorIndex}"` : '';
 
+    // Info icon with timestamp tooltip (only if at least one timestamp exists)
+    let infoIcon = '';
+    const hasTimestamps = task.created || task.updated || task.in_progress || task.completed_at;
+    if (hasTimestamps) {
+        const tooltipText = renderTimestampTooltip(task);
+        infoIcon = `<span class="card-info">&#9432;<span class="card-tooltip">${escapeHtml(tooltipText)}</span></span>`;
+    }
+
     return `
         <div class="card ${completedClass} ${projectClass}" data-id="${task.id}" data-assigned-project="${task.assigned_project || ''}" ${projectColorAttr} onclick="handleCardClick(event, '${task.id}')">
             ${projectStripe}
             <div class="card-actions">
                 ${colorButton}
+                ${timelineButton}
                 ${assignButton}
                 ${moveButton}
                 <button class="card-btn delete" onclick="event.stopPropagation(); deleteCard('${task.id}')" title="Delete">×</button>
             </div>
             <div class="card-text">${textWithLinks}</div>
+            ${infoIcon}
         </div>
     `;
 }
@@ -1048,6 +1114,235 @@ async function selectColorOption(projectId, colorIndex) {
 
 function closeAssignColorModal() {
     document.getElementById('assign-color-modal')?.remove();
+}
+
+// Project Timeline Modal
+async function showProjectTimeline(projectId) {
+    try {
+        const response = await fetch(`/api/projects/${projectId}/timeline`);
+        if (!response.ok) {
+            console.error('Failed to fetch project timeline');
+            return;
+        }
+        const data = await response.json();
+
+        // Remove existing timeline modal if any
+        document.getElementById('project-timeline-modal')?.remove();
+
+        const modalHtml = `
+            <div id="project-timeline-modal" class="modal" data-project-id="${projectId}">
+                <div class="modal-content timeline-modal-content">
+                    <div class="timeline-header">
+                        <div class="project-stripe" data-color="${data.project.color_index || 1}"></div>
+                        <h3>${escapeHtml(data.project.text)}</h3>
+                    </div>
+                    <div class="timeline-task-list">
+                        ${renderTimelineTaskList(data.tasks)}
+                    </div>
+                    <div class="timeline-add-task">
+                        <input type="text" class="timeline-add-input" placeholder="Add a task to this project..."
+                               onkeydown="handleTimelineAddTask(event, '${projectId}')">
+                    </div>
+                    <div class="modal-actions">
+                        <button class="action-btn" onclick="closeProjectTimeline()">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Setup backdrop click to close
+        const modal = document.getElementById('project-timeline-modal');
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeProjectTimeline();
+            }
+        });
+    } catch (error) {
+        console.error('Failed to show project timeline:', error);
+    }
+}
+
+function renderTimelineTaskList(taskList) {
+    if (!taskList || taskList.length === 0) {
+        return '<div class="timeline-empty">No tasks assigned to this project yet.</div>';
+    }
+
+    return taskList.map(task => {
+        const completedClass = task.completed ? 'completed' : '';
+        const checkmark = task.completed ? '&#10003; ' : '';
+        const sectionLabel = task.section || '';
+        const taskText = escapeHtml(task.text);
+
+        // Build timestamp info
+        const timestamps = [];
+        const created = timeAgo(task.created);
+        const inProgress = timeAgo(task.in_progress);
+        const updated = timeAgo(task.updated);
+        const completedAt = timeAgo(task.completed_at);
+        if (created) timestamps.push(`Created ${created}`);
+        if (inProgress) timestamps.push(`In progress ${inProgress}`);
+        if (updated) timestamps.push(`Updated ${updated}`);
+        if (completedAt) timestamps.push(`Completed ${completedAt}`);
+        const timestampStr = timestamps.join(' \u00b7 ');
+
+        return `
+            <div class="timeline-task ${completedClass}" data-task-id="${task.id}">
+                <div class="timeline-task-section">${escapeHtml(sectionLabel)}</div>
+                <div class="timeline-task-text" onclick="startTimelineEdit('${task.id}')">${checkmark}${taskText}</div>
+                ${timestampStr ? `<div class="timeline-task-timestamps">${timestampStr}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function startTimelineEdit(taskId) {
+    const modal = document.getElementById('project-timeline-modal');
+    if (!modal) return;
+
+    const taskEl = modal.querySelector(`.timeline-task[data-task-id="${taskId}"]`);
+    if (!taskEl) return;
+
+    const textEl = taskEl.querySelector('.timeline-task-text');
+    if (!textEl || textEl.querySelector('input')) return; // Already editing
+
+    // Find the current task text from the global tasks object
+    const task = findTaskById(taskId);
+    const currentText = task ? task.text : textEl.textContent;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'timeline-edit-input';
+    input.value = currentText;
+
+    // Replace text content with input
+    textEl.innerHTML = '';
+    textEl.appendChild(input);
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+
+    // Handle save on blur and enter
+    const projectId = modal.dataset.projectId;
+
+    input.addEventListener('blur', () => {
+        saveTimelineEdit(taskId, input.value.trim(), projectId);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            input.blur(); // Triggers save via blur handler
+        } else if (e.key === 'Escape') {
+            // Cancel edit -- re-fetch to restore original text
+            refreshTimelineContent(projectId);
+        }
+    });
+
+    // Prevent the click from propagating to modal backdrop
+    input.addEventListener('click', (e) => e.stopPropagation());
+}
+
+async function saveTimelineEdit(taskId, newText, projectId) {
+    if (!newText) {
+        // Empty text -- just refresh to restore original (don't delete from timeline)
+        await refreshTimelineContent(projectId);
+        return;
+    }
+
+    try {
+        await fetch(`/api/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: newText })
+        });
+
+        // Refresh the main board (the modal survives because it's on document.body)
+        await loadTasks();
+
+        // Re-fetch and re-render timeline content to show updated data
+        await refreshTimelineContent(projectId);
+    } catch (error) {
+        console.error('Failed to save timeline edit:', error);
+        await refreshTimelineContent(projectId);
+    }
+}
+
+async function handleTimelineAddTask(event, projectId) {
+    if (event.key !== 'Enter') return;
+
+    const input = event.target;
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.disabled = true;
+
+    try {
+        // Step 1: Create the task in TODO THIS WEEK
+        const createResponse = await fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ section: 'TODO THIS WEEK', text })
+        });
+
+        if (!createResponse.ok) {
+            console.error('Failed to create task');
+            input.disabled = false;
+            return;
+        }
+
+        const createData = await createResponse.json();
+        const newTaskId = createData.id;
+
+        // Step 2: Assign the new task to the project
+        const assignResponse = await fetch(`/api/tasks/${newTaskId}/assign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId })
+        });
+
+        if (!assignResponse.ok) {
+            console.error('Task created but failed to assign to project');
+        }
+
+        // Refresh the main board
+        await loadTasks();
+
+        // Re-fetch and re-render timeline content
+        await refreshTimelineContent(projectId);
+
+        // Clear and re-enable input
+        input.value = '';
+        input.disabled = false;
+        input.focus();
+    } catch (error) {
+        console.error('Failed to add task to project:', error);
+        input.disabled = false;
+    }
+}
+
+async function refreshTimelineContent(projectId) {
+    const modal = document.getElementById('project-timeline-modal');
+    if (!modal) return;
+
+    try {
+        const response = await fetch(`/api/projects/${projectId}/timeline`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        // Update the task list in place without closing the modal
+        const taskListEl = modal.querySelector('.timeline-task-list');
+        if (taskListEl) {
+            taskListEl.innerHTML = renderTimelineTaskList(data.tasks);
+        }
+    } catch (error) {
+        console.error('Failed to refresh timeline:', error);
+    }
+}
+
+function closeProjectTimeline() {
+    document.getElementById('project-timeline-modal')?.remove();
 }
 
 // Drag and drop

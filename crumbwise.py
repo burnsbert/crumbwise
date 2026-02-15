@@ -107,6 +107,44 @@ SECTIONS = {
 # Sections that use project metadata (color_index)
 PROJECT_SECTIONS = ["PROJECTS", "COMPLETED PROJECTS"]
 
+# Section classifications for timestamp lifecycle
+IN_PROGRESS_SECTIONS = ["IN PROGRESS TODAY"]
+CLEARS_IN_PROGRESS_SECTIONS = [
+    "TODO THIS WEEK",
+    "TODO NEXT WEEK",
+    "TODO FOLLOWING WEEK",
+    "BACKLOG HIGH PRIORITY",
+    "BACKLOG MEDIUM PRIORITY",
+    "BACKLOG LOW PRIORITY"
+]
+
+
+def now_iso():
+    """Return current datetime as ISO string with seconds precision."""
+    return datetime.now().isoformat(timespec='seconds')
+
+
+def set_timestamps(task, skip_updated=False, **kwargs):
+    """
+    Set timestamp fields on a task dict.
+
+    Args:
+        task: Task dictionary to update
+        skip_updated: If True, don't set 'updated' timestamp
+        **kwargs: Timestamp fields to set (created, updated, in_progress, completed_at)
+                 Values should be ISO strings or None
+
+    Always sets 'updated' to current time unless skip_updated=True.
+    Use completed_at (not completed) to avoid collision with boolean checkbox state.
+    """
+    # Set explicitly provided timestamps
+    for key, value in kwargs.items():
+        task[key] = value
+
+    # Always set updated unless told not to
+    if not skip_updated:
+        task['updated'] = now_iso()
+
 
 def get_dynamic_sections():
     """Get SECTIONS dict with current quarter added dynamically."""
@@ -205,6 +243,12 @@ def parse_tasks():
             # Add assigned_project for tasks linked to a project
             if "assigned" in meta:
                 task["assigned_project"] = meta["assigned"]
+
+            # Add timestamp metadata fields
+            task["created"] = meta.get("created")
+            task["updated"] = meta.get("updated")
+            task["in_progress"] = meta.get("in_progress")
+            task["completed_at"] = meta.get("completed_at")
 
             current_tasks.append(task)
 
@@ -364,6 +408,16 @@ def save_tasks(sections):
             elif task.get("assigned_project"):
                 meta_parts.append(f"assigned:{task['assigned_project']}")
 
+            # Add timestamp metadata fields if present
+            if task.get("created"):
+                meta_parts.append(f"created:{task['created']}")
+            if task.get("updated"):
+                meta_parts.append(f"updated:{task['updated']}")
+            if task.get("in_progress"):
+                meta_parts.append(f"in_progress:{task['in_progress']}")
+            if task.get("completed_at"):
+                meta_parts.append(f"completed_at:{task['completed_at']}")
+
             line += f" <!-- {' '.join(meta_parts)} -->"
             lines.append(line)
 
@@ -424,6 +478,17 @@ def add_task():
         "completed": False,
     }
 
+    # Set timestamps for new task
+    new_task["created"] = now_iso()
+    new_task["updated"] = now_iso()
+    new_task["completed_at"] = None
+
+    # Set in_progress if adding to an in-progress section
+    if section in IN_PROGRESS_SECTIONS:
+        new_task["in_progress"] = now_iso()
+    else:
+        new_task["in_progress"] = None
+
     # Assign color_index for project sections using smart assignment
     if section in PROJECT_SECTIONS:
         new_task["color_index"] = get_next_project_color(sections)
@@ -471,6 +536,18 @@ def update_task(task_id):
         sections[found_section].remove(found_task)
         sections[new_section].append(found_task)
 
+        # Handle in_progress timestamp transitions for section moves
+        if new_section in IN_PROGRESS_SECTIONS:
+            # Set in_progress if not already set (preserve original start time)
+            if not found_task.get("in_progress"):
+                found_task["in_progress"] = now_iso()
+        elif new_section in CLEARS_IN_PROGRESS_SECTIONS:
+            # Clear in_progress when moving to TODO or backlog sections
+            found_task["in_progress"] = None
+
+    # Set updated timestamp for any change (text or section)
+    found_task["updated"] = now_iso()
+
     save_tasks(sections)
     clear_undo()
     return jsonify(found_task)
@@ -502,15 +579,26 @@ def toggle_complete(task_id):
             if task["id"] == task_id:
                 task["completed"] = not task["completed"]
 
+                # Set/clear completed_at timestamp
+                if task["completed"]:
+                    task["completed_at"] = now_iso()
+                else:
+                    task["completed_at"] = None
+
                 # Handle project completion - move between PROJECTS and COMPLETED PROJECTS
                 if section == "PROJECTS" and task["completed"]:
-                    # Move to COMPLETED PROJECTS
+                    # Move to COMPLETED PROJECTS and set completed_at
                     tasks.remove(task)
                     sections["COMPLETED PROJECTS"].append(task)
+                    task["completed_at"] = now_iso()
                 elif section == "COMPLETED PROJECTS" and not task["completed"]:
-                    # Move back to PROJECTS
+                    # Move back to PROJECTS and clear completed_at
                     tasks.remove(task)
                     sections["PROJECTS"].append(task)
+                    task["completed_at"] = None
+
+                # Always set updated timestamp
+                task["updated"] = now_iso()
 
                 save_tasks(sections)
                 clear_undo()
@@ -537,10 +625,12 @@ def reorder_tasks():
 
     # Find and remove the task from its current location
     found_task = None
+    source_section = None
     for section, tasks in sections.items():
         for task in tasks:
             if task["id"] == task_id:
                 found_task = task
+                source_section = section  # Capture source section before removal
                 tasks.remove(task)
                 break
         if found_task:
@@ -552,6 +642,19 @@ def reorder_tasks():
     # Insert at new position
     target_index = min(target_index, len(sections[target_section]))
     sections[target_section].insert(target_index, found_task)
+
+    # Only set updated if sections differ (same-section reorder does NOT set updated)
+    if source_section != target_section:
+        found_task["updated"] = now_iso()
+
+        # Handle in_progress timestamp transitions
+        if target_section in IN_PROGRESS_SECTIONS:
+            # Set in_progress if not already set (preserve original start time)
+            if not found_task.get("in_progress"):
+                found_task["in_progress"] = now_iso()
+        elif target_section in CLEARS_IN_PROGRESS_SECTIONS:
+            # Clear in_progress when moving to TODO or backlog sections
+            found_task["in_progress"] = None
 
     save_tasks(sections)
     clear_undo()
@@ -596,6 +699,8 @@ def assign_to_project(task_id):
         return jsonify({"error": "Project not found"}), 404
 
     found_task["assigned_project"] = project_id
+    found_task["updated"] = now_iso()  # Set updated timestamp
+
     save_tasks(sections)
     clear_undo()
     return jsonify(found_task)
@@ -611,6 +716,7 @@ def unassign_from_project(task_id):
             if task["id"] == task_id:
                 if "assigned_project" in task:
                     del task["assigned_project"]
+                task["updated"] = now_iso()  # Set updated timestamp
                 save_tasks(sections)
                 clear_undo()
                 return jsonify(task)
@@ -634,6 +740,7 @@ def set_project_color(task_id):
         for task in sections.get(section_name, []):
             if task["id"] == task_id:
                 task["color_index"] = color_index
+                task["updated"] = now_iso()  # Set updated timestamp
                 save_tasks(sections)
                 clear_undo()
                 return jsonify(task)
@@ -655,6 +762,59 @@ def reassign_project_colors():
     clear_undo()
 
     return jsonify({"reassigned": len(active_projects)})
+
+
+@app.route("/api/projects/<project_id>/timeline", methods=["GET"])
+def get_project_timeline(project_id):
+    """Get project details and all tasks assigned to a project, sorted chronologically."""
+    sections = parse_tasks()
+
+    # Find the project in PROJECTS or COMPLETED PROJECTS sections
+    project = None
+    for section in PROJECT_SECTIONS:
+        for task in sections.get(section, []):
+            if task["id"] == project_id:
+                project = {
+                    "id": task["id"],
+                    "text": task["text"],
+                    "color_index": task.get("color_index"),
+                    "completed": task.get("completed", False),
+                    "created": task.get("created"),
+                    "updated": task.get("updated"),
+                    "in_progress": task.get("in_progress"),
+                    "completed_at": task.get("completed_at"),
+                }
+                break
+        if project:
+            break
+
+    if not project:
+        return jsonify({"error": "Project not found"}), 404
+
+    # Collect all tasks assigned to this project across ALL sections
+    assigned_tasks = []
+    for section_name, tasks in sections.items():
+        for task in tasks:
+            if task.get("assigned_project") == project_id:
+                # Add section name to each task so frontend knows where it lives
+                task_with_section = task.copy()
+                task_with_section["section"] = section_name
+                assigned_tasks.append(task_with_section)
+
+    # Sort tasks chronologically: primary by in_progress (oldest first, nulls last),
+    # secondary by created (oldest first, nulls last)
+    def sort_key(task):
+        # Use far-future sentinel "9999" for None values to sort them last
+        in_progress = task.get("in_progress") or "9999"
+        created = task.get("created") or "9999"
+        return (in_progress, created)
+
+    assigned_tasks.sort(key=sort_key)
+
+    return jsonify({
+        "project": project,
+        "tasks": assigned_tasks
+    })
 
 
 @app.route("/api/new-week", methods=["POST"])
