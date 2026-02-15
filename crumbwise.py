@@ -829,26 +829,55 @@ def get_project_timeline(project_id):
     # Check if any task has order_index
     has_any_order_index = any(task.get("order_index") is not None for task in assigned_tasks)
 
+    def _section_age_tier(section_name):
+        """Map section name to chronological tier (lower = older).
+
+        Used as primary sort factor when tasks lack timestamps.
+        Tiers: yearly archives < quarterly archives < completed projects
+               < recent done < in progress < todo < backlog/other
+        """
+        name = section_name.upper()
+        if name.startswith("DONE 20"):  # DONE 2025, DONE 2024
+            try:
+                return (0, int(name.split()[-1]))
+            except ValueError:
+                return (0, 9999)
+        if name.startswith("DONE Q"):  # DONE Q1 2026
+            parts = name.split()
+            try:
+                return (1, int(parts[2]) * 10 + int(parts[1][1]))
+            except (IndexError, ValueError):
+                return (1, 99999)
+        if name == "COMPLETED PROJECTS":
+            return (2, 0)
+        if name in ("DONE THIS WEEK", "RESEARCH DONE"):
+            return (3, 0)
+        if name in ("IN PROGRESS TODAY", "RESEARCH IN PROGRESS"):
+            return (4, 0)
+        if name == "TODO THIS WEEK":
+            return (5, 0)
+        if name == "TODO NEXT WEEK":
+            return (6, 0)
+        if name == "TODO FOLLOWING WEEK":
+            return (7, 0)
+        return (8, 0)
+
     def sort_key(task):
         if has_any_order_index:
             # When ANY task has order_index, sort by order_index ascending
             # Tasks with order_index come first (tier 0), tasks without come last (tier 1)
             if task.get("order_index") is not None:
-                return (0, task.get("order_index"))
+                return (0, task.get("order_index"), (0, 0))
             else:
-                return (1, 0)  # tier 1, no specific secondary sort needed
+                return (1, 0, (0, 0))
         else:
-            # Fallback to chronological sort: primary by in_progress (newest first, nulls last),
-            # secondary by created (newest first, nulls last)
-            # Use far-past sentinel "0000" for None values so they sort last when reversed
-            in_progress = task.get("in_progress") or "0000"
-            created = task.get("created") or "0000"
-            return (in_progress, created)
+            # Fallback: section tier first (oldest sections first), then timestamps
+            tier = _section_age_tier(task.get("section", ""))
+            in_progress = task.get("in_progress") or "9999"
+            created = task.get("created") or "9999"
+            return (tier, in_progress, created)
 
-    if has_any_order_index:
-        assigned_tasks.sort(key=sort_key)  # sort ascending for order_index
-    else:
-        assigned_tasks.sort(key=sort_key, reverse=True)  # reverse chronological
+    assigned_tasks.sort(key=sort_key)
 
     return jsonify({
         "project": project,
