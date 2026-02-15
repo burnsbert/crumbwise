@@ -33,6 +33,7 @@ let weekDates = {};
 let currentTab = 'current';
 let tasks = {};
 let sortableInstances = [];
+let timelineSortableInstance = null;
 let notes = '';
 let notesSaveTimeout = null;
 let calendarEvents = [];
@@ -754,7 +755,22 @@ function renderCard(task, section) {
     const projectColorAttr = colorIndex ? `data-project-color="${colorIndex}"` : '';
 
     // Info icon on every card; tooltip falls back when no timestamp data
-    const tooltipText = renderTimestampTooltip(task);
+    let tooltipText = renderTimestampTooltip(task);
+    if (isProject) {
+        let total = 0;
+        let completed = 0;
+        for (const [sectionName, sectionTasks] of Object.entries(tasks)) {
+            for (const t of sectionTasks) {
+                if (t.assigned_project === task.id) {
+                    total++;
+                    if (t.completed === true || isDoneSection(sectionName)) {
+                        completed++;
+                    }
+                }
+            }
+        }
+        tooltipText = `Tasks: ${completed}/${total}\n${tooltipText}`;
+    }
     const infoIcon = `<span class="card-info">&#9432;<span class="card-tooltip">${escapeHtml(tooltipText)}</span></span>`;
 
     return `
@@ -1213,6 +1229,9 @@ async function showProjectTimeline(projectId) {
                 closeProjectTimeline();
             }
         });
+
+        // Initialize SortableJS drag-and-drop on the task grid
+        initTimelineSortable();
     } catch (error) {
         console.error('Failed to show project timeline:', error);
     }
@@ -1413,12 +1432,66 @@ async function refreshTimelineContent(projectId) {
             const n = data.tasks.length;
             countEl.textContent = `${n} task${n !== 1 ? 's' : ''}`;
         }
+
+        // Re-initialize SortableJS after innerHTML replacement destroyed it
+        initTimelineSortable();
     } catch (error) {
         console.error('Failed to refresh timeline:', error);
     }
 }
 
+function initTimelineSortable() {
+    const modal = document.getElementById('project-timeline-modal');
+    if (!modal) return;
+
+    const taskList = modal.querySelector('.timeline-task-list');
+    if (!taskList) return;
+
+    // Destroy existing instance to prevent leaks
+    if (timelineSortableInstance) {
+        timelineSortableInstance.destroy();
+        timelineSortableInstance = null;
+    }
+
+    // Don't initialize if the list only contains the empty state div
+    if (taskList.querySelector('.timeline-empty')) return;
+
+    const projectId = modal.dataset.projectId;
+
+    timelineSortableInstance = new Sortable(taskList, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        forceFallback: true,
+        onEnd: async () => {
+            // Collect task IDs in current DOM order
+            const taskIds = Array.from(taskList.querySelectorAll('.timeline-task[data-task-id]'))
+                .map(el => el.dataset.taskId);
+
+            if (taskIds.length === 0) return;
+
+            try {
+                await fetch(`/api/projects/${projectId}/reorder`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ taskIds })
+                });
+
+                await loadTasks();
+                await refreshTimelineContent(projectId);
+            } catch (error) {
+                console.error('Failed to reorder timeline tasks:', error);
+            }
+        }
+    });
+}
+
 function closeProjectTimeline() {
+    if (timelineSortableInstance) {
+        timelineSortableInstance.destroy();
+        timelineSortableInstance = null;
+    }
     document.getElementById('project-timeline-modal')?.remove();
 }
 

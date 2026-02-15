@@ -2176,7 +2176,7 @@ main {
 
 .timeline-task-list {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 	gap: 8px;
 }
 
@@ -2496,13 +2496,6 @@ main {
     border-radius: 0;
     font-family: 'Courier New', monospace;
     border-color: rgba(126, 200, 227, 0.3);
-}
-
-/* Responsive: medium screens — 2 columns */
-@media (max-width: 900px) {
-	.timeline-task-list {
-		grid-template-columns: repeat(2, 1fr);
-	}
 }
 
 /* Responsive: small screens — 1 column, full screen */

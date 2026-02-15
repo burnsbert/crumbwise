@@ -250,6 +250,10 @@ def parse_tasks():
             task["in_progress"] = meta.get("in_progress")
             task["completed_at"] = meta.get("completed_at")
 
+            # Add order_index field if present (convert to int)
+            oi = meta.get("order_index")
+            task["order_index"] = int(oi) if oi is not None else None
+
             current_tasks.append(task)
 
     # Save last section
@@ -417,6 +421,10 @@ def save_tasks(sections):
                 meta_parts.append(f"in_progress:{task['in_progress']}")
             if task.get("completed_at"):
                 meta_parts.append(f"completed_at:{task['completed_at']}")
+
+            # Add order_index if present
+            if task.get("order_index") is not None:
+                meta_parts.append(f"order_index:{task['order_index']}")
 
             line += f" <!-- {' '.join(meta_parts)} -->"
             lines.append(line)
@@ -701,6 +709,18 @@ def assign_to_project(task_id):
     found_task["assigned_project"] = project_id
     found_task["updated"] = now_iso()  # Set updated timestamp
 
+    # Check if any tasks assigned to this project have order_index
+    # If yes, set order_index = max + 1 for the newly assigned task
+    max_order_index = None
+    for section, tasks in sections.items():
+        for task in tasks:
+            if task.get("assigned_project") == project_id and task.get("order_index") is not None:
+                if max_order_index is None or task["order_index"] > max_order_index:
+                    max_order_index = task["order_index"]
+
+    if max_order_index is not None:
+        found_task["order_index"] = max_order_index + 1
+
     save_tasks(sections)
     clear_undo()
     return jsonify(found_task)
@@ -716,6 +736,9 @@ def unassign_from_project(task_id):
             if task["id"] == task_id:
                 if "assigned_project" in task:
                     del task["assigned_project"]
+                # Clear order_index when unassigning from project
+                if "order_index" in task:
+                    del task["order_index"]
                 task["updated"] = now_iso()  # Set updated timestamp
                 save_tasks(sections)
                 clear_undo()
@@ -801,20 +824,80 @@ def get_project_timeline(project_id):
                 task_with_section["section"] = section_name
                 assigned_tasks.append(task_with_section)
 
-    # Sort tasks chronologically: primary by in_progress (oldest first, nulls last),
-    # secondary by created (oldest first, nulls last)
-    def sort_key(task):
-        # Use far-future sentinel "9999" for None values to sort them last
-        in_progress = task.get("in_progress") or "9999"
-        created = task.get("created") or "9999"
-        return (in_progress, created)
+    # Sort tasks: prefer order_index if ANY task has it, otherwise use chronological sort
+    # Check if any task has order_index
+    has_any_order_index = any(task.get("order_index") is not None for task in assigned_tasks)
 
-    assigned_tasks.sort(key=sort_key)
+    def sort_key(task):
+        if has_any_order_index:
+            # When ANY task has order_index, sort by order_index ascending
+            # Tasks with order_index come first (tier 0), tasks without come last (tier 1)
+            if task.get("order_index") is not None:
+                return (0, task.get("order_index"))
+            else:
+                return (1, 0)  # tier 1, no specific secondary sort needed
+        else:
+            # Fallback to chronological sort: primary by in_progress (newest first, nulls last),
+            # secondary by created (newest first, nulls last)
+            # Use far-past sentinel "0000" for None values so they sort last when reversed
+            in_progress = task.get("in_progress") or "0000"
+            created = task.get("created") or "0000"
+            return (in_progress, created)
+
+    if has_any_order_index:
+        assigned_tasks.sort(key=sort_key)  # sort ascending for order_index
+    else:
+        assigned_tasks.sort(key=sort_key, reverse=True)  # reverse chronological
 
     return jsonify({
         "project": project,
         "tasks": assigned_tasks
     })
+
+
+@app.route("/api/projects/<project_id>/reorder", methods=["POST"])
+def reorder_project_tasks(project_id):
+    """Reorder tasks within a project by setting order_index values."""
+    data = request.json
+    task_ids = data.get("taskIds")
+
+    # Validate input
+    if not task_ids:
+        return jsonify({"error": "taskIds required"}), 400
+    if not isinstance(task_ids, list) or len(task_ids) == 0:
+        return jsonify({"error": "taskIds must be a non-empty array"}), 400
+
+    sections = parse_tasks()
+
+    # Find all tasks and validate they belong to this project
+    tasks_to_update = []
+    for task_id in task_ids:
+        found_task = None
+        for section_name, tasks in sections.items():
+            for task in tasks:
+                if task["id"] == task_id:
+                    found_task = task
+                    break
+            if found_task:
+                break
+
+        if not found_task:
+            return jsonify({"error": f"Task not found: {task_id}"}), 404
+
+        if found_task.get("assigned_project") != project_id:
+            return jsonify({"error": f"Task {task_id} is not assigned to project {project_id}"}), 400
+
+        tasks_to_update.append(found_task)
+
+    # Set order_index values (0, 1, 2, ...)
+    for i, task in enumerate(tasks_to_update):
+        task["order_index"] = i
+
+    # Save without setting updated timestamp (explicit AC requirement)
+    save_tasks(sections)
+    clear_undo()
+
+    return jsonify({"success": True})
 
 
 @app.route("/api/new-week", methods=["POST"])
