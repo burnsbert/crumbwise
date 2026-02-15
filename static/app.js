@@ -383,6 +383,67 @@ function renderBoard() {
 
     // Setup project drop zones for task assignment
     setupProjectDropZones();
+    setupCardInfoTooltips();
+}
+
+function setupCardInfoTooltips() {
+    const tooltip = getGlobalCardTooltip();
+    document.querySelectorAll('.card-info').forEach(cardInfo => {
+        if (cardInfo.dataset.tooltipBound === '1') return;
+        cardInfo.dataset.tooltipBound = '1';
+
+        cardInfo.addEventListener('mouseenter', () => {
+            const text = cardInfo.querySelector('.card-tooltip')?.textContent?.trim();
+            if (!text) return;
+            tooltip.textContent = text;
+            tooltip.style.display = 'block';
+            positionGlobalCardTooltip(cardInfo, tooltip);
+        });
+
+        cardInfo.addEventListener('mousemove', () => {
+            if (tooltip.style.display !== 'block') return;
+            positionGlobalCardTooltip(cardInfo, tooltip);
+        });
+
+        cardInfo.addEventListener('mouseleave', () => {
+            tooltip.style.display = 'none';
+        });
+    });
+}
+
+function getGlobalCardTooltip() {
+    let tooltip = document.getElementById('global-card-tooltip');
+    if (tooltip) return tooltip;
+
+    tooltip = document.createElement('div');
+    tooltip.id = 'global-card-tooltip';
+    tooltip.className = 'card-tooltip-global';
+    tooltip.style.display = 'none';
+    document.body.appendChild(tooltip);
+    return tooltip;
+}
+
+function positionGlobalCardTooltip(cardInfo, tooltip) {
+    const rect = cardInfo.getBoundingClientRect();
+    const margin = 10;
+
+    // First pass to get tooltip dimensions
+    tooltip.style.left = '0px';
+    tooltip.style.top = '0px';
+
+    const tooltipRect = tooltip.getBoundingClientRect();
+    let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - tooltipRect.width - margin));
+
+    // Prefer above icon, fallback below if not enough space
+    let top = rect.top - tooltipRect.height - 8;
+    if (top < margin) {
+        top = rect.bottom + 8;
+    }
+    top = Math.max(margin, Math.min(top, window.innerHeight - tooltipRect.height - margin));
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
 }
 
 function setupProjectHoverHighlighting() {
@@ -599,53 +660,31 @@ function renderColumn(section, isSecondary = false) {
     `;
 }
 
-function timeAgo(isoString) {
+function formatDateTime(isoString) {
     if (!isoString) return null;
 
     const date = new Date(isoString);
     if (isNaN(date.getTime())) return null;
 
-    const now = new Date();
-    const diffMs = now - date;
-
-    // Handle future dates gracefully
-    if (diffMs < 0) return 'just now';
-
-    const seconds = Math.floor(diffMs / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    const weeks = Math.floor(days / 7);
-    const months = Math.floor(days / 30);
-    const years = Math.floor(days / 365);
-
-    if (seconds < 60) return 'just now';
-    if (minutes === 1) return '1 minute ago';
-    if (minutes < 60) return `${minutes} minutes ago`;
-    if (hours === 1) return '1 hour ago';
-    if (hours < 24) return `${hours} hours ago`;
-    if (days === 1) return '1 day ago';
-    if (days < 7) return `${days} days ago`;
-    if (weeks === 1) return '1 week ago';
-    if (weeks < 5) return `${weeks} weeks ago`;
-    if (months === 1) return '1 month ago';
-    if (months < 12) return `${months} months ago`;
-    if (years === 1) return '1 year ago';
-    return `${years} years ago`;
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
 }
 
 function renderTimestampTooltip(task) {
     const lines = [];
-    const created = timeAgo(task.created);
-    const inProgress = timeAgo(task.in_progress);
-    const updated = timeAgo(task.updated);
-    const completedAt = timeAgo(task.completed_at);
+    const created = formatDateTime(task.created);
+    const inProgress = formatDateTime(task.in_progress);
+    const updated = formatDateTime(task.updated);
+    const completedAt = formatDateTime(task.completed_at);
 
     if (created) lines.push(`Created: ${created}`);
     if (inProgress) lines.push(`In progress: ${inProgress}`);
     if (updated) lines.push(`Updated: ${updated}`);
     if (completedAt) lines.push(`Completed: ${completedAt}`);
 
+    if (lines.length === 0) return 'no date info';
     return lines.join('\n');
 }
 
@@ -684,7 +723,7 @@ function renderCard(task, section) {
     // Timeline button for project cards (both active and completed)
     let timelineButton = '';
     if (PROJECT_SECTIONS.includes(section)) {
-        timelineButton = `<button class="card-btn timeline" onclick="event.stopPropagation(); showProjectTimeline('${task.id}')" title="Project timeline">&#128337;</button>`;
+        timelineButton = `<button class="card-btn timeline" onclick="event.stopPropagation(); showProjectTimeline('${task.id}')" title="Project timeline" aria-label="Project timeline"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V6a3 3 0 0 1 6 0v1"/><rect x="3" y="7" width="18" height="12" rx="1.5" ry="1.5"/><path d="M3 12h18"/><path d="M11 12v2h2v-2"/></svg></button>`;
     }
 
     // Add color stripe for project sections OR assigned tasks
@@ -709,13 +748,9 @@ function renderCard(task, section) {
     // Add data attribute for project color (used by Post-It theme)
     const projectColorAttr = colorIndex ? `data-project-color="${colorIndex}"` : '';
 
-    // Info icon with timestamp tooltip (only if at least one timestamp exists)
-    let infoIcon = '';
-    const hasTimestamps = task.created || task.updated || task.in_progress || task.completed_at;
-    if (hasTimestamps) {
-        const tooltipText = renderTimestampTooltip(task);
-        infoIcon = `<span class="card-info">&#9432;<span class="card-tooltip">${escapeHtml(tooltipText)}</span></span>`;
-    }
+    // Info icon on every card; tooltip falls back when no timestamp data
+    const tooltipText = renderTimestampTooltip(task);
+    const infoIcon = `<span class="card-info">&#9432;<span class="card-tooltip">${escapeHtml(tooltipText)}</span></span>`;
 
     return `
         <div class="card ${completedClass} ${projectClass}" data-id="${task.id}" data-assigned-project="${task.assigned_project || ''}" ${projectColorAttr} onclick="handleCardClick(event, '${task.id}')">
@@ -1129,21 +1164,35 @@ async function showProjectTimeline(projectId) {
         // Remove existing timeline modal if any
         document.getElementById('project-timeline-modal')?.remove();
 
+        // Build header meta timestamps
+        const headerMeta = [];
+        const projCreated = formatDateTime(data.project.created);
+        const projUpdated = formatDateTime(data.project.updated);
+        const projCompleted = formatDateTime(data.project.completed_at);
+        if (projCreated) headerMeta.push(`<span>Created ${projCreated}</span>`);
+        if (projUpdated) headerMeta.push(`<span>Updated ${projUpdated}</span>`);
+        if (projCompleted) headerMeta.push(`<span>Completed ${projCompleted}</span>`);
+        const taskCount = data.tasks.length;
+
         const modalHtml = `
             <div id="project-timeline-modal" class="modal" data-project-id="${projectId}">
                 <div class="modal-content timeline-modal-content">
                     <div class="timeline-header">
                         <div class="project-stripe" data-color="${data.project.color_index || 1}"></div>
                         <h3>${escapeHtml(data.project.text)}</h3>
+                        ${headerMeta.length ? `<div class="timeline-header-meta">${headerMeta.join('')}</div>` : ''}
                     </div>
-                    <div class="timeline-task-list">
-                        ${renderTimelineTaskList(data.tasks)}
+                    <div class="timeline-body">
+                        <div class="timeline-task-list">
+                            ${renderTimelineTaskList(data.tasks)}
+                        </div>
                     </div>
-                    <div class="timeline-add-task">
-                        <input type="text" class="timeline-add-input" placeholder="Add a task to this project..."
-                               onkeydown="handleTimelineAddTask(event, '${projectId}')">
-                    </div>
-                    <div class="modal-actions">
+                    <div class="timeline-footer">
+                        <div class="timeline-add-task">
+                            <input type="text" class="timeline-add-input" placeholder="Add a task to this project..."
+                                   onkeydown="handleTimelineAddTask(event, '${projectId}')">
+                        </div>
+                        <span class="timeline-task-count">${taskCount} task${taskCount !== 1 ? 's' : ''}</span>
                         <button class="action-btn" onclick="closeProjectTimeline()">Close</button>
                     </div>
                 </div>
@@ -1171,30 +1220,47 @@ function renderTimelineTaskList(taskList) {
 
     return taskList.map(task => {
         const completedClass = task.completed ? 'completed' : '';
-        const checkmark = task.completed ? '&#10003; ' : '';
         const sectionLabel = task.section || '';
         const taskText = escapeHtml(task.text);
 
         // Build timestamp info
         const timestamps = [];
-        const created = timeAgo(task.created);
-        const inProgress = timeAgo(task.in_progress);
-        const updated = timeAgo(task.updated);
-        const completedAt = timeAgo(task.completed_at);
+        const created = formatDateTime(task.created);
+        const inProgress = formatDateTime(task.in_progress);
+        const completedAt = formatDateTime(task.completed_at);
         if (created) timestamps.push(`Created ${created}`);
-        if (inProgress) timestamps.push(`In progress ${inProgress}`);
-        if (updated) timestamps.push(`Updated ${updated}`);
-        if (completedAt) timestamps.push(`Completed ${completedAt}`);
-        const timestampStr = timestamps.join(' \u00b7 ');
+        if (inProgress) timestamps.push(`Started ${inProgress}`);
+        if (completedAt) timestamps.push(`Done ${completedAt}`);
+        const timestampStr = timestamps.join(' · ');
 
         return `
             <div class="timeline-task ${completedClass}" data-task-id="${task.id}">
-                <div class="timeline-task-section">${escapeHtml(sectionLabel)}</div>
-                <div class="timeline-task-text" onclick="startTimelineEdit('${task.id}')">${checkmark}${taskText}</div>
+                <div class="timeline-task-head">
+                    <div class="timeline-task-section">${escapeHtml(sectionLabel)}</div>
+                    <button class="timeline-task-delete" onclick="event.stopPropagation(); deleteTimelineTask('${task.id}')" title="Delete task" aria-label="Delete task">×</button>
+                </div>
+                <div class="timeline-task-text" onclick="startTimelineEdit('${task.id}')">${taskText}</div>
                 ${timestampStr ? `<div class="timeline-task-timestamps">${timestampStr}</div>` : ''}
             </div>
         `;
     }).join('');
+}
+
+async function deleteTimelineTask(taskId) {
+    if (!confirm('Delete this task?')) return;
+
+    const modal = document.getElementById('project-timeline-modal');
+    const projectId = modal?.dataset.projectId;
+
+    try {
+        await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+        await loadTasks();
+        if (projectId) {
+            await refreshTimelineContent(projectId);
+        }
+    } catch (error) {
+        console.error('Failed to delete timeline task:', error);
+    }
 }
 
 function startTimelineEdit(taskId) {
@@ -1335,6 +1401,12 @@ async function refreshTimelineContent(projectId) {
         const taskListEl = modal.querySelector('.timeline-task-list');
         if (taskListEl) {
             taskListEl.innerHTML = renderTimelineTaskList(data.tasks);
+        }
+        // Update the task count
+        const countEl = modal.querySelector('.timeline-task-count');
+        if (countEl) {
+            const n = data.tasks.length;
+            countEl.textContent = `${n} task${n !== 1 ? 's' : ''}`;
         }
     } catch (error) {
         console.error('Failed to refresh timeline:', error);

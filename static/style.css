@@ -1851,11 +1851,11 @@ main {
     position: absolute;
     bottom: 4px;
     right: 4px;
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text-muted);
     cursor: help;
     line-height: 1;
-    opacity: 0.6;
+    opacity: 0.8;
     transition: opacity 0.15s;
 }
 
@@ -1865,35 +1865,32 @@ main {
 
 .card-tooltip {
     display: none;
-    position: absolute;
-    bottom: 100%;
-    right: 0;
-    margin-bottom: 4px;
-    background: var(--surface-color);
-    color: var(--text-color);
-    font-size: 0.75rem;
-    border-radius: var(--border-radius, 4px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    z-index: 100;
-    padding: 8px;
-    white-space: pre-line;
-    min-width: 160px;
-    pointer-events: none;
-    border: 1px solid rgba(128, 128, 128, var(--border-alpha, 0.2));
 }
 
-.card-info:hover .card-tooltip {
-    display: block;
+.card-tooltip-global {
+    position: fixed;
+    z-index: 10010;
+    background: var(--surface-color);
+    color: var(--text-color);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    border-radius: var(--border-radius, 6px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(128, 128, 128, var(--border-alpha, 0.25));
+    padding: 10px 12px;
+    white-space: pre-line;
+    max-width: min(360px, calc(100vw - 20px));
+    pointer-events: none;
 }
 
 /* Theme-specific tooltip overrides */
 /* Minecraft (theme 2): pixelated, no rounding */
-[data-theme="2"] .card-tooltip {
+[data-theme="2"] .card-tooltip-global {
     border-radius: 0;
 }
 
 /* Fallout (theme 12): terminal aesthetic */
-[data-theme="12"] .card-tooltip {
+[data-theme="12"] .card-tooltip-global {
     border-radius: 0;
     background: #0f2010;
     border-color: #0a5500;
@@ -1901,12 +1898,12 @@ main {
 }
 
 /* Emerald City (theme 13): serif font */
-[data-theme="13"] .card-tooltip {
+[data-theme="13"] .card-tooltip-global {
     font-family: 'Georgia', serif;
 }
 
 /* Whiteboard Post-Its (theme 14): hand-drawn feel */
-[data-theme="14"] .card-tooltip {
+[data-theme="14"] .card-tooltip-global {
     border-radius: 1px;
     font-family: 'Comic Sans MS', 'Segoe Print', cursive, sans-serif;
     background: #fffff0;
@@ -1916,7 +1913,7 @@ main {
 }
 
 /* Blueprint (theme 15): technical drawing */
-[data-theme="15"] .card-tooltip {
+[data-theme="15"] .card-tooltip-global {
     border-radius: 0;
     font-family: 'Courier New', monospace;
     border-color: rgba(126, 200, 227, 0.4);
@@ -2103,161 +2100,234 @@ main {
 
 /* Timeline button */
 .card-btn.timeline {
-    font-size: 0.7rem;
+    padding: 0;
 }
 
-/* Project Timeline Modal */
-.timeline-modal-content {
-    max-width: 520px;
-    width: 95%;
-    max-height: 80vh;
-    overflow-y: auto;
-    padding: 20px 24px;
+.card-btn.timeline svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Project Timeline Modal — higher specificity to override .modal-content base */
+.modal .timeline-modal-content {
+	width: 94vw;
+	max-width: 1200px;
+	height: 90vh;
+	max-height: 90vh;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 }
 
 .timeline-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    position: relative;
-    padding-left: 16px;
-    border-bottom: 1px solid var(--column-border);
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 20px 28px;
+	position: relative;
+	padding-left: 40px;
+	border-bottom: 1px solid var(--column-border);
+	flex-shrink: 0;
 }
 
 .timeline-header .project-stripe {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 6px;
-    border-radius: 3px;
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 8px;
 }
 
 .timeline-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    color: var(--text-color);
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+	margin: 0;
+	font-size: 1.35rem;
+	color: var(--text-color);
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.timeline-header-meta {
+	display: flex;
+	gap: 16px;
+	font-size: 0.75rem;
+	color: var(--text-muted);
+	flex-shrink: 0;
+}
+
+.timeline-header-meta span {
+	white-space: nowrap;
+}
+
+.timeline-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 28px;
+	min-height: 0;
 }
 
 .timeline-task-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 16px;
-    max-height: 50vh;
-    overflow-y: auto;
-    padding-right: 4px;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
 }
 
 .timeline-empty {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    font-style: italic;
-    text-align: center;
-    padding: 32px 0;
+	color: var(--text-muted);
+	font-size: 0.95rem;
+	font-style: italic;
+	text-align: center;
+	padding: 64px 0;
 }
 
 .timeline-task {
-    padding: 10px 12px;
-    background: var(--card-color);
-    border-radius: var(--border-radius, 6px);
-    border: 1px solid var(--column-border);
-    transition: border-color 0.15s, box-shadow 0.15s;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 10px 14px;
+	background: var(--card-color);
+	border-radius: var(--border-radius, 6px);
+	border: 1px solid var(--column-border);
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.timeline-task-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
 }
 
 .timeline-task:hover {
-    border-color: var(--accent-color);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-}
-
-.timeline-task.completed {
-    opacity: 0.7;
+	border-color: var(--accent-color);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .timeline-task.completed .timeline-task-text {
-    text-decoration: line-through;
+	color: var(--text-muted);
 }
 
 .timeline-task-section {
-    display: inline-block;
-    font-size: 0.6rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--accent-color);
-    background: rgba(128, 128, 128, var(--border-alpha, 0.1));
-    padding: 1px 6px;
-    border-radius: 3px;
-    letter-spacing: 0.03em;
-    margin-bottom: 4px;
+	display: inline-block;
+	font-size: 0.65rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--accent-color);
+	background: rgba(128, 128, 128, var(--border-alpha, 0.1));
+	padding: 2px 8px;
+	border-radius: 3px;
+	letter-spacing: 0.03em;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 100%;
 }
 
 .timeline-task-text {
-    font-size: 0.9rem;
-    color: var(--text-color);
-    cursor: pointer;
-    line-height: 1.4;
-    transition: color 0.15s;
+	font-size: 0.9rem;
+	color: var(--text-color);
+	cursor: pointer;
+	line-height: 1.4;
+	transition: color 0.15s;
+	min-width: 0;
+	word-break: break-word;
 }
 
 .timeline-task-text:hover {
-    color: var(--accent-color);
+	color: var(--accent-color);
 }
 
 .timeline-task-timestamps {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    margin-top: 4px;
-    line-height: 1.3;
+	font-size: 0.7rem;
+	color: var(--text-muted);
+	line-height: 1.3;
+}
+
+.timeline-task-delete {
+	background: transparent;
+	border: 1px solid var(--card-btn-border);
+	color: var(--text-muted);
+	width: 20px;
+	height: 20px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 0.85rem;
+	line-height: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.timeline-task-delete:hover {
+	background: var(--accent-color);
+	border-color: var(--accent-color);
+	color: #fff;
 }
 
 /* Inline edit: minimal border-bottom style matching card edit pattern */
 .timeline-edit-input {
-    width: 100%;
-    padding: 2px 0;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--accent-color);
-    color: var(--text-color);
-    font-size: 0.9rem;
-    line-height: 1.4;
-    outline: none;
-    font-family: inherit;
-    box-sizing: border-box;
+	width: 100%;
+	padding: 2px 0;
+	background: transparent;
+	border: none;
+	border-bottom: 1px solid var(--accent-color);
+	color: var(--text-color);
+	font-size: 0.9rem;
+	line-height: 1.4;
+	outline: none;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.timeline-footer {
+	padding: 12px 28px 20px;
+	border-top: 1px solid var(--column-border);
+	flex-shrink: 0;
+	display: flex;
+	gap: 12px;
+	align-items: center;
 }
 
 .timeline-add-task {
-    margin-bottom: 16px;
-    padding-top: 4px;
+	flex: 1;
 }
 
 .timeline-add-input {
-    width: 100%;
-    padding: 8px 10px;
-    background: var(--card-color);
-    border: 1px dashed var(--btn-border);
-    border-radius: var(--border-radius, 6px);
-    color: var(--text-color);
-    font-size: 0.85rem;
-    outline: none;
-    font-family: inherit;
-    box-sizing: border-box;
-    transition: border-color 0.2s, border-style 0.2s;
+	width: 100%;
+	padding: 10px 14px;
+	background: var(--card-color);
+	border: 1px dashed var(--btn-border);
+	border-radius: var(--border-radius, 6px);
+	color: var(--text-color);
+	font-size: 0.9rem;
+	outline: none;
+	font-family: inherit;
+	box-sizing: border-box;
+	transition: border-color 0.2s, border-style 0.2s;
 }
 
 .timeline-add-input:focus {
-    border-color: var(--accent-color);
-    border-style: solid;
+	border-color: var(--accent-color);
+	border-style: solid;
 }
 
 .timeline-add-input::placeholder {
-    color: var(--text-muted);
+	color: var(--text-muted);
+}
+
+.timeline-task-count {
+	font-size: 0.8rem;
+	color: var(--text-muted);
+	white-space: nowrap;
 }
 
 /* Timeline modal theme overrides for distinctive themes */
@@ -2336,6 +2406,9 @@ main {
 [data-theme="14"] .timeline-header {
     border-bottom-color: #cccccc;
 }
+[data-theme="14"] .timeline-footer {
+    border-top-color: #cccccc;
+}
 [data-theme="14"] .timeline-task {
     border-radius: 1px;
     border: none;
@@ -2400,6 +2473,9 @@ main {
 [data-theme="15"] .timeline-header {
     border-bottom-color: rgba(126, 200, 227, 0.3);
 }
+[data-theme="15"] .timeline-footer {
+    border-top-color: rgba(126, 200, 227, 0.3);
+}
 [data-theme="15"] .timeline-task {
     border-radius: 0;
     border-color: rgba(126, 200, 227, 0.3);
@@ -2422,17 +2498,36 @@ main {
     border-color: rgba(126, 200, 227, 0.3);
 }
 
-/* Responsive: smaller screens */
+/* Responsive: medium screens — 2 columns */
+@media (max-width: 900px) {
+	.timeline-task-list {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+/* Responsive: small screens — 1 column, full screen */
 @media (max-width: 600px) {
-    .timeline-modal-content {
-        max-width: none;
-        width: 96%;
-        padding: 16px;
-        max-height: 85vh;
-    }
-    .timeline-task-list {
-        max-height: 55vh;
-    }
+	.modal .timeline-modal-content {
+		width: 100vw;
+		height: 100vh;
+		max-height: 100vh;
+		border-radius: 0;
+	}
+	.timeline-header {
+		padding: 14px 16px 14px 32px;
+	}
+	.timeline-header-meta {
+		display: none;
+	}
+	.timeline-body {
+		padding: 12px 16px;
+	}
+	.timeline-task-list {
+		grid-template-columns: 1fr;
+	}
+	.timeline-footer {
+		padding: 10px 16px 16px;
+	}
 }
 
 /* Add task */
