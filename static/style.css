@@ -3310,6 +3310,7 @@ main {
     gap: 6px;
     min-height: 28px;
     cursor: default;
+    overflow: hidden;
 }
 
 /* In-progress bar: accent-colored background with readable text */
@@ -3326,14 +3327,20 @@ main {
     opacity: 0.7;
 }
 
-/* Blocked bar: uses --blocked-color with dashed border.
-   The dashed border ensures visual distinction from in-progress bars
-   because --blocked-color == --accent-color in 14 of 17 themes.
-   Without the dashed border, blocked and in-progress would look identical. */
+/* Blocked bar: uses --blocked-color with diagonal stripe pattern and
+   reduced opacity. --blocked-color == --accent-color in 14 of 17 themes,
+   so color alone is not enough — the stripe pattern and opacity make
+   blocked bars immediately recognizable. */
 .timeline-bar.blocked {
-    background: var(--blocked-color);
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--blocked-color),
+        var(--blocked-color) 6px,
+        transparent 6px,
+        transparent 10px
+    );
     color: #fff;
-    border: 2px dashed rgba(255, 255, 255, 0.5);
+    opacity: 0.75;
 }
 
 /* Project color dot indicator */
