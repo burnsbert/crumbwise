@@ -351,3 +351,42 @@ class TestTaskLifecycleIntegration:
                     assert "start" in span
                     assert "end" in span
                     assert "status" in span
+
+    def test_pre_existing_ip_task_without_timestamps_appears_in_timeline(
+        self, tmp_path, client
+    ):
+        """Pre-existing tasks in IN PROGRESS TODAY with no in_progress timestamp
+        should still appear in the timeline as a single-day bar on today.
+
+        This handles tasks that were added to the IP section before the
+        timestamp tracking was implemented.
+        """
+        tasks_file = tmp_path / "tasks.md"
+        # Task sitting in IP with no metadata at all (pre-existing)
+        write_tasks(tasks_file, """## IN PROGRESS TODAY
+
+- [ ] Legacy task with no timestamps
+""")
+
+        with mock_today():
+            resp = client.get("/api/timeline")
+            assert resp.status_code == 200
+            data = resp.get_json()
+
+            # The task should appear even without in_progress timestamp
+            assert len(data["tasks"]) == 1
+            task = data["tasks"][0]
+            assert task["text"] == "Legacy task with no timestamps"
+
+            # Should have a single-day span on today
+            assert len(task["spans"]) == 1
+            span = task["spans"][0]
+            assert span["start"] == "2026-02-17"
+            assert span["end"] == "2026-02-17"
+            assert span["status"] == "in_progress"
+
+            # But NOT visible when viewing a different week
+            resp2 = client.get("/api/timeline?week_offset=-1")
+            assert resp2.status_code == 200
+            data2 = resp2.get_json()
+            assert len(data2["tasks"]) == 0

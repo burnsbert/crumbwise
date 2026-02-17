@@ -1846,10 +1846,13 @@ def get_timeline():
 
         for task in tasks:
             # Must have in_progress timestamp (either directly or inferrable from history)
+            # OR be currently sitting in an in-progress section (pre-existing tasks
+            # may lack timestamps if they were added before tracking was implemented)
             has_in_progress = task.get("in_progress")
             has_history_with_ip = (task.get("history") and "ip@" in task.get("history", ""))
+            is_currently_ip = section_name in IN_PROGRESS_SECTIONS
 
-            if not has_in_progress and not has_history_with_ip:
+            if not has_in_progress and not has_history_with_ip and not is_currently_ip:
                 continue
 
             # Compute spans
@@ -1857,10 +1860,21 @@ def get_timeline():
                 spans = compute_spans_from_history(
                     task["history"], task, today, week_start, week_end
                 )
-            else:
+            elif has_in_progress:
                 spans = compute_simplified_span(
                     task, today, week_start, week_end, section_name
                 )
+            else:
+                # Pre-existing task in IP section with no timestamps — show as
+                # a single-day bar on today, but only if today is in this week
+                if week_start <= today <= week_end:
+                    spans = [{
+                        "start": today.isoformat(),
+                        "end": today.isoformat(),
+                        "status": "in_progress",
+                    }]
+                else:
+                    spans = []
 
             # Skip tasks with no spans in this week
             if not spans:
