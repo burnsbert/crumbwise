@@ -3303,13 +3303,10 @@ main {
 .timeline-bar {
     border-radius: var(--border-radius, 6px);
     padding: 5px 10px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     font-size: 0.8rem;
     line-height: 1.4;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
     min-height: 28px;
     cursor: default;
@@ -3348,11 +3345,8 @@ main {
     display: inline-block;
 }
 
-/* Task text inside bar (truncated for long names) */
+/* Task text inside bar */
 .timeline-bar-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     flex: 1;
     min-width: 0;
 }
