@@ -22,6 +22,9 @@ const SECTION_CONFIG = {
     history: {
         columns: [] // Will be populated dynamically
     },
+    timeline: {
+        isTimeline: true
+    },
     settings: {
         isSettings: true
     }
@@ -40,6 +43,7 @@ let calendarEvents = [];
 let calendarConnected = false;
 let calendarDateOffset = 0; // 0 = today, -1 = yesterday, 1 = tomorrow, etc.
 let calendarVisible = true;
+let timelineWeekOffset = 0; // 0 = this week, -1 = last week, 1 = next week
 let currentTheme = 1;
 let currentDraggedTaskId = null;
 let currentDraggedFromSection = null;
@@ -266,6 +270,16 @@ function renderBoard() {
         followupsArea.classList.add('hidden');
         document.getElementById('calendar-sidebar')?.classList.add('hidden');
         loadSettingsIntoForm();
+        return;
+    }
+
+    // Handle timeline tab specially
+    if (config.isTimeline) {
+        board.className = 'board timeline-view';
+        board.innerHTML = '';
+        renderTimeline(board);
+        followupsArea.classList.add('hidden');
+        document.getElementById('calendar-sidebar')?.classList.add('hidden');
         return;
     }
 
@@ -595,6 +609,195 @@ function renderSettingsPage() {
             </div>
         </div>
     `;
+}
+
+// Timeline view
+async function renderTimeline(container) {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Show loading state
+    container.innerHTML = `
+        <div class="timeline-container">
+            <div class="timeline-header">
+                <div class="timeline-nav">
+                    <button class="timeline-nav-btn" onclick="changeTimelineWeek(-1)" title="Previous week">&lsaquo;</button>
+                    <span class="timeline-week-label" style="color: var(--text-muted);">Loading...</span>
+                    <button class="timeline-nav-btn" onclick="changeTimelineWeek(1)" title="Next week">&rsaquo;</button>
+                </div>
+                <button class="timeline-this-week-btn" onclick="goToThisWeek()" disabled>This Week</button>
+            </div>
+            <div class="timeline-grid">
+                <div class="timeline-day-headers">
+                    ${dayNames.map(d => `<div class="timeline-day-header">${d}</div>`).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    try {
+        const url = timelineWeekOffset === 0
+            ? '/api/timeline'
+            : `/api/timeline?week_offset=${timelineWeekOffset}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const weekStart = new Date(data.week_start + 'T00:00:00');
+        const weekEnd = new Date(data.week_end + 'T00:00:00');
+        const today = data.today;
+        const isThisWeek = timelineWeekOffset === 0;
+
+        // Format week label: "Feb 15 - Feb 21, 2026"
+        const startMonth = weekStart.toLocaleDateString('en-US', { month: 'short' });
+        const endMonth = weekEnd.toLocaleDateString('en-US', { month: 'short' });
+        const startDay = weekStart.getDate();
+        const endDay = weekEnd.getDate();
+        const year = weekEnd.getFullYear();
+
+        let weekLabel;
+        if (startMonth === endMonth) {
+            weekLabel = `${startMonth} ${startDay} \u2013 ${endDay}, ${year}`;
+        } else {
+            weekLabel = `${startMonth} ${startDay} \u2013 ${endMonth} ${endDay}, ${year}`;
+        }
+
+        // Build day headers with dates and determine today's column index
+        let todayColIndex = -1; // -1 means today is not in this week
+        const dayHeaders = dayNames.map((name, i) => {
+            const dayDate = new Date(weekStart);
+            dayDate.setDate(dayDate.getDate() + i);
+            const dateNum = dayDate.getDate();
+            const dateStr = dayDate.toISOString().split('T')[0];
+            const isToday = dateStr === today;
+            if (isToday) todayColIndex = i;
+            return `<div class="timeline-day-header${isToday ? ' today' : ''}">${name}<span class="timeline-day-date">${dateNum}</span></div>`;
+        }).join('');
+
+        // Build column highlight layer: 7 cells, only today's gets highlighted
+        const columnHighlights = dayNames.map((_, i) => {
+            return `<div class="timeline-col-bg${i === todayColIndex ? ' today' : ''}"></div>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="timeline-container">
+                <div class="timeline-header">
+                    <div class="timeline-nav">
+                        <button class="timeline-nav-btn" onclick="changeTimelineWeek(-1)" title="Previous week">&lsaquo;</button>
+                        <span class="timeline-week-label${isThisWeek ? '' : ' not-this-week'}" onclick="${isThisWeek ? '' : 'goToThisWeek()'}" title="${isThisWeek ? '' : 'Click to go to this week'}">${weekLabel}</span>
+                        <button class="timeline-nav-btn" onclick="changeTimelineWeek(1)" title="Next week">&rsaquo;</button>
+                    </div>
+                    <button class="timeline-this-week-btn${isThisWeek ? ' active' : ''}" onclick="goToThisWeek()" ${isThisWeek ? 'disabled' : ''}>${isThisWeek ? 'This Week' : 'This Week'}</button>
+                </div>
+                <div class="timeline-grid">
+                    <div class="timeline-day-headers">
+                        ${dayHeaders}
+                    </div>
+                    <div class="timeline-tasks-area">
+                        <div class="timeline-col-highlights">${columnHighlights}</div>
+                        ${renderTimelineTasks(data.tasks, data.today, data.week_start)}
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Failed to load timeline data:', error);
+        container.innerHTML = `
+            <div class="timeline-container">
+                <div class="timeline-header">
+                    <div class="timeline-nav">
+                        <button class="timeline-nav-btn" onclick="changeTimelineWeek(-1)" title="Previous week">&lsaquo;</button>
+                        <span class="timeline-week-label" style="color: var(--text-muted);">Error loading timeline</span>
+                        <button class="timeline-nav-btn" onclick="changeTimelineWeek(1)" title="Next week">&rsaquo;</button>
+                    </div>
+                    <button class="timeline-this-week-btn" onclick="goToThisWeek()" ${timelineWeekOffset === 0 ? 'disabled' : ''}>This Week</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function changeTimelineWeek(delta) {
+    timelineWeekOffset += delta;
+    const board = document.querySelector('.board');
+    if (board) {
+        renderTimeline(board);
+    }
+}
+
+function goToThisWeek() {
+    timelineWeekOffset = 0;
+    const board = document.querySelector('.board');
+    if (board) {
+        renderTimeline(board);
+    }
+}
+
+// Timeline task bar rendering
+function renderTimelineTasks(tasks, today, weekStart) {
+    if (!tasks || tasks.length === 0) {
+        return '<div class="timeline-empty">No tasks with timeline data this week.</div>';
+    }
+
+    // Parse weekStart as a Date for computing column offsets
+    const weekStartDate = new Date(weekStart + 'T00:00:00');
+
+    // Helper: given a YYYY-MM-DD date string, return 1-based column (Sun=1 .. Sat=7)
+    // Clamps to 1..7 range (tasks starting before week start at col 1, etc.)
+    function dateToColumn(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00');
+        const diffDays = Math.round((d - weekStartDate) / (1000 * 60 * 60 * 24));
+        return Math.max(1, Math.min(7, diffDays + 1));
+    }
+
+    // Helper: determine if a section name represents a "done" section.
+    // Mirrors the backend is_done_section() logic for frontend rendering.
+    function isDoneSection(section) {
+        if (!section) return false;
+        return section === 'DONE THIS WEEK'
+            || section.startsWith('DONE Q')
+            || section.startsWith('DONE 20');
+    }
+
+    let html = '';
+
+    for (const task of tasks) {
+        if (!task.spans || task.spans.length === 0) continue;
+
+        // Determine if this task is completed (in a done section).
+        // The API only produces "in_progress" and "blocked" span statuses (co@ is
+        // terminal), so we derive "completed" from the task's current section.
+        const taskCompleted = isDoneSection(task.section);
+
+        // Each task gets its own row -- a CSS grid with the same 7 columns as the
+        // day headers (0.6fr 1fr 1fr 1fr 1fr 1fr 0.6fr). Bars position themselves
+        // using grid-column. AC 18: no visual overlap -- each task is its own row.
+        html += '<div class="timeline-task-row">';
+
+        // Build project color indicator HTML (shown inside each bar)
+        const projectDot = task.project_color
+            ? `<span class="timeline-project-dot" style="background: var(--project-color-${task.project_color});"></span>`
+            : '';
+
+        // Render each span as a bar positioned via CSS grid-column
+        for (const span of task.spans) {
+            const colStart = dateToColumn(span.start);
+            const colEnd = dateToColumn(span.end);
+            // CSS grid-column end line is exclusive, so +1 to include the end column
+            const gridColEnd = colEnd + 1;
+
+            // AC 5/6: completed tasks use "completed" class for all bars;
+            // otherwise use the span-level status (in_progress or blocked)
+            const barStatus = taskCompleted ? 'completed' : span.status;
+
+            html += `<div class="timeline-bar ${barStatus}" style="grid-column: ${colStart} / ${gridColEnd};">`
+                + projectDot
+                + `<span class="timeline-bar-text">${escapeHtml(task.text)}</span>`
+                + `</div>`;
+        }
+
+        html += '</div>';
+    }
+
+    return html;
 }
 
 function renderNotesArea() {
