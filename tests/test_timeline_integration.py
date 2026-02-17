@@ -390,3 +390,85 @@ class TestTaskLifecycleIntegration:
             assert resp2.status_code == 200
             data2 = resp2.get_json()
             assert len(data2["tasks"]) == 0
+
+    def test_completed_task_with_only_completed_at_appears(self, tmp_path, client):
+        """Tasks completed via checkbox (co@ history, completed_at, but no
+        in_progress/ip@) should appear as a single-day bar on their completion day."""
+        tasks_file = tmp_path / "tasks.md"
+        write_tasks(tasks_file, """## DONE THIS WEEK
+
+- [x] Checkbox completed task <!-- id:task1 completed_at:2026-02-17T10:00:00 history:co@2026-02-17T10:00:00 -->
+""")
+
+        with mock_today():
+            resp = client.get("/api/timeline")
+            data = resp.get_json()
+            assert len(data["tasks"]) == 1
+            task = data["tasks"][0]
+            assert task["text"] == "Checkbox completed task"
+            assert len(task["spans"]) == 1
+            assert task["spans"][0]["start"] == "2026-02-17"
+            assert task["spans"][0]["end"] == "2026-02-17"
+            assert task["spans"][0]["status"] == "in_progress"
+
+    def test_blocked_task_with_only_blocked_at_appears(self, tmp_path, client):
+        """Tasks in BLOCKED with blocked_at but no in_progress should appear
+        as a bar from blocked_at to today."""
+        tasks_file = tmp_path / "tasks.md"
+        write_tasks(tasks_file, """## BLOCKED
+
+- [ ] Blocked task <!-- id:task1 blocked_at:2026-02-16T09:00:00 history:bl@2026-02-16T09:00:00 -->
+""")
+
+        with mock_today():
+            resp = client.get("/api/timeline")
+            data = resp.get_json()
+            assert len(data["tasks"]) == 1
+            task = data["tasks"][0]
+            assert task["text"] == "Blocked task"
+            assert len(task["spans"]) == 1
+            assert task["spans"][0]["start"] == "2026-02-16"
+            assert task["spans"][0]["end"] == "2026-02-17"
+            assert task["spans"][0]["status"] == "blocked"
+
+    def test_pre_existing_blocked_task_without_timestamps_appears(
+        self, tmp_path, client
+    ):
+        """Pre-existing tasks in BLOCKED with no timestamps should appear
+        as a single-day bar on today."""
+        tasks_file = tmp_path / "tasks.md"
+        write_tasks(tasks_file, """## BLOCKED
+
+- [ ] Legacy blocked task
+""")
+
+        with mock_today():
+            resp = client.get("/api/timeline")
+            data = resp.get_json()
+            assert len(data["tasks"]) == 1
+            task = data["tasks"][0]
+            assert task["text"] == "Legacy blocked task"
+            assert len(task["spans"]) == 1
+            assert task["spans"][0]["start"] == "2026-02-17"
+            assert task["spans"][0]["end"] == "2026-02-17"
+            assert task["spans"][0]["status"] == "blocked"
+
+    def test_done_task_with_in_progress_but_no_completed_at_uses_backfill(
+        self, tmp_path, client
+    ):
+        """Tasks in done sections with in_progress but no completed_at
+        get backfilled: completed_at = in_progress date."""
+        tasks_file = tmp_path / "tasks.md"
+        write_tasks(tasks_file, """## DONE THIS WEEK
+
+- [x] Done task missing completed_at <!-- id:task1 in_progress:2026-02-15T09:00:00 -->
+""")
+
+        with mock_today():
+            resp = client.get("/api/timeline")
+            data = resp.get_json()
+            assert len(data["tasks"]) == 1
+            task = data["tasks"][0]
+            # Backfill: span from in_progress to in_progress (same-day)
+            assert task["spans"][0]["start"] == "2026-02-15"
+            assert task["spans"][0]["end"] == "2026-02-15"

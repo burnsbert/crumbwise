@@ -1806,6 +1806,87 @@ def compute_simplified_span(task, today, week_start, week_end, section_name):
     }]
 
 
+def _spans_from_terminal_history(task, today, week_start, week_end, section_name):
+    """Create spans for tasks with history containing only terminal events.
+
+    When a task has history like "co@2026-02-17T10:00:00" (completed via
+    checkbox without ever being moved to IP), create a single-day bar on
+    the event date. For co@, use the completion date. For bl@, create a
+    blocked span from that date to today.
+    """
+    history_str = task.get("history", "")
+    entries = history_str.split("|")
+
+    for entry in reversed(entries):
+        if "@" not in entry:
+            continue
+        prefix, timestamp_str = entry.split("@", 1)
+        try:
+            entry_date = datetime.fromisoformat(timestamp_str).date()
+        except (ValueError, TypeError):
+            continue
+
+        if prefix == "co":
+            if entry_date < week_start or entry_date > week_end:
+                return []
+            return [{
+                "start": entry_date.isoformat(),
+                "end": entry_date.isoformat(),
+                "status": "in_progress",
+            }]
+        elif prefix == "bl":
+            end_date = today
+            if end_date < week_start or entry_date > week_end:
+                return []
+            clipped_start = max(entry_date, week_start)
+            clipped_end = min(end_date, week_end)
+            return [{
+                "start": clipped_start.isoformat(),
+                "end": clipped_end.isoformat(),
+                "status": "blocked",
+            }]
+
+    return []
+
+
+def _spans_from_timestamp_only(task, today, week_start, week_end, section_name):
+    """Create spans for tasks with only completed_at or blocked_at, no in_progress.
+
+    For completed_at-only tasks: single-day bar on completion date.
+    For blocked_at-only tasks: bar from blocked_at to today.
+    """
+    if task.get("completed_at"):
+        try:
+            comp_date = datetime.fromisoformat(task["completed_at"]).date()
+        except (ValueError, TypeError):
+            return []
+        if comp_date < week_start or comp_date > week_end:
+            return []
+        return [{
+            "start": comp_date.isoformat(),
+            "end": comp_date.isoformat(),
+            "status": "in_progress",
+        }]
+
+    if task.get("blocked_at"):
+        try:
+            bl_date = datetime.fromisoformat(task["blocked_at"]).date()
+        except (ValueError, TypeError):
+            return []
+        end_date = today
+        if end_date < week_start or bl_date > week_end:
+            return []
+        clipped_start = max(bl_date, week_start)
+        clipped_end = min(end_date, week_end)
+        return [{
+            "start": clipped_start.isoformat(),
+            "end": clipped_end.isoformat(),
+            "status": "blocked",
+        }]
+
+    return []
+
+
 @app.route("/api/timeline")
 def get_timeline():
     """Get timeline data for a given week.
@@ -1845,36 +1926,57 @@ def get_timeline():
             continue
 
         for task in tasks:
-            # Must have in_progress timestamp (either directly or inferrable from history)
-            # OR be currently sitting in an in-progress section (pre-existing tasks
-            # may lack timestamps if they were added before tracking was implemented)
+            # A task qualifies for the timeline if it has ANY timestamp,
+            # history, or is currently in an active section (IP/BLOCKED).
             has_in_progress = task.get("in_progress")
-            has_history_with_ip = (task.get("history") and "ip@" in task.get("history", ""))
-            is_currently_ip = section_name in IN_PROGRESS_SECTIONS
+            has_completed_at = task.get("completed_at")
+            has_blocked_at = task.get("blocked_at")
+            has_history = bool(task.get("history"))
+            is_in_active_section = (
+                section_name in IN_PROGRESS_SECTIONS
+                or section_name in BLOCKED_SECTIONS
+            )
 
-            if not has_in_progress and not has_history_with_ip and not is_currently_ip:
+            if not any([has_in_progress, has_completed_at, has_blocked_at,
+                        has_history, is_in_active_section]):
                 continue
 
             # Compute spans
-            if task.get("history"):
+            if has_history:
                 spans = compute_spans_from_history(
                     task["history"], task, today, week_start, week_end
                 )
+                # If history has only terminal events (co@/op@) with no
+                # preceding active span, create a single-day bar on the
+                # terminal event date
+                if not spans and not has_in_progress:
+                    spans = _spans_from_terminal_history(
+                        task, today, week_start, week_end, section_name
+                    )
             elif has_in_progress:
                 spans = compute_simplified_span(
                     task, today, week_start, week_end, section_name
                 )
-            else:
-                # Pre-existing task in IP section with no timestamps — show as
-                # a single-day bar on today, but only if today is in this week
+            elif has_completed_at or has_blocked_at:
+                # Task with only completed_at or blocked_at, no in_progress
+                spans = _spans_from_timestamp_only(
+                    task, today, week_start, week_end, section_name
+                )
+            elif is_in_active_section:
+                # Pre-existing task in active section with no timestamps —
+                # show as single-day bar on today
                 if week_start <= today <= week_end:
+                    status = ("blocked" if section_name in BLOCKED_SECTIONS
+                              else "in_progress")
                     spans = [{
                         "start": today.isoformat(),
                         "end": today.isoformat(),
-                        "status": "in_progress",
+                        "status": status,
                     }]
                 else:
                     spans = []
+            else:
+                spans = []
 
             # Skip tasks with no spans in this week
             if not spans:
