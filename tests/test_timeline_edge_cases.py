@@ -87,10 +87,10 @@ class TestTimelineExactBoundaries:
         task = data["tasks"][0]
         span = task["spans"][0]
         assert span["start"] == "2026-02-15"  # Sunday
-        assert span["end"] == "2026-02-21"    # Saturday, not clipped
+        assert span["end"] == "2026-02-20"    # Day before co@Saturday
 
     def test_task_entire_week_sunday_to_saturday(self, tmp_path, client):
-        """Task spanning exactly Sunday to Saturday should cover entire week."""
+        """Task spanning Sunday to Saturday (co@ on Sat) covers Sun-Fri."""
         write_tasks(tmp_path / "tasks.md", """## DONE THIS WEEK
 
 - [x] Entire week <!-- id:task1 in_progress:2026-02-15T00:00:00 completed_at:2026-02-21T23:59:59 history:ip@2026-02-15T00:00:00|co@2026-02-21T23:59:59 -->
@@ -104,7 +104,7 @@ class TestTimelineExactBoundaries:
         task = data["tasks"][0]
         span = task["spans"][0]
         assert span["start"] == "2026-02-15"
-        assert span["end"] == "2026-02-21"
+        assert span["end"] == "2026-02-20"
 
 
 class TestTimelineHistoryTerminalEvents:
@@ -123,11 +123,11 @@ class TestTimelineHistoryTerminalEvents:
             resp = client.get("/api/timeline")
         data = resp.get_json()
         task = data["tasks"][0]
-        # Should produce one span: ip@Mon to co@Tue
+        # Should produce one span: ip@Mon, ends day before co@Tue = Mon
         # No open span extending to "today" since task is completed
         assert len(task["spans"]) == 1
         assert task["spans"][0]["start"] == "2026-02-16"
-        assert task["spans"][0]["end"] == "2026-02-17"
+        assert task["spans"][0]["end"] == "2026-02-16"
         assert task["spans"][0]["status"] == "in_progress"
 
     def test_history_with_only_terminal_event_no_active_state(self, tmp_path, client):
@@ -162,13 +162,13 @@ class TestTimelineHistoryTerminalEvents:
         with mock_today():
             resp = client.get("/api/timeline")
         data = resp.get_json()
-        # Should have one span: ip@Mon to co@Tue
+        # Should have one span: ip@Mon, ends day before co@Tue = Mon
         # The op@ after co@ is just another terminal event that doesn't create a span
         assert len(data["tasks"]) == 1
         task = data["tasks"][0]
         assert len(task["spans"]) == 1
         assert task["spans"][0]["start"] == "2026-02-16"
-        assert task["spans"][0]["end"] == "2026-02-17"
+        assert task["spans"][0]["end"] == "2026-02-16"
 
 
 class TestTimelineMultipleSpanTypes:
@@ -189,19 +189,19 @@ class TestTimelineMultipleSpanTypes:
             resp = client.get("/api/timeline")
         data = resp.get_json()
         task = data["tasks"][0]
-        # Should produce 3 spans:
-        # 1. ip Mon-Tue (in_progress)
-        # 2. bl Tue-Wed (blocked)
+        # Should produce 3 non-overlapping spans:
+        # 1. ip Mon only (ends day before bl@Tue)
+        # 2. bl Tue only (ends day before ip@Wed)
         # 3. ip Wed-today (in_progress, extends to today)
         assert len(task["spans"]) == 3
 
         assert task["spans"][0]["status"] == "in_progress"
         assert task["spans"][0]["start"] == "2026-02-16"
-        assert task["spans"][0]["end"] == "2026-02-17"
+        assert task["spans"][0]["end"] == "2026-02-16"
 
         assert task["spans"][1]["status"] == "blocked"
         assert task["spans"][1]["start"] == "2026-02-17"
-        assert task["spans"][1]["end"] == "2026-02-18"
+        assert task["spans"][1]["end"] == "2026-02-17"
 
         assert task["spans"][2]["status"] == "in_progress"
         assert task["spans"][2]["start"] == "2026-02-18"
@@ -222,12 +222,12 @@ class TestTimelineMultipleSpanTypes:
             resp = client.get("/api/timeline")
         data = resp.get_json()
         task = data["tasks"][0]
-        # Two spans: ip Mon-Tue, bl Tue-today
+        # Two non-overlapping spans: ip Mon only, bl Tue-today
         assert len(task["spans"]) == 2
 
         assert task["spans"][0]["status"] == "in_progress"
         assert task["spans"][0]["start"] == "2026-02-16"
-        assert task["spans"][0]["end"] == "2026-02-17"
+        assert task["spans"][0]["end"] == "2026-02-16"
 
         assert task["spans"][1]["status"] == "blocked"
         assert task["spans"][1]["start"] == "2026-02-17"
@@ -309,10 +309,10 @@ class TestTimelineWeekOffsetEdgeCases:
             resp_this = client.get("/api/timeline?week_offset=0")
             data_this = resp_this.get_json()
             assert len(data_this["tasks"]) == 1
-            # Span clipped to this week: Feb 15 (Sun) to Feb 20 (Thu)
+            # Span clipped to this week: Feb 15 (Sun) to Feb 19 (day before co@Feb 20)
             span_this = data_this["tasks"][0]["spans"][0]
             assert span_this["start"] == "2026-02-15"
-            assert span_this["end"] == "2026-02-20"
+            assert span_this["end"] == "2026-02-19"
 
     def test_task_only_in_current_week(self, tmp_path, client):
         """Task entirely within current week should NOT appear in adjacent weeks."""
@@ -393,3 +393,47 @@ class TestTimelineMalformedHistory:
         task = data["tasks"][0]
         assert len(task["spans"]) == 1
         assert task["spans"][0]["start"] == "2026-02-17"
+
+    def test_same_day_transitions_no_duplicate_bars(self, tmp_path, client):
+        """Multiple same-day state changes should produce only one bar for that day.
+
+        Regression test: task moved ip->blocked->ip on same day was rendering
+        3 separate bars in today's column (one per span). Uses Feb 17 = today.
+        """
+        write_tasks(tmp_path / "tasks.md", """## IN PROGRESS TODAY
+
+- [ ] Bounced task <!-- id:task1 history:ip@2026-02-17T08:00:00|bl@2026-02-17T14:00:00|ip@2026-02-17T16:00:00 -->
+
+## DONE THIS WEEK
+
+""")
+        with mock_today():
+            resp = client.get("/api/timeline")
+        data = resp.get_json()
+        task = data["tasks"][0]
+        # Should be exactly one span, not three
+        assert len(task["spans"]) == 1
+        assert task["spans"][0]["start"] == "2026-02-17"
+        assert task["spans"][0]["end"] == "2026-02-17"
+        assert task["spans"][0]["status"] == "in_progress"
+
+    def test_same_day_transition_mid_history_no_duplicate(self, tmp_path, client):
+        """Same-day transition in the middle of history shouldn't duplicate bars."""
+        # Task went ip from Feb 15 (Sunday), then bl->ip same day on Feb 17 (today)
+        write_tasks(tmp_path / "tasks.md", """## IN PROGRESS TODAY
+
+- [ ] Mid bounce <!-- id:task1 history:ip@2026-02-15T09:00:00|bl@2026-02-17T10:00:00|ip@2026-02-17T14:00:00 -->
+
+## DONE THIS WEEK
+
+""")
+        with mock_today():
+            resp = client.get("/api/timeline")
+        data = resp.get_json()
+        task = data["tasks"][0]
+        # Feb15-Feb16 as in_progress, Feb17 as in_progress (bl span on Feb17 dropped)
+        assert len(task["spans"]) == 2
+        assert task["spans"][0]["start"] == "2026-02-15"
+        assert task["spans"][0]["end"] == "2026-02-16"
+        assert task["spans"][1]["start"] == "2026-02-17"
+        assert task["spans"][1]["end"] == "2026-02-17"

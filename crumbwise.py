@@ -201,6 +201,17 @@ def is_done_section(section_name):
     return False
 
 
+def append_history_entry(task, prefix):
+    """Append a timestamped history entry to a task. Returns the timestamp used."""
+    timestamp = now_iso()
+    entry = f"{prefix}@{timestamp}"
+    if task.get("history"):
+        task["history"] = f"{task['history']}|{entry}"
+    else:
+        task["history"] = entry
+    return timestamp
+
+
 def handle_section_transition(task, source_section, target_section):
     """Handle timestamp lifecycle and history tracking for section transitions.
 
@@ -231,14 +242,9 @@ def handle_section_transition(task, source_section, target_section):
     if source_section in RESEARCH_SECTIONS:
         return
 
-    # Helper to append history entry
+    # Helper to append history entry (delegates to module-level function)
     def append_history(prefix):
-        timestamp = now_iso()
-        entry = f"{prefix}@{timestamp}"
-        if task.get("history"):
-            task["history"] = f"{task['history']}|{entry}"
-        else:
-            task["history"] = entry
+        append_history_entry(task, prefix)
 
     # (a) Moving to IN_PROGRESS_SECTIONS
     if target_section in IN_PROGRESS_SECTIONS:
@@ -380,6 +386,11 @@ def parse_tasks():
             task["blocked_at"] = meta.get("blocked_at")
             task["history"] = meta.get("history")
 
+            # Add priority for project sections (None if not in metadata;
+            # migrate_project_priorities will fill in "medium" and persist)
+            if current_section in PROJECT_SECTIONS:
+                task["priority"] = meta.get("priority")
+
             # Add order_index field if present (convert to int)
             oi = meta.get("order_index")
             task["order_index"] = int(oi) if oi is not None else None
@@ -397,6 +408,9 @@ def parse_tasks():
 
     # Migrate projects without color_index
     migrate_project_colors(sections)
+
+    # Migrate projects without priority
+    migrate_project_priorities(sections)
 
     # Fix any orphaned project assignments (from uuid5->uuid4 ID change)
     migrate_orphaned_assignments(sections)
@@ -455,6 +469,23 @@ def migrate_project_colors(sections):
         for task in sections[section_name]:
             if "color_index" not in task:
                 task["color_index"] = get_next_project_color(sections)
+                needs_save = True
+
+    if needs_save:
+        save_tasks(sections)
+
+
+def migrate_project_priorities(sections):
+    """Assign 'medium' priority to projects that don't have one."""
+    needs_save = False
+
+    for section_name in PROJECT_SECTIONS:
+        if section_name not in sections:
+            continue
+
+        for task in sections[section_name]:
+            if not task.get("priority"):
+                task["priority"] = "medium"
                 needs_save = True
 
     if needs_save:
@@ -539,6 +570,8 @@ def save_tasks(sections):
             meta_parts = [f"id:{task['id']}"]
             if section in PROJECT_SECTIONS and task.get("color_index"):
                 meta_parts.append(f"project:{task['color_index']}")
+                if task.get("priority"):
+                    meta_parts.append(f"priority:{task['priority']}")
             elif task.get("assigned_project"):
                 meta_parts.append(f"assigned:{task['assigned_project']}")
 
@@ -631,9 +664,10 @@ def add_task():
     else:
         new_task["in_progress"] = None
 
-    # Assign color_index for project sections using smart assignment
+    # Assign color_index and default priority for project sections
     if section in PROJECT_SECTIONS:
         new_task["color_index"] = get_next_project_color(sections)
+        new_task["priority"] = "medium"
 
     sections[section].append(new_task)
     save_tasks(sections)
@@ -726,41 +760,29 @@ def toggle_complete(task_id):
                     # Move to COMPLETED PROJECTS and set completed_at
                     tasks.remove(task)
                     sections["COMPLETED PROJECTS"].append(task)
-                    task["completed_at"] = now_iso()
-                    # Append co@ history for project completion (unless research section)
                     if section not in RESEARCH_SECTIONS:
-                        timestamp = now_iso()
-                        entry = f"co@{timestamp}"
-                        if task.get("history"):
-                            task["history"] = f"{task['history']}|{entry}"
-                        else:
-                            task["history"] = entry
+                        timestamp = append_history_entry(task, "co")
+                        task["completed_at"] = timestamp
+                    else:
+                        task["completed_at"] = now_iso()
                 elif section == "COMPLETED PROJECTS" and not task["completed"]:
                     # Move back to PROJECTS and clear completed_at
                     tasks.remove(task)
                     sections["PROJECTS"].append(task)
                     task["completed_at"] = None
-                    # Append op@ history for project uncompleting (unless research section)
                     if section not in RESEARCH_SECTIONS:
-                        timestamp = now_iso()
-                        entry = f"op@{timestamp}"
-                        if task.get("history"):
-                            task["history"] = f"{task['history']}|{entry}"
-                        else:
-                            task["history"] = entry
+                        append_history_entry(task, "op")
                 else:
                     # In-place completion (no section move) - append history directly
                     # Skip research section tasks (user decision #5)
                     if section not in RESEARCH_SECTIONS:
-                        timestamp = now_iso()
                         if task["completed"]:
-                            entry = f"co@{timestamp}"
+                            append_history_entry(task, "co")
+                            # Clear in-progress and blocked state on completion
+                            task["in_progress"] = None
+                            task["blocked_at"] = None
                         else:
-                            entry = f"op@{timestamp}"
-                        if task.get("history"):
-                            task["history"] = f"{task['history']}|{entry}"
-                        else:
-                            task["history"] = entry
+                            append_history_entry(task, "op")
 
                 # Always set updated timestamp
                 task["updated"] = now_iso()
@@ -916,6 +938,31 @@ def set_project_color(task_id):
             if task["id"] == task_id:
                 task["color_index"] = color_index
                 task["updated"] = now_iso()  # Set updated timestamp
+                save_tasks(sections)
+                clear_undo()
+                return jsonify(task)
+
+    return jsonify({"error": "Project not found"}), 404
+
+
+@app.route("/api/tasks/<task_id>/priority", methods=["POST"])
+def set_project_priority(task_id):
+    """Set a project's priority bucket."""
+    data = request.json
+    priority = data.get("priority")
+
+    valid_priorities = ("high", "medium", "paused")
+    if priority not in valid_priorities:
+        return jsonify({"error": f"priority must be one of: {', '.join(valid_priorities)}"}), 400
+
+    sections = parse_tasks()
+
+    # Find the project in PROJECT_SECTIONS
+    for section_name in PROJECT_SECTIONS:
+        for task in sections.get(section_name, []):
+            if task["id"] == task_id:
+                task["priority"] = priority
+                task["updated"] = now_iso()
                 save_tasks(sections)
                 clear_undo()
                 return jsonify(task)
@@ -1223,7 +1270,9 @@ def generate_confluence_content(sections):
     # Define the order for Confluence export
     # Use None as a marker for horizontal rules
     section_order = [
-        ("PROJECTS", "PROJECTS"),
+        ("PROJECTS:high", "Projects - High Priority"),
+        ("PROJECTS:medium", "Projects - Medium Priority"),
+        ("PROJECTS:paused", "Projects - Paused"),
         None,  # HR below projects
         ("DONE THIS WEEK", "DONE THIS WEEK"),
         ("FOLLOW UPS", "FOLLOW UPS"),
@@ -1257,12 +1306,20 @@ def generate_confluence_content(sections):
             continue
 
         section_key, section_title = item
-        tasks = sections.get(section_key, [])
+
+        # Handle priority-filtered project sections (e.g., "PROJECTS:high")
+        if ":" in section_key:
+            base_section, priority_filter = section_key.split(":", 1)
+            section_tasks = [t for t in sections.get(base_section, [])
+                             if t.get("priority") == priority_filter]
+        else:
+            section_tasks = sections.get(section_key, [])
+
         html_parts.append(f'<h2>{section_title}</h2>')
 
-        if tasks:
+        if section_tasks:
             html_parts.append('<ul>')
-            for task in tasks:
+            for task in section_tasks:
                 text = task['text']
                 # Convert URLs to links
                 text = re.sub(
@@ -1649,7 +1706,8 @@ def get_timeline_week_boundaries(week_offset=0):
     return week_start, week_end, today
 
 
-def compute_spans_from_history(history_str, task, today, week_start, week_end):
+def compute_spans_from_history(history_str, task, today, week_start, week_end,
+                               section_name=None):
     """Compute timeline spans from a task's history string.
 
     Parses the pipe-delimited history entries and creates spans between
@@ -1660,6 +1718,9 @@ def compute_spans_from_history(history_str, task, today, week_start, week_end):
     - blocked_at if the task is currently blocked
     - today if the task is in progress
 
+    The last (current) span's status is overridden by the task's actual
+    section when provided, since the section is the source of truth.
+
     op@ (opened/backlog) entries end the previous span without starting
     a visible new span -- the task was deactivated.
 
@@ -1669,6 +1730,7 @@ def compute_spans_from_history(history_str, task, today, week_start, week_end):
         today: Today's date (date object)
         week_start: Start of displayed week (date, Sunday)
         week_end: End of displayed week (date, Saturday)
+        section_name: Current section (source of truth for current status)
 
     Returns:
         list: Spans within the week, each as {start: str, end: str, status: str}
@@ -1709,8 +1771,19 @@ def compute_spans_from_history(history_str, task, today, week_start, week_end):
 
         # Determine end date for this span
         if i + 1 < len(parsed):
-            # End at next entry's date
-            end_date = parsed[i + 1][1]
+            next_prefix, next_date = parsed[i + 1]
+            if next_date > start_date:
+                # End the day before the next entry so spans don't overlap
+                end_date = next_date - timedelta(days=1)
+            elif next_prefix in ACTIVE_STATUSES:
+                # Same-day transition to another active state (ip→bl or bl→ip):
+                # skip this span since the next state supersedes it on this day,
+                # avoiding duplicate bars in the same column.
+                continue
+            else:
+                # Same-day transition to a terminal event (ip→co, ip→op):
+                # keep this span on its start day (last active state for the day)
+                end_date = start_date
         else:
             # Last entry is an active state (ip@ or bl@) -- task is currently
             # in this state, so the span extends to today
@@ -1741,6 +1814,14 @@ def compute_spans_from_history(history_str, task, today, week_start, week_end):
             "end": clipped_end.isoformat(),
             "status": span["status"],
         })
+
+    # Override the last span's status based on the task's current section,
+    # which is the source of truth for current status.
+    if clipped and section_name:
+        if section_name in IN_PROGRESS_SECTIONS:
+            clipped[-1]["status"] = "in_progress"
+        elif section_name in BLOCKED_SECTIONS:
+            clipped[-1]["status"] = "blocked"
 
     return clipped
 
@@ -1944,7 +2025,8 @@ def get_timeline():
             # Compute spans
             if has_history:
                 spans = compute_spans_from_history(
-                    task["history"], task, today, week_start, week_end
+                    task["history"], task, today, week_start, week_end,
+                    section_name=section_name
                 )
                 # If history has only terminal events (co@/op@) with no
                 # preceding active span, create a single-day bar on the

@@ -10,14 +10,16 @@ A local-first task management app with a visual kanban-style board UI. Tasks are
   - **Current**: Weekly workflow (Following Week → Next Week → This Week → In Progress → Done)
   - **Research/Ops**: Ongoing projects, problems to solve, things to research
   - **Backlog**: High/Medium/Low priority items
+  - **Timeline**: Weekly timeline view showing task activity over time
   - **History**: Completed tasks organized by quarter
   - **Settings**: Configure integrations and preferences
 - **Weekly Workflow**: "New Week" button advances your weekly columns with undo support
-- **Notes Area**: Freeform text area on the Current tab for quick notes
+- **Projects with Priority Buckets**: Color-coded projects organized into High Priority, Medium Priority, and Paused sections with drag-and-drop between buckets
+- **Project Timeline**: Per-project timeline modal showing task activity history
+- **Notes Area**: Freeform text area on the Current tab with an expand button for a full-size editing modal
 - **16 Color Themes**: Dark and light themes including Minecraft, Knight Rider, Portal 2, Fallout, and more
-- **Projects**: Color-coded projects with task assignment via drag-and-drop
 - **Google Calendar Integration**: See today's meetings in a timeline sidebar
-- **Confluence Sync**: Optional integration to sync tasks to a Confluence page
+- **Confluence Sync**: Optional integration to sync tasks to a Confluence page (groups projects by priority)
 - **No Cloud Required**: Everything runs locally on your machine
 
 ## Installation
@@ -69,6 +71,16 @@ A local-first task management app with a visual kanban-style board UI. Tasks are
 - **Add links**: Include URLs in task text - they become clickable links
 - **Assign to project**: Drag a task onto a project (or vice versa) to assign it, or use the ◐ button
 
+### Projects
+
+Projects live in a sidebar on the Current tab, spanning both the main and secondary rows. They are organized into three priority buckets:
+
+- **High Priority**: Active, important projects
+- **Medium Priority**: Default for new projects
+- **Paused**: On-hold projects
+
+Drag projects between priority buckets to change their priority. Each project has a color stripe and can have tasks assigned to it. Click the briefcase icon on a project to see its per-project timeline.
+
 ### Weekly Workflow
 
 The "Current" tab is designed around a weekly workflow:
@@ -78,6 +90,10 @@ The "Current" tab is designed around a weekly workflow:
 3. Move active tasks to "In Progress Today"
 4. Mark completed tasks in "Done This Week"
 5. Click "New Week" to advance everything (done items move to history)
+
+### Notes
+
+The Current tab includes a Notes area with a freeform textarea. Click the expand button (⛶) in the Notes header to open a larger editing modal.
 
 ### Themes
 

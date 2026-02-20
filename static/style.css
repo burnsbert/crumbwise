@@ -1646,23 +1646,65 @@ main {
 
 /* Shorter columns on Current tab to show secondary row */
 .board.current-tab .column {
-    max-height: calc(100vh - 380px);
+    min-height: 500px;
+    max-height: 600px;
 }
 
 .column.secondary {
-    max-height: calc(100vh - 380px);
+    min-height: 500px;
+    max-height: 600px;
 }
 
-/* Notes area - double wide */
+/* Projects column - spans both rows via sidebar */
+.projects-column {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    width: var(--column-width);
+    min-width: var(--column-width);
+    display: flex;
+    flex-direction: column;
+    max-height: none !important;
+}
+
+.projects-column .priority-tasks {
+    overflow-y: visible;
+}
+
+/* Priority sub-sections within projects column */
+.priority-subsection {
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.priority-subsection:last-of-type {
+    border-bottom: none;
+}
+
+.priority-header {
+    padding: 8px 16px 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.priority-tasks {
+    padding: 4px 8px 8px;
+    min-height: 40px;
+}
+
+/* Notes area */
 .notes-area {
     background: var(--surface-color);
     border-radius: var(--border-radius);
-    width: calc(var(--column-width) * 2 + var(--gap));
-    min-width: calc(var(--column-width) * 2 + var(--gap));
+    width: var(--column-width);
+    min-width: var(--column-width);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 380px);
+    max-height: 600px;
 }
 
 .notes-area .column-header {
@@ -1690,6 +1732,63 @@ main {
 }
 
 .notes-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* Expand notes button */
+.expand-notes-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0 4px;
+    line-height: 1;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+.expand-notes-btn:hover {
+    opacity: 1;
+    color: var(--accent-color);
+}
+
+/* Notes modal */
+.notes-modal-content {
+    max-width: 700px !important;
+    width: 90%;
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+}
+.notes-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.notes-modal-header h2 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 1.25rem;
+}
+.notes-modal-textarea {
+    flex: 1;
+    width: 100%;
+    padding: 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--column-border);
+    border-radius: var(--border-radius);
+    color: var(--text-color);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: none;
+    font-family: inherit;
+    outline: none;
+}
+.notes-modal-textarea:focus {
+    border-color: var(--accent-color);
+}
+.notes-modal-textarea::placeholder {
     color: var(--text-muted);
 }
 
@@ -2804,6 +2903,34 @@ main {
     min-width: 0;
 }
 
+/* Current tab: projects sidebar spans both rows */
+.board-container.has-projects-sidebar {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    gap: 4px var(--gap);
+}
+
+#projects-sidebar {
+    grid-row: 1 / 3;
+    grid-column: 1;
+}
+
+#projects-sidebar.hidden {
+    display: none;
+}
+
+.has-projects-sidebar #board {
+    grid-row: 1;
+    grid-column: 2;
+}
+
+.has-projects-sidebar #followups-area {
+    grid-row: 2;
+    grid-column: 2;
+    margin-top: 0;
+}
+
 /* Calendar Sidebar */
 .calendar-sidebar {
     width: var(--column-width);
@@ -3311,6 +3438,20 @@ main {
     min-height: 28px;
     cursor: default;
     overflow: hidden;
+    position: relative;
+}
+
+/* Project stripe inside timeline bars */
+.timeline-bar .project-stripe {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+}
+
+.timeline-bar:has(.project-stripe) {
+    padding-left: 14px;
 }
 
 /* In-progress bar: accent-colored background with readable text */
@@ -3327,30 +3468,11 @@ main {
     opacity: 0.7;
 }
 
-/* Blocked bar: uses --blocked-color with diagonal stripe pattern and
-   reduced opacity. --blocked-color == --accent-color in 14 of 17 themes,
-   so color alone is not enough — the stripe pattern and opacity make
-   blocked bars immediately recognizable. */
 .timeline-bar.blocked {
-    background: repeating-linear-gradient(
-        -45deg,
-        var(--blocked-color),
-        var(--blocked-color) 6px,
-        transparent 6px,
-        transparent 10px
-    );
-    color: #fff;
-    opacity: 0.75;
+    background: #7f1d1d;
+    color: #fca5a5;
 }
 
-/* Project color dot indicator */
-.timeline-project-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    display: inline-block;
-}
 
 /* Task text inside bar */
 .timeline-bar-text {

@@ -275,7 +275,7 @@ class TestTimelineSpanComputation:
         assert span["status"] == "in_progress"
 
     def test_completed_task_spans_ip_to_completed(self, tmp_path, client):
-        """Task IP Mon, completed Tue => single span Mon-Tue."""
+        """Task IP Mon, completed Tue => span Mon only (co@ on Tue ends it the day before)."""
         write_tasks(tmp_path / "tasks.md", """## DONE THIS WEEK
 
 - [x] Done task <!-- id:task1 in_progress:2026-02-16T09:00:00 completed_at:2026-02-17T10:00:00 history:ip@2026-02-16T09:00:00|co@2026-02-17T10:00:00 -->
@@ -290,11 +290,11 @@ class TestTimelineSpanComputation:
         assert len(task["spans"]) == 1
         span = task["spans"][0]
         assert span["start"] == "2026-02-16"
-        assert span["end"] == "2026-02-17"
+        assert span["end"] == "2026-02-16"
         assert span["status"] == "in_progress"
 
     def test_ip_blocked_ip_done_history(self, tmp_path, client):
-        """Complex lifecycle: IP->BLOCKED->IP->DONE produces multiple spans."""
+        """Complex lifecycle: IP->BLOCKED->IP->DONE produces multiple spans (non-overlapping)."""
         write_tasks(tmp_path / "tasks.md", """## DONE THIS WEEK
 
 - [x] Complex task <!-- id:task1 completed_at:2026-02-20T17:00:00 history:ip@2026-02-15T09:00:00|bl@2026-02-16T14:00:00|ip@2026-02-18T09:00:00|co@2026-02-20T17:00:00 -->
@@ -306,26 +306,26 @@ class TestTimelineSpanComputation:
             resp = client.get("/api/timeline")
         data = resp.get_json()
         task = data["tasks"][0]
-        # Should produce 3 visible spans:
-        # 1. ip@Sun -> bl@Mon: in_progress
-        # 2. bl@Mon -> ip@Wed: blocked
-        # 3. ip@Wed -> co@Fri: in_progress
+        # Should produce 3 visible spans (non-overlapping):
+        # 1. ip@Sun -> day before bl@Mon: in_progress (Sun only)
+        # 2. bl@Mon -> day before ip@Wed: blocked (Mon-Tue)
+        # 3. ip@Wed -> day before co@Fri: in_progress (Wed-Thu)
         assert len(task["spans"]) == 3
 
         assert task["spans"][0]["start"] == "2026-02-15"
-        assert task["spans"][0]["end"] == "2026-02-16"
+        assert task["spans"][0]["end"] == "2026-02-15"
         assert task["spans"][0]["status"] == "in_progress"
 
         assert task["spans"][1]["start"] == "2026-02-16"
-        assert task["spans"][1]["end"] == "2026-02-18"
+        assert task["spans"][1]["end"] == "2026-02-17"
         assert task["spans"][1]["status"] == "blocked"
 
         assert task["spans"][2]["start"] == "2026-02-18"
-        assert task["spans"][2]["end"] == "2026-02-20"
+        assert task["spans"][2]["end"] == "2026-02-19"
         assert task["spans"][2]["status"] == "in_progress"
 
     def test_blocked_task_span_extends_to_today(self, tmp_path, client):
-        """Currently blocked task => blocked span extends to today."""
+        """Currently blocked task => non-overlapping ip then blocked spans."""
         write_tasks(tmp_path / "tasks.md", """## BLOCKED
 
 - [ ] Blocked task <!-- id:task1 blocked_at:2026-02-16T14:00:00 history:ip@2026-02-15T09:00:00|bl@2026-02-16T14:00:00 -->
@@ -341,12 +341,12 @@ class TestTimelineSpanComputation:
         task = data["tasks"][0]
         assert len(task["spans"]) == 2
 
-        # First span: in_progress from Sun to Mon
+        # First span: in_progress Sun only (ends day before bl@Mon)
         assert task["spans"][0]["start"] == "2026-02-15"
-        assert task["spans"][0]["end"] == "2026-02-16"
+        assert task["spans"][0]["end"] == "2026-02-15"
         assert task["spans"][0]["status"] == "in_progress"
 
-        # Second span: blocked from Mon to today
+        # Second span: blocked from Mon to today (last entry, extends to today)
         assert task["spans"][1]["start"] == "2026-02-16"
         assert task["spans"][1]["end"] == "2026-02-17"
         assert task["spans"][1]["status"] == "blocked"
@@ -420,12 +420,12 @@ class TestTimelineSpanComputation:
             resp = client.get("/api/timeline")
         data = resp.get_json()
         task = data["tasks"][0]
-        # Two visible spans: ip Sun-Mon, then ip Mon-today(Tue)
-        # The op@ on Monday morning ended the first span but created no visible span
+        # Two visible spans: ip Sun only, then ip Mon-today(Tue)
+        # The op@ on Monday morning ended the first span (day before = Sun)
         assert len(task["spans"]) == 2
         assert task["spans"][0]["status"] == "in_progress"
         assert task["spans"][0]["start"] == "2026-02-15"
-        assert task["spans"][0]["end"] == "2026-02-16"
+        assert task["spans"][0]["end"] == "2026-02-15"
 
         assert task["spans"][1]["status"] == "in_progress"
         assert task["spans"][1]["start"] == "2026-02-16"
