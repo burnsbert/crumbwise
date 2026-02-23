@@ -12,15 +12,7 @@ import crumbwise
 @pytest.fixture
 def app(tmp_path):
     """Create a test app with a temporary tasks file."""
-    tasks_file = tmp_path / "tasks.md"
-    undo_file = tmp_path / "tasks.md.undo"
-    settings_file = tmp_path / "settings.json"
-    notes_file = tmp_path / "notes.txt"
-
-    crumbwise.TASKS_FILE = tasks_file
-    crumbwise.UNDO_FILE = undo_file
-    crumbwise.SETTINGS_FILE = settings_file
-    crumbwise.NOTES_FILE = notes_file
+    crumbwise.DEFAULT_DATA_DIR = tmp_path
 
     crumbwise.app.config["TESTING"] = True
     yield crumbwise.app
@@ -30,6 +22,13 @@ def app(tmp_path):
 def client(app):
     """Flask test client."""
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def _set_data_dir(tmp_path):
+    """Point crumbwise at tmp_path for all tests in this module."""
+    crumbwise.DEFAULT_DATA_DIR = tmp_path
+    yield
 
 
 def write_tasks(tasks_file, content):
@@ -47,7 +46,7 @@ class TestPriorityParsing:
             "## PROJECTS\n\n"
             "- [ ] My Project <!-- id:abc123 project:1 -->\n\n"
         ))
-        crumbwise.TASKS_FILE = tasks_file
+
         sections = crumbwise.parse_tasks()
         project = sections["PROJECTS"][0]
         assert project["priority"] == "medium"
@@ -59,7 +58,7 @@ class TestPriorityParsing:
             "## PROJECTS\n\n"
             "- [ ] Urgent Project <!-- id:abc123 project:2 priority:high -->\n\n"
         ))
-        crumbwise.TASKS_FILE = tasks_file
+
         sections = crumbwise.parse_tasks()
         project = sections["PROJECTS"][0]
         assert project["priority"] == "high"
@@ -71,7 +70,7 @@ class TestPriorityParsing:
             "## PROJECTS\n\n"
             "- [ ] On Hold <!-- id:abc123 project:3 priority:paused -->\n\n"
         ))
-        crumbwise.TASKS_FILE = tasks_file
+
         sections = crumbwise.parse_tasks()
         project = sections["PROJECTS"][0]
         assert project["priority"] == "paused"
@@ -79,7 +78,7 @@ class TestPriorityParsing:
     def test_priority_saved_to_metadata(self, app, tmp_path):
         """save_tasks writes priority to markdown metadata."""
         tasks_file = tmp_path / "tasks.md"
-        crumbwise.TASKS_FILE = tasks_file
+
 
         sections = {"PROJECTS": [{
             "id": "abc123",
@@ -103,7 +102,7 @@ class TestPriorityParsing:
             "## TODO THIS WEEK\n\n"
             "- [ ] Regular task <!-- id:abc123 -->\n\n"
         ))
-        crumbwise.TASKS_FILE = tasks_file
+
         sections = crumbwise.parse_tasks()
         task = sections["TODO THIS WEEK"][0]
         assert "priority" not in task
@@ -119,7 +118,7 @@ class TestPriorityAPI:
             "## PROJECTS\n\n"
             "- [ ] My Project <!-- id:proj1 project:1 priority:medium -->\n\n"
         ))
-        crumbwise.TASKS_FILE = tasks_file
+
 
         response = client.post(
             "/api/tasks/proj1/priority",
@@ -141,7 +140,7 @@ class TestPriorityAPI:
             "## PROJECTS\n\n"
             "- [ ] My Project <!-- id:proj1 project:1 priority:medium -->\n\n"
         ))
-        crumbwise.TASKS_FILE = tasks_file
+
 
         response = client.post(
             "/api/tasks/proj1/priority",
@@ -157,7 +156,7 @@ class TestPriorityAPI:
             "## TODO THIS WEEK\n\n"
             "- [ ] Regular task <!-- id:task1 -->\n\n"
         ))
-        crumbwise.TASKS_FILE = tasks_file
+
 
         response = client.post(
             "/api/tasks/task1/priority",
@@ -173,7 +172,7 @@ class TestPriorityAPI:
             "## PROJECTS\n\n"
             "- [ ] My Project <!-- id:proj1 project:1 priority:high -->\n\n"
         ))
-        crumbwise.TASKS_FILE = tasks_file
+
 
         response = client.get("/api/tasks")
         data = response.get_json()
@@ -184,7 +183,7 @@ class TestPriorityAPI:
         """POST to create project gets priority 'medium'."""
         tasks_file = tmp_path / "tasks.md"
         write_tasks(tasks_file, "## PROJECTS\n\n")
-        crumbwise.TASKS_FILE = tasks_file
+
 
         response = client.post(
             "/api/tasks",
@@ -206,7 +205,7 @@ class TestPriorityMigration:
             "## PROJECTS\n\n"
             "- [ ] Old Project <!-- id:old1 project:1 -->\n\n"
         ))
-        crumbwise.TASKS_FILE = tasks_file
+
 
         # parse_tasks triggers migration
         sections = crumbwise.parse_tasks()
@@ -223,7 +222,7 @@ class TestConfluencePriorityGrouping:
     def test_confluence_priority_grouping(self, app, tmp_path):
         """generate_confluence_content groups projects by priority bucket."""
         tasks_file = tmp_path / "tasks.md"
-        crumbwise.TASKS_FILE = tasks_file
+
 
         sections = {
             "PROJECTS": [

@@ -17,15 +17,7 @@ import crumbwise
 @pytest.fixture
 def app(tmp_path):
     """Create a test app with a temporary tasks file."""
-    tasks_file = tmp_path / "tasks.md"
-    undo_file = tmp_path / "tasks.md.undo"
-    settings_file = tmp_path / "settings.json"
-    notes_file = tmp_path / "notes.txt"
-
-    crumbwise.TASKS_FILE = tasks_file
-    crumbwise.UNDO_FILE = undo_file
-    crumbwise.SETTINGS_FILE = settings_file
-    crumbwise.NOTES_FILE = notes_file
+    crumbwise.DEFAULT_DATA_DIR = tmp_path
 
     crumbwise.app.config["TESTING"] = True
     yield crumbwise.app

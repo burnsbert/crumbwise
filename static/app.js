@@ -98,6 +98,7 @@ const THEME_COLORS = {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadTheme(); // Load theme first to avoid flash
+    setupPrivateMode();
     setupTabs();
     setupNewWeek();
     setupSettings();
@@ -957,7 +958,7 @@ function renderProjectsColumn(section) {
             </div>
             ${subsections}
             <div class="add-task">
-                <button class="add-task-btn" onclick="showAddTask(this, '${section}')">+ Add task</button>
+                <button class="add-task-btn" onclick="showAddTask(this, '${section}')">+ Add project</button>
             </div>
         </div>
     `;
@@ -1942,6 +1943,26 @@ function findTaskById(taskId) {
 }
 
 // New Week functionality
+function setupPrivateMode() {
+    const btn = document.getElementById('private-btn');
+    if (!btn) return;
+
+    fetch('/api/profile')
+        .then(r => r.json())
+        .then(data => {
+            if (data.profile === 'private') {
+                btn.classList.add('active');
+                btn.textContent = 'Private';
+            }
+        });
+
+    btn.addEventListener('click', () => {
+        fetch('/api/profile/toggle', { method: 'POST' })
+            .then(r => { if (r.ok) location.reload(); });
+    });
+}
+
+
 function setupNewWeek() {
     const newWeekBtn = document.getElementById('new-week-btn');
     const undoBtn = document.getElementById('undo-btn');

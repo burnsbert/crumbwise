@@ -21,10 +21,7 @@ def app(tmp_path):
     settings_file = tmp_path / "settings.json"
     notes_file = tmp_path / "notes.txt"
 
-    crumbwise.TASKS_FILE = tasks_file
-    crumbwise.UNDO_FILE = undo_file
-    crumbwise.SETTINGS_FILE = settings_file
-    crumbwise.NOTES_FILE = notes_file
+    crumbwise.DEFAULT_DATA_DIR = tmp_path
 
     crumbwise.app.config["TESTING"] = True
     yield crumbwise.app

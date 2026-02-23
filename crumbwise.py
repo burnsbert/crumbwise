@@ -5,10 +5,11 @@ import os
 import re
 import uuid
 import json
+import shutil
 import requests
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, redirect
+from flask import Flask, render_template, jsonify, request, redirect, g
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -57,29 +58,97 @@ def get_week_dates():
 
 app = Flask(__name__)
 
-DATA_DIR = Path(__file__).parent / "data"
-TASKS_FILE = DATA_DIR / "tasks.md"
-UNDO_FILE = DATA_DIR / "tasks.md.undo"
-SETTINGS_FILE = DATA_DIR / "settings.json"
-NOTES_FILE = DATA_DIR / "notes.txt"
+DEFAULT_DATA_DIR = Path(__file__).parent / "data"
+
+_last_backup_dates = {}  # keyed by profile name
+
+
+def _get_data_dir():
+    """Get the data directory for the current request's profile (thread-safe)."""
+    try:
+        data_dir = g._data_dir
+    except (AttributeError, RuntimeError):
+        data_dir = DEFAULT_DATA_DIR
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return data_dir
+
+
+# Thread-safe path accessors — read from flask.g, not module globals
+def _tasks_file():
+    return _get_data_dir() / "tasks.md"
+
+def _undo_file():
+    return _get_data_dir() / "tasks.md.undo"
+
+def _settings_file():
+    return _get_data_dir() / "settings.json"
+
+def _notes_file():
+    return _get_data_dir() / "notes.txt"
+
+def _backups_dir():
+    return _get_data_dir() / ".backups"
+
+
+def _reset_backup_state():
+    """Reset backup tracking (for testing)."""
+    global _last_backup_dates
+    _last_backup_dates = {}
+
+
+def _get_current_profile():
+    """Get the current profile name from the request cookie."""
+    try:
+        return request.cookies.get("profile", "default")
+    except RuntimeError:
+        return "default"
+
+
+def daily_backup():
+    """Create a daily backup of data files if not already done today."""
+    global _last_backup_dates
+    today = date.today()
+    profile = _get_current_profile()
+    if _last_backup_dates.get(profile) == today:
+        return
+    _last_backup_dates[profile] = today
+
+    backups = _backups_dir()
+    backup_dir = backups / today.isoformat()
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    for src in [_tasks_file(), _notes_file(), _settings_file()]:
+        if src.exists():
+            shutil.copy2(src, backup_dir / src.name)
+
+    # Retain only 3 most recent backups
+    if backups.exists():
+        dirs = sorted(
+            (d for d in backups.iterdir() if d.is_dir()),
+            key=lambda d: d.name,
+        )
+        for old_dir in dirs[:-3]:
+            shutil.rmtree(old_dir)
 
 
 def load_settings():
     """Load settings from JSON file."""
-    if SETTINGS_FILE.exists():
-        return json.loads(SETTINGS_FILE.read_text())
+    sf = _settings_file()
+    if sf.exists():
+        return json.loads(sf.read_text())
     return {}
 
 
 def save_settings(settings):
     """Save settings to JSON file."""
-    SETTINGS_FILE.write_text(json.dumps(settings, indent=2))
+    _settings_file().write_text(json.dumps(settings, indent=2))
 
 
 def clear_undo():
     """Clear undo file after any task modification."""
-    if UNDO_FILE.exists():
-        UNDO_FILE.unlink()
+    uf = _undo_file()
+    if uf.exists():
+        uf.unlink()
 
 
 # Section definitions with display order and tab grouping
@@ -291,14 +360,15 @@ def handle_section_transition(task, source_section, target_section):
 
 def migrate_section_renames():
     """Migrate renamed sections in existing tasks file."""
-    if not TASKS_FILE.exists():
+    tf = _tasks_file()
+    if not tf.exists():
         return
 
     renames = {
         "BIG ONGOING PROJECTS": "PROJECTS",
     }
 
-    content = TASKS_FILE.read_text()
+    content = tf.read_text()
     modified = False
 
     for old_name, new_name in renames.items():
@@ -309,17 +379,18 @@ def migrate_section_renames():
             modified = True
 
     if modified:
-        TASKS_FILE.write_text(content)
+        tf.write_text(content)
 
 
 def ensure_data_file():
     """Create the data file with default sections if it doesn't exist."""
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if not TASKS_FILE.exists():
+    _get_data_dir().mkdir(parents=True, exist_ok=True)
+    tf = _tasks_file()
+    if not tf.exists():
         content = []
         for section in sorted(SECTIONS.keys(), key=lambda s: (SECTIONS[s]["tab"], SECTIONS[s]["order"])):
             content.append(f"## {section}\n\n")
-        TASKS_FILE.write_text("\n".join(content))
+        tf.write_text("\n".join(content))
     else:
         migrate_section_renames()
 
@@ -327,7 +398,7 @@ def ensure_data_file():
 def parse_tasks():
     """Parse the markdown file into a structured dict."""
     ensure_data_file()
-    content = TASKS_FILE.read_text()
+    content = _tasks_file().read_text()
 
     sections = {}
     current_section = None
@@ -598,13 +669,45 @@ def save_tasks(sections):
 
         lines.append("")
 
-    TASKS_FILE.write_text("\n".join(lines))
+    _tasks_file().write_text("\n".join(lines))
+
+
+@app.before_request
+def _activate_profile_from_cookie():
+    """Store profile-specific data dir in flask.g (thread-safe, per-request)."""
+    profile = request.cookies.get("profile", "default")
+    if profile == "private":
+        g._data_dir = DEFAULT_DATA_DIR / "private"
+    else:
+        g._data_dir = DEFAULT_DATA_DIR
+
+
+@app.before_request
+def _check_daily_backup():
+    daily_backup()
 
 
 @app.route("/")
 def index():
     """Serve the main UI."""
     return render_template("index.html")
+
+
+@app.route("/api/profile")
+def get_profile():
+    """Get the current profile name."""
+    profile = request.cookies.get("profile", "default")
+    return jsonify({"profile": profile})
+
+
+@app.route("/api/profile/toggle", methods=["POST"])
+def toggle_profile():
+    """Toggle between default and private profiles."""
+    current = request.cookies.get("profile", "default")
+    new_profile = "private" if current == "default" else "default"
+    resp = jsonify({"profile": new_profile})
+    resp.set_cookie("profile", new_profile, httponly=False, samesite="Lax")
+    return resp
 
 
 @app.route("/api/sections")
@@ -1132,8 +1235,8 @@ def reorder_project_tasks(project_id):
 def new_week():
     """Advance to a new week: move done items to history, shift weekly columns."""
     # Save current state for undo
-    current_content = TASKS_FILE.read_text()
-    UNDO_FILE.write_text(current_content)
+    current_content = _tasks_file().read_text()
+    _undo_file().write_text(current_content)
 
     sections = parse_tasks()
 
@@ -1162,15 +1265,15 @@ def new_week():
 @app.route("/api/undo-new-week", methods=["POST"])
 def undo_new_week():
     """Undo the last new week operation."""
-    if not UNDO_FILE.exists():
+    if not _undo_file().exists():
         return jsonify({"error": "No undo data available"}), 400
 
     # Restore from undo file
-    undo_content = UNDO_FILE.read_text()
-    TASKS_FILE.write_text(undo_content)
+    undo_content = _undo_file().read_text()
+    _tasks_file().write_text(undo_content)
 
     # Remove undo file
-    UNDO_FILE.unlink()
+    _undo_file().unlink()
 
     return jsonify({"success": True})
 
@@ -1178,7 +1281,7 @@ def undo_new_week():
 @app.route("/api/can-undo")
 def can_undo():
     """Check if undo is available."""
-    return jsonify({"canUndo": UNDO_FILE.exists()})
+    return jsonify({"canUndo": _undo_file().exists()})
 
 
 @app.route("/api/settings", methods=["GET"])
@@ -1221,8 +1324,9 @@ def update_settings():
 @app.route("/api/notes", methods=["GET"])
 def get_notes():
     """Get the notes content."""
-    if NOTES_FILE.exists():
-        return jsonify({"notes": NOTES_FILE.read_text()})
+    nf = _notes_file()
+    if nf.exists():
+        return jsonify({"notes": nf.read_text()})
     return jsonify({"notes": ""})
 
 
@@ -1231,8 +1335,8 @@ def save_notes():
     """Save the notes content."""
     data = request.json
     notes = data.get("notes", "")
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    NOTES_FILE.write_text(notes)
+    _get_data_dir().mkdir(parents=True, exist_ok=True)
+    _notes_file().write_text(notes)
     return jsonify({"success": True})
 
 
@@ -1335,8 +1439,8 @@ def generate_confluence_content(sections):
     # Add notes section at the end
     html_parts.append('<hr/>')
     notes = ""
-    if NOTES_FILE.exists():
-        notes = NOTES_FILE.read_text().strip()
+    if _notes_file().exists():
+        notes = _notes_file().read_text().strip()
     html_parts.append('<h2>NOTES</h2>')
     if notes:
         # Convert newlines to <br/> and URLs to links

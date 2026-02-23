@@ -17,10 +17,7 @@ def app(tmp_path):
     notes_file = tmp_path / "notes.txt"
 
     # Point the app at temporary files
-    crumbwise.TASKS_FILE = tasks_file
-    crumbwise.UNDO_FILE = undo_file
-    crumbwise.SETTINGS_FILE = settings_file
-    crumbwise.NOTES_FILE = notes_file
+    crumbwise.DEFAULT_DATA_DIR = tmp_path
 
     crumbwise.app.config["TESTING"] = True
     yield crumbwise.app
@@ -32,6 +29,13 @@ def app(tmp_path):
 def client(app):
     """Flask test client."""
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def _set_data_dir(tmp_path):
+    """Point crumbwise at tmp_path for all tests in this module."""
+    crumbwise.DEFAULT_DATA_DIR = tmp_path
+    yield
 
 
 def write_tasks(tasks_file, content):
@@ -85,7 +89,7 @@ class TestMetadataParsing:
 ## BLOCKED
 
 """)
-        crumbwise.TASKS_FILE = tasks_file
+
 
         sections = crumbwise.parse_tasks()
         task = sections["IN PROGRESS TODAY"][0]
@@ -101,7 +105,7 @@ class TestMetadataParsing:
 - [ ] Task with history <!-- id:task1 history:ip@2026-02-10T09:00:00|bl@2026-02-12T14:00:00 -->
 
 """)
-        crumbwise.TASKS_FILE = tasks_file
+
 
         sections = crumbwise.parse_tasks()
         task = sections["IN PROGRESS TODAY"][0]
@@ -117,7 +121,7 @@ class TestMetadataParsing:
 - [ ] Complex task <!-- id:task1 in_progress:2026-02-10T09:00:00 blocked_at:2026-02-12T14:00:00 history:ip@2026-02-10T09:00:00|bl@2026-02-12T14:00:00 -->
 
 """)
-        crumbwise.TASKS_FILE = tasks_file
+
 
         sections = crumbwise.parse_tasks()
         task = sections["BLOCKED"][0]
@@ -134,7 +138,7 @@ class TestMetadataParsing:
 - [ ] Normal task <!-- id:task1 -->
 
 """)
-        crumbwise.TASKS_FILE = tasks_file
+
 
         sections = crumbwise.parse_tasks()
         task = sections["IN PROGRESS TODAY"][0]
@@ -149,7 +153,7 @@ class TestMetadataParsing:
 - [ ] Normal task <!-- id:task1 -->
 
 """)
-        crumbwise.TASKS_FILE = tasks_file
+
 
         sections = crumbwise.parse_tasks()
         task = sections["IN PROGRESS TODAY"][0]
@@ -163,7 +167,7 @@ class TestMetadataSerialization:
     def test_save_task_with_blocked_at(self, tmp_path):
         """Saving a task with blocked_at should preserve it in the markdown."""
         tasks_file = tmp_path / "tasks.md"
-        crumbwise.TASKS_FILE = tasks_file
+
 
         # Create minimal sections to write
         sections = {
@@ -200,7 +204,7 @@ class TestMetadataSerialization:
     def test_save_task_with_history(self, tmp_path):
         """Saving a task with history should preserve it in the markdown."""
         tasks_file = tmp_path / "tasks.md"
-        crumbwise.TASKS_FILE = tasks_file
+
 
         sections = {
             "IN PROGRESS TODAY": [
@@ -235,7 +239,7 @@ class TestMetadataSerialization:
     def test_save_and_parse_roundtrip(self, tmp_path):
         """Save and re-parse should preserve metadata."""
         tasks_file = tmp_path / "tasks.md"
-        crumbwise.TASKS_FILE = tasks_file
+
 
         original_task = {
             "id": "task1",
@@ -276,7 +280,7 @@ class TestMetadataSerialization:
     def test_save_task_without_blocked_at(self, tmp_path):
         """Saving a task without blocked_at should not include it in metadata."""
         tasks_file = tmp_path / "tasks.md"
-        crumbwise.TASKS_FILE = tasks_file
+
 
         sections = {
             "IN PROGRESS TODAY": [
@@ -315,7 +319,7 @@ class TestMetadataSerialization:
     def test_save_task_without_history(self, tmp_path):
         """Saving a task without history should not include it in metadata."""
         tasks_file = tmp_path / "tasks.md"
-        crumbwise.TASKS_FILE = tasks_file
+
 
         sections = {
             "IN PROGRESS TODAY": [
