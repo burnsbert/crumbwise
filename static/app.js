@@ -41,10 +41,11 @@ let tasks = {};
 let sortableInstances = [];
 let timelineSortableInstance = null;
 let notesList = [];
-let compactNotesSort = 'manual';
+let compactNotesSort = 'newest';
 let notesTabSort = 'newest';
 let notesTabFilter = '';
 let notesTabFilterMode = 'title+content';
+let compactNotesFilter = '';
 let calendarEvents = [];
 let calendarConnected = false;
 let calendarDateOffset = 0; // 0 = today, -1 = yesterday, 1 = tomorrow, etc.
@@ -53,6 +54,7 @@ let timelineWeekOffset = 0; // 0 = this week, -1 = last week, 1 = next week
 let currentTheme = 1;
 let currentDraggedTaskId = null;
 let currentDraggedFromSection = null;
+let currentDraggedNoteId = null;
 
 const THEME_COUNT = 16;
 const THEME_NAMES = {
@@ -108,6 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTabs();
     setupNewWeek();
     setupSettings();
+    // Restore persisted sort preferences
+    compactNotesSort = localStorage.getItem('crumbwise_compact_notes_sort') || 'newest';
+    notesTabSort = localStorage.getItem('crumbwise_notes_tab_sort') || 'newest';
     loadTasks();
     loadSettings();
     calendarDateOffset = 0; // Always start on today
@@ -589,6 +594,12 @@ function handleProjectDragOver(e) {
         e.preventDefault();
         card.classList.add('drop-target');
     }
+
+    // Case 3: Dragging a note over a project card
+    if (cardSection === 'PROJECTS' && currentDraggedNoteId) {
+        e.preventDefault();
+        card.classList.add('drop-target');
+    }
 }
 
 function handleProjectDragLeave(e) {
@@ -635,6 +646,40 @@ async function handleProjectDrop(e) {
         currentDraggedFromSection = null;
 
         await assignToProject(taskId, projectId);
+    }
+
+    // Case 3: Dropping a note on a project - assign note to project
+    if (cardSection === 'PROJECTS' && currentDraggedNoteId) {
+        e.preventDefault();
+        e.stopPropagation();
+        card.classList.remove('drop-target');
+
+        const noteId = currentDraggedNoteId;
+        currentDraggedNoteId = null;
+
+        await assignNoteToProject(noteId, cardId);
+    }
+}
+
+function handleNoteDragOver(e) {
+    // Allow project cards to be dropped onto note cards
+    if (currentDraggedTaskId && currentDraggedFromSection === 'PROJECTS') {
+        e.preventDefault();
+        e.currentTarget.classList.add('drop-target');
+    }
+}
+
+async function handleNoteDrop(e, noteId) {
+    if (currentDraggedTaskId && currentDraggedFromSection === 'PROJECTS') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.currentTarget.classList.remove('drop-target');
+
+        const projectId = currentDraggedTaskId;
+        currentDraggedTaskId = null;
+        currentDraggedFromSection = null;
+
+        await assignNoteToProject(noteId, projectId);
     }
 }
 
@@ -905,50 +950,96 @@ function buildNoteColorStripe(projectColor) {
 // ── Compact notes panel (Current tab) ────────────────────────────────────────
 
 function renderNotesArea() {
-    const sortedNotes = getSortedNotes(notesList, compactNotesSort);
-    const cards = sortedNotes.map(n => renderCompactNoteCard(n)).join('');
-    const manualSel = compactNotesSort === 'manual' ? 'selected' : '';
+    let filtered = notesList;
+    if (compactNotesFilter) {
+        const q = compactNotesFilter.toLowerCase();
+        filtered = notesList.filter(n =>
+            (n.title || '').toLowerCase().includes(q) || (n.content || '').toLowerCase().includes(q)
+        );
+    }
+    const sortedNotes = getSortedNotes(filtered, compactNotesSort);
     const titleSel = compactNotesSort === 'title' ? 'selected' : '';
     const newestSel = compactNotesSort === 'newest' ? 'selected' : '';
     const oldestSel = compactNotesSort === 'oldest' ? 'selected' : '';
+
+    let cardsHtml;
+    if (notesList.length === 0) {
+        cardsHtml = '<div class="notes-empty-compact">No notes yet</div>';
+    } else if (sortedNotes.length === 0) {
+        cardsHtml = '<div class="notes-empty-compact">No matches</div>';
+    } else {
+        cardsHtml = sortedNotes.map(n => renderCompactNoteCard(n)).join('');
+    }
+
     return `
         <div class="notes-area notes-cards-panel">
             <div class="column-header">
                 <span>NOTES</span>
                 <div class="notes-header-actions">
-                    <button class="action-btn notes-add-btn" onclick="showNoteModal(null)">+ Add</button>
                     <select class="notes-sort-select" onchange="setCompactNotesSort(this.value)">
-                        <option value="manual" ${manualSel}>Manual</option>
-                        <option value="title" ${titleSel}>Title A–Z</option>
                         <option value="newest" ${newestSel}>Newest</option>
                         <option value="oldest" ${oldestSel}>Oldest</option>
+                        <option value="title" ${titleSel}>Title A–Z</option>
                     </select>
                 </div>
             </div>
+            <div class="notes-compact-filter-bar">
+                <input class="notes-compact-filter-input" type="text"
+                       placeholder="Filter notes…" value="${escapeHtml(compactNotesFilter)}"
+                       oninput="setCompactNotesFilter(this.value)">
+            </div>
             <div class="notes-cards-list" id="notes-compact-list">
-                ${cards || '<div class="notes-empty-compact">No notes yet</div>'}
+                ${cardsHtml}
+            </div>
+            <div class="notes-compact-add">
+                <button class="add-task-btn" onclick="showNoteModal(null)">+ Add note</button>
             </div>
         </div>
     `;
 }
 
+function setCompactNotesFilter(value) {
+    compactNotesFilter = value;
+    // Re-render just the notes area for responsive filtering
+    const notesArea = document.querySelector('.notes-cards-panel');
+    if (notesArea) {
+        notesArea.outerHTML = renderNotesArea();
+        // Restore focus
+        const input = document.querySelector('.notes-compact-filter-input');
+        if (input) {
+            input.focus();
+            input.setSelectionRange(value.length, value.length);
+        }
+    }
+}
+
 function renderCompactNoteCard(note) {
-    const stripe = buildNoteColorStripe(note.project_color);
+    const stripe = note.project_color ? `<div class="project-stripe" data-color="${note.project_color}"></div>` : '';
     const created = formatNoteDate(note.created_at);
     const updated = formatRelativeTime(note.updated_at);
+    const tooltipText = `Created ${created}\nUpdated ${updated}`;
     return `
         <div class="note-card-compact" data-note-id="${note.id}"
              onclick="showNoteModal('${note.id}')"
-             title="Created ${created} · Updated ${updated}">
+             draggable="true"
+             ondragstart="event.stopPropagation(); currentDraggedNoteId = '${note.id}'; event.dataTransfer.effectAllowed = 'link';"
+             ondragend="currentDraggedNoteId = null;"
+             ondragover="handleNoteDragOver(event)"
+             ondrop="handleNoteDrop(event, '${note.id}')">
             ${stripe}
-            <span class="note-card-title">${escapeHtml(note.title || '')}</span>
-            <button class="note-card-delete" onclick="event.stopPropagation(); deleteNoteCard('${note.id}')" title="Delete">×</button>
+            <div class="card-actions">
+                <button class="card-btn assign-project" onclick="event.stopPropagation(); showNoteAssignProjectModal('${note.id}')" title="Assign project">◐</button>
+                <button class="card-btn delete" onclick="event.stopPropagation(); deleteNoteCard('${note.id}')" title="Delete">×</button>
+            </div>
+            <div class="card-text">${escapeHtml(note.title || '')}</div>
+            <span class="card-info">&#9432;<span class="card-tooltip">${escapeHtml(tooltipText)}</span></span>
         </div>
     `;
 }
 
 function setCompactNotesSort(value) {
     compactNotesSort = value;
+    localStorage.setItem('crumbwise_compact_notes_sort', value);
     renderBoard();
 }
 
@@ -1001,7 +1092,7 @@ function showNoteModal(noteId) {
                     <input id="note-modal-title" class="note-modal-input" type="text" value="${title}" placeholder="Note title…">
                     <div id="note-modal-title-error" class="note-modal-error hidden">Title is required.</div>
                     <label class="note-modal-label">Content</label>
-                    <textarea id="note-modal-content" class="note-modal-textarea" rows="8" placeholder="Note content…">${content}</textarea>
+                    <textarea id="note-modal-content" class="note-modal-textarea" rows="14" placeholder="Note content…">${content}</textarea>
                     <label class="note-modal-label">Project</label>
                     <select id="note-modal-project" class="note-modal-select">
                         <option value="" ${noneSelected}>— none —</option>
@@ -1084,7 +1175,6 @@ function renderNotesTab() {
     const newestSel = notesTabSort === 'newest' ? 'selected' : '';
     const oldestSel = notesTabSort === 'oldest' ? 'selected' : '';
     const titleSel = notesTabSort === 'title' ? 'selected' : '';
-    const manualSel = notesTabSort === 'manual' ? 'selected' : '';
 
     // Apply filter
     let filtered = notesList;
@@ -1141,7 +1231,6 @@ function renderNotesTab() {
                         <option value="newest" ${newestSel}>Newest first</option>
                         <option value="oldest" ${oldestSel}>Oldest first</option>
                         <option value="title" ${titleSel}>Title A–Z</option>
-                        <option value="manual" ${manualSel}>Manual order</option>
                     </select>
                 </div>
             </div>
@@ -1151,22 +1240,29 @@ function renderNotesTab() {
 }
 
 function renderNotesTabCard(note) {
-    const stripe = buildNoteColorStripe(note.project_color);
+    const stripe = note.project_color ? `<div class="project-stripe" data-color="${note.project_color}"></div>` : '';
     const preview = escapeHtml(note.content || '');
-    const footer = `${formatNoteDate(note.created_at)} · ${formatRelativeTime(note.updated_at)}`;
+    const created = formatNoteDate(note.created_at);
+    const updated = formatRelativeTime(note.updated_at);
+    const tooltipText = `Created ${created}\nUpdated ${updated}`;
     return `
         <div class="notes-tab-card" onclick="showNoteModal('${note.id}')">
             ${stripe}
-            <button class="note-tab-card-delete" onclick="event.stopPropagation(); deleteNoteCard('${note.id}')" title="Delete">×</button>
+            <div class="card-actions">
+                <button class="card-btn assign-project" onclick="event.stopPropagation(); showNoteAssignProjectModal('${note.id}')" title="Assign project">◐</button>
+                <button class="card-btn delete" onclick="event.stopPropagation(); deleteNoteCard('${note.id}')" title="Delete">×</button>
+            </div>
             <div class="notes-tab-card-title">${escapeHtml(note.title || '')}</div>
             <div class="notes-tab-card-preview">${preview}</div>
-            <div class="notes-tab-card-footer">${footer}</div>
+            <div class="notes-tab-card-footer">${created} · ${updated}</div>
+            <span class="card-info">&#9432;<span class="card-tooltip">${escapeHtml(tooltipText)}</span></span>
         </div>
     `;
 }
 
 function setNotesTabSort(value) {
     notesTabSort = value;
+    localStorage.setItem('crumbwise_notes_tab_sort', value);
     renderBoard();
 }
 
@@ -1710,6 +1806,66 @@ async function selectProjectOption(element, taskId, projectId) {
 
     await loadTasks();
     restoreScrollPositions(scrollPositions);
+}
+
+// Show modal to assign a note to a project
+function showNoteAssignProjectModal(noteId) {
+    const projects = tasks['PROJECTS'] || [];
+    const note = notesList.find(n => n.id === noteId);
+    const currentAssignment = note ? (note.assigned_project || null) : null;
+
+    const projectOptions = projects.map(p => {
+        const isSelected = currentAssignment === p.id ? 'selected' : '';
+        return `
+            <div class="project-option ${isSelected}" data-project-id="${p.id}" onclick="selectNoteProjectOption(this, '${noteId}', '${p.id}')">
+                <div class="project-stripe" data-color="${p.color_index || 1}"></div>
+                <span>${escapeHtml(p.text)}</span>
+            </div>
+        `;
+    }).join('');
+
+    const noProjectSelected = !currentAssignment ? 'selected' : '';
+
+    const modalHtml = `
+        <div id="assign-project-modal" class="modal">
+            <div class="modal-content assign-project-modal-content">
+                <h3>Assign to Project</h3>
+                <div class="project-options">
+                    <div class="project-option ${noProjectSelected}" data-project-id="" onclick="selectNoteProjectOption(this, '${noteId}', '')">
+                        <div class="no-project-indicator">○</div>
+                        <span>No Project</span>
+                    </div>
+                    ${projectOptions}
+                </div>
+                <div class="modal-actions">
+                    <button class="action-btn" onclick="closeAssignProjectModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('assign-project-modal')?.remove();
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+async function selectNoteProjectOption(element, noteId, projectId) {
+    document.querySelectorAll('.project-option').forEach(el => el.classList.remove('selected'));
+    element.classList.add('selected');
+    closeAssignProjectModal();
+    await assignNoteToProject(noteId, projectId || null);
+}
+
+async function assignNoteToProject(noteId, projectId) {
+    try {
+        await fetch(`/api/notes/${noteId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assigned_project: projectId })
+        });
+        await loadTasks();
+    } catch (error) {
+        console.error('Failed to assign note to project:', error);
+    }
 }
 
 function closeAssignProjectModal() {

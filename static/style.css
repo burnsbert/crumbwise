@@ -1827,6 +1827,35 @@ main {
     font-size: 0.75rem;
 }
 
+.notes-compact-filter-bar {
+    padding: 4px 8px 2px;
+}
+
+.notes-compact-filter-input {
+    width: 100%;
+    padding: 4px 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--column-border);
+    border-radius: var(--border-radius);
+    color: var(--text-color);
+    font-size: 0.8rem;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.notes-compact-filter-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.notes-compact-add {
+    padding: 6px 8px 8px;
+}
+
+.notes-compact-add .add-task-btn {
+    width: 100%;
+}
+
 .notes-sort-select {
     background: var(--btn-bg);
     border: 1px solid var(--btn-border);
@@ -1862,20 +1891,23 @@ main {
 
 .note-card-compact {
     position: relative;
-    display: flex;
-    align-items: center;
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    padding: 7px 8px 7px 12px;
+    padding: 8px 12px 18px 24px;
     cursor: pointer;
     overflow: hidden;
     border: 1px solid var(--column-border);
     transition: border-color 0.15s;
-    gap: 6px;
+    margin-bottom: 4px;
 }
 
 .note-card-compact:hover {
-    border-color: var(--accent-color);
+    border-color: var(--card-hover-border);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.note-card-compact:hover .card-actions {
+    display: flex;
 }
 
 .note-color-stripe {
@@ -1938,8 +1970,8 @@ main {
 /* ── Note edit/add modal ────────────────────────────────────────────────────── */
 
 .note-modal-content {
-    max-width: 520px;
-    width: 90%;
+    max-width: 720px;
+    width: min(720px, 92vw);
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -2020,7 +2052,7 @@ main {
     font-family: inherit;
     resize: vertical;
     box-sizing: border-box;
-    min-height: 140px;
+    min-height: 260px;
 }
 
 .note-modal-textarea:focus {
@@ -2137,7 +2169,7 @@ main {
     background: var(--card-bg);
     border-radius: var(--border-radius);
     border: 1px solid var(--column-border);
-    padding: 12px 12px 12px 16px;
+    padding: 12px 12px 20px 24px;
     cursor: pointer;
     margin-bottom: 16px;
     transition: border-color 0.15s;
@@ -2145,7 +2177,12 @@ main {
 }
 
 .notes-tab-card:hover {
-    border-color: var(--accent-color);
+    border-color: var(--card-hover-border);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.notes-tab-card:hover .card-actions {
+    display: flex;
 }
 
 .note-tab-card-delete {
