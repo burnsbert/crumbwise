@@ -261,3 +261,147 @@ class TestMigration:
         """No notes.txt and no notes.json returns empty list."""
         resp = client.get("/api/notes")
         assert resp.get_json() == []
+
+
+# --- Confluence sync: notes rendering ---
+
+
+def _empty_sections():
+    """Minimal sections dict for generate_confluence_content calls."""
+    return {
+        "PROJECTS": [],
+        "DONE THIS WEEK": [],
+        "FOLLOW UPS": [],
+        "BLOCKED": [],
+        "IN PROGRESS TODAY": [],
+        "TODO THIS WEEK": [],
+        "TODO NEXT WEEK": [],
+        "TODO FOLLOWING WEEK": [],
+        "BACKLOG HIGH PRIORITY": [],
+        "BACKLOG MEDIUM PRIORITY": [],
+        "BACKLOG LOW PRIORITY": [],
+        "PROBLEMS TO SOLVE": [],
+        "THINGS TO RESEARCH": [],
+    }
+
+
+class TestConfluenceNotesRendering:
+    """Test that generate_confluence_content renders notes from notes.json."""
+
+    def test_notes_rendered_as_h3_and_p(self, app, tmp_path):
+        """Notes with title and content produce <h3> and <p> elements."""
+        notes = [
+            {"id": "n1", "title": "Meeting Notes", "content": "Discussed roadmap",
+             "created_at": "2026-01-01T00:00:00", "updated_at": "2026-01-01T00:00:00",
+             "assigned_project": None, "order_index": 0},
+            {"id": "n2", "title": "Ideas", "content": "Build a widget",
+             "created_at": "2026-01-02T00:00:00", "updated_at": "2026-01-02T00:00:00",
+             "assigned_project": None, "order_index": 1},
+        ]
+        (tmp_path / "notes.json").write_text(json.dumps(notes))
+
+        html = crumbwise.generate_confluence_content(_empty_sections())
+
+        assert "<h2>NOTES</h2>" in html
+        assert "<h3>Meeting Notes</h3>" in html
+        assert "<p>Discussed roadmap</p>" in html
+        assert "<h3>Ideas</h3>" in html
+        assert "<p>Build a widget</p>" in html
+
+    def test_empty_notes_renders_no_notes_placeholder(self, app, tmp_path):
+        """When notes.json is empty list, renders '(no notes)' placeholder."""
+        (tmp_path / "notes.json").write_text(json.dumps([]))
+
+        html = crumbwise.generate_confluence_content(_empty_sections())
+
+        assert "<h2>NOTES</h2>" in html
+        assert "(no notes)" in html
+
+    def test_no_notes_file_renders_no_notes_placeholder(self, app, tmp_path):
+        """When notes.json does not exist, renders '(no notes)' placeholder."""
+        # Ensure no notes.json or notes.txt exist
+        assert not (tmp_path / "notes.json").exists()
+
+        html = crumbwise.generate_confluence_content(_empty_sections())
+
+        assert "<h2>NOTES</h2>" in html
+        assert "(no notes)" in html
+
+    def test_urls_in_note_title_are_linkified(self, app, tmp_path):
+        """URLs in note titles are converted to anchor tags."""
+        notes = [
+            {"id": "n1", "title": "See https://example.com/page for details",
+             "content": "", "created_at": "2026-01-01T00:00:00",
+             "updated_at": "2026-01-01T00:00:00",
+             "assigned_project": None, "order_index": 0},
+        ]
+        (tmp_path / "notes.json").write_text(json.dumps(notes))
+
+        html = crumbwise.generate_confluence_content(_empty_sections())
+
+        assert '<a href="https://example.com/page">https://example.com/page</a>' in html
+        # The linkified URL should be inside an h3
+        assert "<h3>See " in html
+
+    def test_urls_in_note_content_are_linkified(self, app, tmp_path):
+        """URLs in note content are converted to anchor tags."""
+        notes = [
+            {"id": "n1", "title": "Links", "content": "Check https://docs.example.com/api",
+             "created_at": "2026-01-01T00:00:00", "updated_at": "2026-01-01T00:00:00",
+             "assigned_project": None, "order_index": 0},
+        ]
+        (tmp_path / "notes.json").write_text(json.dumps(notes))
+
+        html = crumbwise.generate_confluence_content(_empty_sections())
+
+        assert '<a href="https://docs.example.com/api">https://docs.example.com/api</a>' in html
+
+    def test_note_content_newlines_become_br(self, app, tmp_path):
+        """Newlines in note content are converted to <br/> tags."""
+        notes = [
+            {"id": "n1", "title": "Multi-line", "content": "Line one\nLine two\nLine three",
+             "created_at": "2026-01-01T00:00:00", "updated_at": "2026-01-01T00:00:00",
+             "assigned_project": None, "order_index": 0},
+        ]
+        (tmp_path / "notes.json").write_text(json.dumps(notes))
+
+        html = crumbwise.generate_confluence_content(_empty_sections())
+
+        assert "Line one<br/>Line two<br/>Line three" in html
+
+    def test_notes_ordered_by_order_index(self, app, tmp_path):
+        """Notes in Confluence output respect order_index sorting."""
+        notes = [
+            {"id": "n2", "title": "Second", "content": "",
+             "created_at": "2026-01-01T00:00:00", "updated_at": "2026-01-01T00:00:00",
+             "assigned_project": None, "order_index": 1},
+            {"id": "n1", "title": "First", "content": "",
+             "created_at": "2026-01-01T00:00:00", "updated_at": "2026-01-01T00:00:00",
+             "assigned_project": None, "order_index": 0},
+        ]
+        (tmp_path / "notes.json").write_text(json.dumps(notes))
+
+        html = crumbwise.generate_confluence_content(_empty_sections())
+
+        first_pos = html.index("<h3>First</h3>")
+        second_pos = html.index("<h3>Second</h3>")
+        assert first_pos < second_pos
+
+    def test_note_without_content_omits_p_tag(self, app, tmp_path):
+        """A note with empty content does not produce a <p> tag."""
+        notes = [
+            {"id": "n1", "title": "Title Only", "content": "",
+             "created_at": "2026-01-01T00:00:00", "updated_at": "2026-01-01T00:00:00",
+             "assigned_project": None, "order_index": 0},
+        ]
+        (tmp_path / "notes.json").write_text(json.dumps(notes))
+
+        html = crumbwise.generate_confluence_content(_empty_sections())
+
+        assert "<h3>Title Only</h3>" in html
+        # There should be no <p> immediately after this note's h3
+        # (the next element should be another h3, h2, hr, or end of string)
+        notes_section = html[html.index("<h2>NOTES</h2>"):]
+        h3_end = notes_section.index("</h3>") + len("</h3>")
+        after_h3 = notes_section[h3_end:].strip()
+        assert not after_h3.startswith("<p>")
