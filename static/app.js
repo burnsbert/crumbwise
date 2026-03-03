@@ -22,6 +22,9 @@ const SECTION_CONFIG = {
     history: {
         columns: [] // Will be populated dynamically
     },
+    notes: {
+        isNotes: true
+    },
     timeline: {
         isTimeline: true
     },
@@ -37,8 +40,11 @@ let currentTab = 'current';
 let tasks = {};
 let sortableInstances = [];
 let timelineSortableInstance = null;
-let notes = '';
-let notesSaveTimeout = null;
+let notesList = [];
+let compactNotesSort = 'manual';
+let notesTabSort = 'newest';
+let notesTabFilter = '';
+let notesTabFilterMode = 'title+content';
 let calendarEvents = [];
 let calendarConnected = false;
 let calendarDateOffset = 0; // 0 = today, -1 = yesterday, 1 = tomorrow, etc.
@@ -216,9 +222,8 @@ async function loadTasks() {
         const quarterData = await quarterResponse.json();
         const undoData = await undoResponse.json();
         weekDates = await weekDatesResponse.json();
-        const notesData = await notesResponse.json();
         currentQuarter = quarterData.quarter;
-        notes = notesData.notes || '';
+        notesList = await notesResponse.json() || [];
 
         // Build history columns dynamically from task data
         updateHistoryColumns();
@@ -292,6 +297,18 @@ function renderBoard() {
         return;
     }
 
+    // Handle notes tab specially
+    if (config.isNotes) {
+        board.className = 'board notes-tab-view';
+        board.innerHTML = renderNotesTab();
+        followupsArea.classList.add('hidden');
+        document.getElementById('calendar-sidebar')?.classList.add('hidden');
+        if (projectsSidebar) projectsSidebar.classList.add('hidden');
+        boardContainer.classList.remove('has-projects-sidebar');
+        setupNotesTabFilter();
+        return;
+    }
+
     // Add class for current tab styling
     board.className = currentTab === 'current' ? 'board current-tab' : 'board';
 
@@ -330,11 +347,18 @@ function renderBoard() {
 
         followupsColumns.innerHTML = secondaryHtml;
 
-        // Setup notes auto-save if notes area exists
-        const notesTextarea = document.getElementById('notes-textarea');
-        if (notesTextarea) {
-            notesTextarea.value = notes;
-            notesTextarea.addEventListener('input', handleNotesInput);
+        // Initialize SortableJS on the notes compact list (isolated group)
+        const notesList = document.getElementById('notes-compact-list');
+        if (notesList) {
+            const notesSortable = new Sortable(notesList, {
+                group: 'notes-panel',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                onEnd: handleNotesCompactReorder
+            });
+            sortableInstances.push(notesSortable);
         }
     } else {
         followupsArea.classList.add('hidden');
@@ -841,91 +865,332 @@ function renderTimelineTasks(tasks, today, weekStart) {
     return html;
 }
 
+// ── Notes helpers ────────────────────────────────────────────────────────────
+
+function formatNoteDate(isoStr) {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatRelativeTime(isoStr) {
+    if (!isoStr) return '';
+    const diff = Date.now() - new Date(isoStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return mins <= 1 ? 'just now' : `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+}
+
+function getSortedNotes(notes, sortMode) {
+    const copy = [...notes];
+    if (sortMode === 'title') {
+        copy.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    } else if (sortMode === 'newest') {
+        copy.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    } else if (sortMode === 'oldest') {
+        copy.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    }
+    // 'manual' keeps order_index ordering (already sorted by API)
+    return copy;
+}
+
+function buildNoteColorStripe(projectColor) {
+    if (!projectColor) return '';
+    return `<div class="note-color-stripe" data-color="${projectColor}"></div>`;
+}
+
+// ── Compact notes panel (Current tab) ────────────────────────────────────────
+
 function renderNotesArea() {
+    const sortedNotes = getSortedNotes(notesList, compactNotesSort);
+    const cards = sortedNotes.map(n => renderCompactNoteCard(n)).join('');
+    const manualSel = compactNotesSort === 'manual' ? 'selected' : '';
+    const titleSel = compactNotesSort === 'title' ? 'selected' : '';
+    const newestSel = compactNotesSort === 'newest' ? 'selected' : '';
+    const oldestSel = compactNotesSort === 'oldest' ? 'selected' : '';
     return `
-        <div class="notes-area">
+        <div class="notes-area notes-cards-panel">
             <div class="column-header">
                 <span>NOTES</span>
-                <button class="expand-notes-btn" onclick="showNotesModal()" title="Expand notes">&#x26F6;</button>
+                <div class="notes-header-actions">
+                    <button class="action-btn notes-add-btn" onclick="showNoteModal(null)">+ Add</button>
+                    <select class="notes-sort-select" onchange="setCompactNotesSort(this.value)">
+                        <option value="manual" ${manualSel}>Manual</option>
+                        <option value="title" ${titleSel}>Title A–Z</option>
+                        <option value="newest" ${newestSel}>Newest</option>
+                        <option value="oldest" ${oldestSel}>Oldest</option>
+                    </select>
+                </div>
             </div>
-            <textarea id="notes-textarea" class="notes-textarea" placeholder="Add notes here..."></textarea>
+            <div class="notes-cards-list" id="notes-compact-list">
+                ${cards || '<div class="notes-empty-compact">No notes yet</div>'}
+            </div>
         </div>
     `;
 }
 
-function showNotesModal() {
-    // Save any pending changes from inline textarea first
-    const inlineTextarea = document.getElementById('notes-textarea');
-    if (inlineTextarea) {
-        notes = inlineTextarea.value;
-    }
-
-    let modal = document.getElementById('notes-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'notes-modal';
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content notes-modal-content">
-                <div class="notes-modal-header">
-                    <h2>Notes</h2>
-                    <button class="action-btn cancel" onclick="closeNotesModal()">Close</button>
-                </div>
-                <textarea id="notes-modal-textarea" class="notes-modal-textarea" placeholder="Add notes here..."></textarea>
-            </div>
-        `;
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeNotesModal();
-        });
-        document.body.appendChild(modal);
-    }
-
-    const modalTextarea = document.getElementById('notes-modal-textarea');
-    modalTextarea.value = notes;
-    modal.classList.remove('hidden');
-    modalTextarea.focus();
-
-    // Auto-save from modal textarea
-    modalTextarea.oninput = () => {
-        notes = modalTextarea.value;
-        // Sync back to inline textarea
-        const inline = document.getElementById('notes-textarea');
-        if (inline) inline.value = notes;
-        if (notesSaveTimeout) clearTimeout(notesSaveTimeout);
-        notesSaveTimeout = setTimeout(saveNotes, 5000);
-    };
+function renderCompactNoteCard(note) {
+    const stripe = buildNoteColorStripe(note.project_color);
+    const created = formatNoteDate(note.created_at);
+    const updated = formatRelativeTime(note.updated_at);
+    return `
+        <div class="note-card-compact" data-note-id="${note.id}"
+             onclick="showNoteModal('${note.id}')"
+             title="Created ${created} · Updated ${updated}">
+            ${stripe}
+            <span class="note-card-title">${escapeHtml(note.title || '')}</span>
+            <button class="note-card-delete" onclick="event.stopPropagation(); deleteNoteCard('${note.id}')" title="Delete">×</button>
+        </div>
+    `;
 }
 
-function closeNotesModal() {
-    const modal = document.getElementById('notes-modal');
-    if (modal) modal.classList.add('hidden');
-    // Flush save immediately on close
-    if (notesSaveTimeout) {
-        clearTimeout(notesSaveTimeout);
-    }
-    saveNotes();
+function setCompactNotesSort(value) {
+    compactNotesSort = value;
+    renderBoard();
 }
 
-function handleNotesInput(event) {
-    notes = event.target.value;
-
-    // Debounce save - wait 5 seconds after typing stops
-    if (notesSaveTimeout) {
-        clearTimeout(notesSaveTimeout);
-    }
-    notesSaveTimeout = setTimeout(saveNotes, 5000);
-}
-
-async function saveNotes() {
+async function handleNotesCompactReorder(evt) {
+    const list = document.getElementById('notes-compact-list');
+    if (!list) return;
+    const order = Array.from(list.querySelectorAll('.note-card-compact')).map(el => el.dataset.noteId);
     try {
-        await fetch('/api/notes', {
+        await fetch('/api/notes/reorder', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ notes })
+            body: JSON.stringify({ order })
         });
+        await loadTasks();
     } catch (error) {
-        console.error('Failed to save notes:', error);
+        console.error('Failed to reorder notes:', error);
     }
+}
+
+// ── Note card CRUD ────────────────────────────────────────────────────────────
+
+function showNoteModal(noteId) {
+    const note = noteId ? notesList.find(n => n.id === noteId) : null;
+    const title = note ? escapeHtml(note.title || '') : '';
+    const content = note ? escapeHtml(note.content || '') : '';
+    const isEdit = !!note;
+    const createdLine = note ? `<div class="note-modal-timestamp">Created ${formatNoteDate(note.created_at)}</div>` : '';
+    const updatedLine = note ? `<div class="note-modal-timestamp">Updated ${formatNoteDate(note.updated_at)}</div>` : '';
+
+    // Build project dropdown
+    const projects = tasks['PROJECTS'] || [];
+    const currentProject = note ? (note.assigned_project || '') : '';
+    const noneSelected = !currentProject ? 'selected' : '';
+    const projectOptions = projects.map(p => {
+        const sel = currentProject === p.id ? 'selected' : '';
+        return `<option value="${p.id}" ${sel}>${escapeHtml(p.text || '')}</option>`;
+    }).join('');
+
+    document.getElementById('note-edit-modal')?.remove();
+
+    const modalHtml = `
+        <div id="note-edit-modal" class="modal">
+            <div class="modal-content note-modal-content">
+                <div class="note-modal-header">
+                    <h2>${isEdit ? 'Edit Note' : 'New Note'}</h2>
+                    <button class="note-modal-close" onclick="closeNoteModal()">✕</button>
+                </div>
+                <div class="note-modal-body">
+                    <label class="note-modal-label">Title</label>
+                    <input id="note-modal-title" class="note-modal-input" type="text" value="${title}" placeholder="Note title…">
+                    <div id="note-modal-title-error" class="note-modal-error hidden">Title is required.</div>
+                    <label class="note-modal-label">Content</label>
+                    <textarea id="note-modal-content" class="note-modal-textarea" rows="8" placeholder="Note content…">${content}</textarea>
+                    <label class="note-modal-label">Project</label>
+                    <select id="note-modal-project" class="note-modal-select">
+                        <option value="" ${noneSelected}>— none —</option>
+                        ${projectOptions}
+                    </select>
+                </div>
+                <div class="note-modal-actions">
+                    <button class="action-btn cancel" onclick="closeNoteModal()">Cancel</button>
+                    <button class="action-btn confirm" onclick="saveNoteFromModal('${noteId || ''}')">Save</button>
+                </div>
+                ${createdLine || updatedLine ? `<div class="note-modal-footer">${createdLine}${updatedLine}</div>` : ''}
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.getElementById('note-edit-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'note-edit-modal') closeNoteModal();
+    });
+    document.getElementById('note-modal-title').focus();
+}
+
+function closeNoteModal() {
+    document.getElementById('note-edit-modal')?.remove();
+}
+
+async function saveNoteFromModal(noteId) {
+    const titleEl = document.getElementById('note-modal-title');
+    const contentEl = document.getElementById('note-modal-content');
+    const projectEl = document.getElementById('note-modal-project');
+    const errorEl = document.getElementById('note-modal-title-error');
+
+    const title = titleEl.value.trim();
+    if (!title) {
+        errorEl.classList.remove('hidden');
+        titleEl.focus();
+        return;
+    }
+    errorEl.classList.add('hidden');
+
+    const payload = {
+        title,
+        content: contentEl.value,
+        assigned_project: projectEl.value || null
+    };
+
+    try {
+        if (noteId) {
+            await fetch(`/api/notes/${noteId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } else {
+            await fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+        closeNoteModal();
+        await loadTasks();
+    } catch (error) {
+        console.error('Failed to save note:', error);
+    }
+}
+
+async function deleteNoteCard(noteId) {
+    try {
+        await fetch(`/api/notes/${noteId}`, { method: 'DELETE' });
+        await loadTasks();
+    } catch (error) {
+        console.error('Failed to delete note:', error);
+    }
+}
+
+// ── Notes tab ─────────────────────────────────────────────────────────────────
+
+function renderNotesTab() {
+    const newestSel = notesTabSort === 'newest' ? 'selected' : '';
+    const oldestSel = notesTabSort === 'oldest' ? 'selected' : '';
+    const titleSel = notesTabSort === 'title' ? 'selected' : '';
+    const manualSel = notesTabSort === 'manual' ? 'selected' : '';
+
+    // Apply filter
+    let filtered = notesList;
+    if (notesTabFilter) {
+        const q = notesTabFilter.toLowerCase();
+        filtered = notesList.filter(n => {
+            if (notesTabFilterMode === 'title') {
+                return (n.title || '').toLowerCase().includes(q);
+            }
+            return (n.title || '').toLowerCase().includes(q) || (n.content || '').toLowerCase().includes(q);
+        });
+    }
+
+    const sorted = getSortedNotes(filtered, notesTabSort);
+
+    let cardsHtml;
+    if (notesList.length === 0 && !notesTabFilter) {
+        cardsHtml = `
+            <div class="notes-tab-empty">
+                <p>No notes yet.</p>
+                <button class="action-btn" onclick="showNoteModal(null)">+ Create your first note</button>
+            </div>
+        `;
+    } else if (sorted.length === 0) {
+        cardsHtml = '<div class="notes-tab-empty"><p>No notes match.</p></div>';
+    } else {
+        cardsHtml = `<div class="notes-tab-grid">${sorted.map(n => renderNotesTabCard(n)).join('')}</div>`;
+    }
+
+    const titleOnlySel = notesTabFilterMode === 'title' ? 'checked' : '';
+    const titleBodySel = notesTabFilterMode === 'title+content' ? 'checked' : '';
+
+    return `
+        <div class="notes-tab-container">
+            <div class="notes-tab-toolbar">
+                <div class="notes-filter-bar">
+                    <input id="notes-tab-filter-input" class="notes-filter-input" type="text"
+                           placeholder="Filter notes…" value="${escapeHtml(notesTabFilter)}"
+                           oninput="setNotesTabFilter(this.value)">
+                    <div class="notes-filter-modes">
+                        <label class="notes-filter-mode-label">
+                            <input type="radio" name="notes-filter-mode" value="title" ${titleOnlySel}
+                                   onchange="setNotesTabFilterMode('title')"> Title only
+                        </label>
+                        <label class="notes-filter-mode-label">
+                            <input type="radio" name="notes-filter-mode" value="title+content" ${titleBodySel}
+                                   onchange="setNotesTabFilterMode('title+content')"> Title + content
+                        </label>
+                    </div>
+                </div>
+                <div class="notes-tab-toolbar-right">
+                    <button class="action-btn" onclick="showNoteModal(null)">+ New Note</button>
+                    <select class="notes-sort-select" onchange="setNotesTabSort(this.value)">
+                        <option value="newest" ${newestSel}>Newest first</option>
+                        <option value="oldest" ${oldestSel}>Oldest first</option>
+                        <option value="title" ${titleSel}>Title A–Z</option>
+                        <option value="manual" ${manualSel}>Manual order</option>
+                    </select>
+                </div>
+            </div>
+            ${cardsHtml}
+        </div>
+    `;
+}
+
+function renderNotesTabCard(note) {
+    const stripe = buildNoteColorStripe(note.project_color);
+    const preview = escapeHtml(note.content || '');
+    const footer = `${formatNoteDate(note.created_at)} · ${formatRelativeTime(note.updated_at)}`;
+    return `
+        <div class="notes-tab-card" onclick="showNoteModal('${note.id}')">
+            ${stripe}
+            <button class="note-tab-card-delete" onclick="event.stopPropagation(); deleteNoteCard('${note.id}')" title="Delete">×</button>
+            <div class="notes-tab-card-title">${escapeHtml(note.title || '')}</div>
+            <div class="notes-tab-card-preview">${preview}</div>
+            <div class="notes-tab-card-footer">${footer}</div>
+        </div>
+    `;
+}
+
+function setNotesTabSort(value) {
+    notesTabSort = value;
+    renderBoard();
+}
+
+function setNotesTabFilter(value) {
+    notesTabFilter = value;
+    const board = document.getElementById('board');
+    if (board) {
+        board.innerHTML = renderNotesTab();
+        // Restore focus to filter input
+        const input = document.getElementById('notes-tab-filter-input');
+        if (input) {
+            input.focus();
+            input.setSelectionRange(value.length, value.length);
+        }
+    }
+}
+
+function setNotesTabFilterMode(value) {
+    notesTabFilterMode = value;
+    setNotesTabFilter(notesTabFilter);
+}
+
+function setupNotesTabFilter() {
+    // Nothing needed - filter is handled via oninput inline handler
 }
 
 function renderProjectsColumn(section) {
@@ -2440,13 +2705,6 @@ async function syncToConfluence() {
     syncBtn.classList.add('disabled');
 
     try {
-        // Save notes first in case there are pending changes
-        if (notesSaveTimeout) {
-            clearTimeout(notesSaveTimeout);
-            notesSaveTimeout = null;
-        }
-        await saveNotes();
-
         const response = await fetch('/api/sync-confluence', { method: 'POST' });
         const data = await response.json();
 
