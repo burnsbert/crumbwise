@@ -2,6 +2,8 @@
 data/settings.json
 data/tasks.md
 data/notes.txt
+data/.backups/
+data/private/
 
 # Python
 __pycache__/

@@ -18,16 +18,8 @@ import crumbwise
 @pytest.fixture
 def app(tmp_path):
     """Create a test app with a temporary tasks file."""
-    tasks_file = tmp_path / "tasks.md"
-    undo_file = tmp_path / "tasks.md.undo"
-    settings_file = tmp_path / "settings.json"
-    notes_file = tmp_path / "notes.txt"
-
     # Point the app at temporary files
-    crumbwise.TASKS_FILE = tasks_file
-    crumbwise.UNDO_FILE = undo_file
-    crumbwise.SETTINGS_FILE = settings_file
-    crumbwise.NOTES_FILE = notes_file
+    crumbwise.DEFAULT_DATA_DIR = tmp_path
 
     crumbwise.app.config["TESTING"] = True
     yield crumbwise.app
@@ -173,7 +165,7 @@ class TestTimelineSortNoTimestamps:
     def test_oldest_sections_sort_first(self, client, tmp_path):
         """Tasks in DONE 2025 should appear before DONE Q1 2026
         before DONE THIS WEEK before IN PROGRESS TODAY."""
-        write_tasks(crumbwise.TASKS_FILE, TASKS_WITH_NO_TIMESTAMPS)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", TASKS_WITH_NO_TIMESTAMPS)
 
         resp = client.get(f"/api/projects/{PROJECT_ID}/timeline")
         assert resp.status_code == 200
@@ -191,7 +183,7 @@ class TestTimelineSortNoTimestamps:
 
     def test_section_names_in_response(self, client, tmp_path):
         """Each task includes its section name."""
-        write_tasks(crumbwise.TASKS_FILE, TASKS_WITH_NO_TIMESTAMPS)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", TASKS_WITH_NO_TIMESTAMPS)
 
         resp = client.get(f"/api/projects/{PROJECT_ID}/timeline")
         data = resp.get_json()
@@ -230,7 +222,7 @@ class TestTimelineSortWithTimestamps:
 
     def test_oldest_timestamp_first(self, client, tmp_path):
         """Tasks with timestamps sort oldest first within same section tier."""
-        write_tasks(crumbwise.TASKS_FILE, TASKS_WITH_TIMESTAMPS)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", TASKS_WITH_TIMESTAMPS)
 
         resp = client.get(f"/api/projects/{PROJECT_ID}/timeline")
         data = resp.get_json()
@@ -266,7 +258,7 @@ class TestTimelineSortMixedTimestamps:
     def test_no_timestamp_sorts_after_timestamped_in_same_tier(self, client, tmp_path):
         """Within the same section tier, tasks with timestamps come before
         tasks without timestamps (which get sentinel "9999")."""
-        write_tasks(crumbwise.TASKS_FILE, TASKS_MIXED_TIMESTAMPS)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", TASKS_MIXED_TIMESTAMPS)
 
         resp = client.get(f"/api/projects/{PROJECT_ID}/timeline")
         data = resp.get_json()
@@ -306,7 +298,7 @@ class TestTimelineSortWithOrderIndex:
 
     def test_order_index_overrides_section_sort(self, client, tmp_path):
         """When tasks have order_index, sort by order_index regardless of section."""
-        write_tasks(crumbwise.TASKS_FILE, TASKS_WITH_ORDER_INDEX)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", TASKS_WITH_ORDER_INDEX)
 
         resp = client.get(f"/api/projects/{PROJECT_ID}/timeline")
         data = resp.get_json()
@@ -316,7 +308,7 @@ class TestTimelineSortWithOrderIndex:
 
     def test_order_index_zero_is_valid(self, client, tmp_path):
         """order_index=0 is a valid position (not treated as falsy/None)."""
-        write_tasks(crumbwise.TASKS_FILE, TASKS_WITH_ORDER_INDEX)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", TASKS_WITH_ORDER_INDEX)
 
         resp = client.get(f"/api/projects/{PROJECT_ID}/timeline")
         data = resp.get_json()
@@ -346,7 +338,7 @@ class TestTimelineSortPartialOrderIndex:
 
     def test_unordered_tasks_sort_after_ordered(self, client, tmp_path):
         """Tasks without order_index go to the end when other tasks have it."""
-        write_tasks(crumbwise.TASKS_FILE, TASKS_PARTIAL_ORDER_INDEX)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", TASKS_PARTIAL_ORDER_INDEX)
 
         resp = client.get(f"/api/projects/{PROJECT_ID}/timeline")
         data = resp.get_json()
@@ -363,7 +355,7 @@ class TestOrderIndexParsing:
     """Test that order_index is correctly parsed from and saved to markdown."""
 
     def test_order_index_parsed_as_integer(self, client, tmp_path):
-        write_tasks(crumbwise.TASKS_FILE, TASKS_WITH_ORDER_INDEX)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", TASKS_WITH_ORDER_INDEX)
 
         resp = client.get(f"/api/projects/{PROJECT_ID}/timeline")
         data = resp.get_json()
@@ -372,7 +364,7 @@ class TestOrderIndexParsing:
             assert isinstance(task["order_index"], int)
 
     def test_missing_order_index_is_none(self, client, tmp_path):
-        write_tasks(crumbwise.TASKS_FILE, TASKS_WITH_NO_TIMESTAMPS)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", TASKS_WITH_NO_TIMESTAMPS)
 
         resp = client.get(f"/api/projects/{PROJECT_ID}/timeline")
         data = resp.get_json()
@@ -394,7 +386,7 @@ class TestOrderIndexParsing:
 ## TODO THIS WEEK
 
 """
-        write_tasks(crumbwise.TASKS_FILE, content)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", content)
 
         # Parse, save, parse again
         sections = crumbwise.parse_tasks()
@@ -434,7 +426,7 @@ class TestReorderEndpoint:
 ## TODO THIS WEEK
 
 """
-        write_tasks(crumbwise.TASKS_FILE, content)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", content)
 
         # Reorder: C, A, B
         resp = client.post(
@@ -463,7 +455,7 @@ class TestReorderEndpoint:
 ## TODO THIS WEEK
 
 """
-        write_tasks(crumbwise.TASKS_FILE, content)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", content)
 
         resp = client.post(
             f"/api/projects/{PROJECT_ID}/reorder",
@@ -500,7 +492,7 @@ class TestAssignOrderIndexLifecycle:
 ## TODO THIS WEEK
 
 """
-        write_tasks(crumbwise.TASKS_FILE, content)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", content)
 
         resp = client.post(
             f"/api/tasks/task-new/assign",
@@ -524,7 +516,7 @@ class TestAssignOrderIndexLifecycle:
 ## TODO THIS WEEK
 
 """
-        write_tasks(crumbwise.TASKS_FILE, content)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", content)
 
         resp = client.post(
             f"/api/tasks/task-new/assign",
@@ -548,7 +540,7 @@ class TestAssignOrderIndexLifecycle:
 ## TODO THIS WEEK
 
 """
-        write_tasks(crumbwise.TASKS_FILE, content)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", content)
 
         resp = client.post("/api/tasks/task-1/unassign")
         assert resp.status_code == 200
@@ -575,7 +567,7 @@ class TestAssignOrderIndexLifecycle:
 ## TODO THIS WEEK
 
 """
-        write_tasks(crumbwise.TASKS_FILE, content)
+        write_tasks(crumbwise.DEFAULT_DATA_DIR / "tasks.md", content)
 
         resp = client.post(
             "/api/tasks/task-1/assign",

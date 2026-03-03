@@ -8,9 +8,9 @@ const PROJECT_SECTIONS = ['PROJECTS', 'COMPLETED PROJECTS'];
 
 const SECTION_CONFIG = {
     current: {
-        // Flow: Week After Next -> Next Week -> This Week -> In Progress -> Done This Week
-        columns: ['TODO FOLLOWING WEEK', 'TODO NEXT WEEK', 'TODO THIS WEEK', 'IN PROGRESS TODAY', 'DONE THIS WEEK'],
-        secondary: ['PROJECTS', 'FOLLOW UPS', 'BLOCKED'],
+        projectsSidebar: 'PROJECTS',
+        columns: ['TODO NEXT WEEK', 'TODO THIS WEEK', 'IN PROGRESS TODAY', 'DONE THIS WEEK'],
+        secondary: ['TODO FOLLOWING WEEK', 'FOLLOW UPS', 'BLOCKED'],
         hasNotes: true
     },
     research: {
@@ -21,6 +21,9 @@ const SECTION_CONFIG = {
     },
     history: {
         columns: [] // Will be populated dynamically
+    },
+    timeline: {
+        isTimeline: true
     },
     settings: {
         isSettings: true
@@ -40,6 +43,7 @@ let calendarEvents = [];
 let calendarConnected = false;
 let calendarDateOffset = 0; // 0 = today, -1 = yesterday, 1 = tomorrow, etc.
 let calendarVisible = true;
+let timelineWeekOffset = 0; // 0 = this week, -1 = last week, 1 = next week
 let currentTheme = 1;
 let currentDraggedTaskId = null;
 let currentDraggedFromSection = null;
@@ -94,6 +98,7 @@ const THEME_COLORS = {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadTheme(); // Load theme first to avoid flash
+    setupPrivateMode();
     setupTabs();
     setupNewWeek();
     setupSettings();
@@ -259,23 +264,57 @@ function renderBoard() {
     sortableInstances.forEach(s => s.destroy());
     sortableInstances = [];
 
+    // Manage projects sidebar
+    const boardContainer = document.querySelector('.board-container');
+    let projectsSidebar = document.getElementById('projects-sidebar');
+
     // Handle settings tab specially
     if (config.isSettings) {
         board.className = 'board settings-view';
         board.innerHTML = renderSettingsPage();
         followupsArea.classList.add('hidden');
         document.getElementById('calendar-sidebar')?.classList.add('hidden');
+        if (projectsSidebar) projectsSidebar.classList.add('hidden');
+        boardContainer.classList.remove('has-projects-sidebar');
         loadSettingsIntoForm();
+        return;
+    }
+
+    // Handle timeline tab specially
+    if (config.isTimeline) {
+        board.className = 'board timeline-view';
+        board.innerHTML = '';
+        renderTimeline(board);
+        followupsArea.classList.add('hidden');
+        document.getElementById('calendar-sidebar')?.classList.add('hidden');
+        if (projectsSidebar) projectsSidebar.classList.add('hidden');
+        boardContainer.classList.remove('has-projects-sidebar');
         return;
     }
 
     // Add class for current tab styling
     board.className = currentTab === 'current' ? 'board current-tab' : 'board';
 
+    // Handle projects sidebar for current tab
+    if (config.projectsSidebar) {
+        if (!projectsSidebar) {
+            projectsSidebar = document.createElement('div');
+            projectsSidebar.id = 'projects-sidebar';
+            boardContainer.insertBefore(projectsSidebar, boardContainer.firstChild);
+        }
+        projectsSidebar.innerHTML = renderProjectsColumn(config.projectsSidebar);
+        projectsSidebar.classList.remove('hidden');
+        boardContainer.classList.add('has-projects-sidebar');
+    } else {
+        if (projectsSidebar) projectsSidebar.classList.add('hidden');
+        boardContainer.classList.remove('has-projects-sidebar');
+    }
+
     // Render main columns
-    board.innerHTML = config.columns
-        .map(section => renderColumn(section))
-        .join('');
+    board.innerHTML = config.columns.map(col => {
+        if (typeof col === 'string') return renderColumn(col);
+        return '';
+    }).join('');
 
     // Render secondary area for Current tab
     if (config.secondary && config.secondary.length > 0) {
@@ -304,7 +343,7 @@ function renderBoard() {
 
     // Initialize sortable on all column-tasks
     document.querySelectorAll('.column-tasks').forEach(el => {
-        const section = el.closest('.column')?.dataset.section;
+        const section = el.dataset.section || el.closest('.column')?.dataset.section;
         const isLocked = LOCKED_SECTIONS.includes(section);
 
         const sortable = new Sortable(el, {
@@ -316,9 +355,26 @@ function renderBoard() {
             dragClass: 'sortable-drag',
             onStart: (evt) => {
                 currentDraggedTaskId = evt.item.dataset.id;
-                currentDraggedFromSection = evt.from.closest('.column')?.dataset.section;
+                currentDraggedFromSection = evt.from.dataset.section || evt.from.closest('.column')?.dataset.section;
             },
             onEnd: handleDragEnd
+        });
+        sortableInstances.push(sortable);
+    });
+
+    // Initialize sortable on priority sub-sections (isolated group)
+    document.querySelectorAll('.priority-tasks').forEach(el => {
+        const sortable = new Sortable(el, {
+            group: 'project-priorities',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            onStart: (evt) => {
+                currentDraggedTaskId = evt.item.dataset.id;
+                currentDraggedFromSection = 'PROJECTS';
+            },
+            onEnd: handlePriorityDragEnd
         });
         sortableInstances.push(sortable);
     });
@@ -328,7 +384,6 @@ function renderBoard() {
 
     // Setup header drop zones - dropping on header adds to end of section
     document.querySelectorAll('.column-header').forEach(header => {
-        const column = header.closest('.column');
         header.addEventListener('dragover', (e) => {
             e.preventDefault();
             header.classList.add('header-drop-target');
@@ -344,7 +399,7 @@ function renderBoard() {
             if (!currentDraggedTaskId) return;
 
             const taskId = currentDraggedTaskId;
-            const section = header.closest('.column').dataset.section;
+            const section = header.closest('[data-section]')?.dataset.section;
             const fromSection = currentDraggedFromSection;
 
             // Clear BEFORE async work so handleDragEnd sees null and exits early
@@ -474,22 +529,22 @@ function setupProjectDropZones() {
     // This ensures new cards automatically get the handlers
     const board = document.getElementById('board');
     const followups = document.getElementById('followups-columns');
+    const projectsSidebar = document.getElementById('projects-sidebar');
 
     // Remove old handlers if any (to prevent duplicates)
-    board.removeEventListener('dragover', handleProjectDragOver);
-    board.removeEventListener('dragleave', handleProjectDragLeave);
-    board.removeEventListener('drop', handleProjectDrop);
-    followups?.removeEventListener('dragover', handleProjectDragOver);
-    followups?.removeEventListener('dragleave', handleProjectDragLeave);
-    followups?.removeEventListener('drop', handleProjectDrop);
+    const containers = [board, followups, projectsSidebar].filter(Boolean);
+    for (const el of containers) {
+        el.removeEventListener('dragover', handleProjectDragOver);
+        el.removeEventListener('dragleave', handleProjectDragLeave);
+        el.removeEventListener('drop', handleProjectDrop);
+    }
 
     // Add delegated handlers
-    board.addEventListener('dragover', handleProjectDragOver);
-    board.addEventListener('dragleave', handleProjectDragLeave);
-    board.addEventListener('drop', handleProjectDrop);
-    followups?.addEventListener('dragover', handleProjectDragOver);
-    followups?.addEventListener('dragleave', handleProjectDragLeave);
-    followups?.addEventListener('drop', handleProjectDrop);
+    for (const el of containers) {
+        el.addEventListener('dragover', handleProjectDragOver);
+        el.addEventListener('dragleave', handleProjectDragLeave);
+        el.addEventListener('drop', handleProjectDrop);
+    }
 }
 
 function handleProjectDragOver(e) {
@@ -597,15 +652,258 @@ function renderSettingsPage() {
     `;
 }
 
+// Timeline view
+async function renderTimeline(container) {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Show loading state
+    container.innerHTML = `
+        <div class="timeline-container">
+            <div class="timeline-header">
+                <div class="timeline-nav">
+                    <button class="timeline-nav-btn" onclick="changeTimelineWeek(-1)" title="Previous week">&lsaquo;</button>
+                    <span class="timeline-week-label" style="color: var(--text-muted);">Loading...</span>
+                    <button class="timeline-nav-btn" onclick="changeTimelineWeek(1)" title="Next week">&rsaquo;</button>
+                </div>
+                <button class="timeline-this-week-btn" onclick="goToThisWeek()" disabled>This Week</button>
+            </div>
+            <div class="timeline-grid">
+                <div class="timeline-day-headers">
+                    ${dayNames.map(d => `<div class="timeline-day-header">${d}</div>`).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    try {
+        const url = timelineWeekOffset === 0
+            ? '/api/timeline'
+            : `/api/timeline?week_offset=${timelineWeekOffset}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const weekStart = new Date(data.week_start + 'T00:00:00');
+        const weekEnd = new Date(data.week_end + 'T00:00:00');
+        const today = data.today;
+        const isThisWeek = timelineWeekOffset === 0;
+
+        // Format week label: "Feb 15 - Feb 21, 2026"
+        const startMonth = weekStart.toLocaleDateString('en-US', { month: 'short' });
+        const endMonth = weekEnd.toLocaleDateString('en-US', { month: 'short' });
+        const startDay = weekStart.getDate();
+        const endDay = weekEnd.getDate();
+        const year = weekEnd.getFullYear();
+
+        let weekLabel;
+        if (startMonth === endMonth) {
+            weekLabel = `${startMonth} ${startDay} \u2013 ${endDay}, ${year}`;
+        } else {
+            weekLabel = `${startMonth} ${startDay} \u2013 ${endMonth} ${endDay}, ${year}`;
+        }
+
+        // Build day headers with dates and determine today's column index
+        let todayColIndex = -1; // -1 means today is not in this week
+        const dayHeaders = dayNames.map((name, i) => {
+            const dayDate = new Date(weekStart);
+            dayDate.setDate(dayDate.getDate() + i);
+            const dateNum = dayDate.getDate();
+            const dateStr = dayDate.toISOString().split('T')[0];
+            const isToday = dateStr === today;
+            if (isToday) todayColIndex = i;
+            return `<div class="timeline-day-header${isToday ? ' today' : ''}">${name}<span class="timeline-day-date">${dateNum}</span></div>`;
+        }).join('');
+
+        // Build column highlight layer: 7 cells, only today's gets highlighted
+        const columnHighlights = dayNames.map((_, i) => {
+            return `<div class="timeline-col-bg${i === todayColIndex ? ' today' : ''}"></div>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="timeline-container">
+                <div class="timeline-header">
+                    <div class="timeline-nav">
+                        <button class="timeline-nav-btn" onclick="changeTimelineWeek(-1)" title="Previous week">&lsaquo;</button>
+                        <span class="timeline-week-label${isThisWeek ? '' : ' not-this-week'}" onclick="${isThisWeek ? '' : 'goToThisWeek()'}" title="${isThisWeek ? '' : 'Click to go to this week'}">${weekLabel}</span>
+                        <button class="timeline-nav-btn" onclick="changeTimelineWeek(1)" title="Next week">&rsaquo;</button>
+                    </div>
+                    <button class="timeline-this-week-btn${isThisWeek ? ' active' : ''}" onclick="goToThisWeek()" ${isThisWeek ? 'disabled' : ''}>${isThisWeek ? 'This Week' : 'This Week'}</button>
+                </div>
+                <div class="timeline-grid">
+                    <div class="timeline-day-headers">
+                        ${dayHeaders}
+                    </div>
+                    <div class="timeline-tasks-area">
+                        <div class="timeline-col-highlights">${columnHighlights}</div>
+                        ${renderTimelineTasks(data.tasks, data.today, data.week_start)}
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Failed to load timeline data:', error);
+        container.innerHTML = `
+            <div class="timeline-container">
+                <div class="timeline-header">
+                    <div class="timeline-nav">
+                        <button class="timeline-nav-btn" onclick="changeTimelineWeek(-1)" title="Previous week">&lsaquo;</button>
+                        <span class="timeline-week-label" style="color: var(--text-muted);">Error loading timeline</span>
+                        <button class="timeline-nav-btn" onclick="changeTimelineWeek(1)" title="Next week">&rsaquo;</button>
+                    </div>
+                    <button class="timeline-this-week-btn" onclick="goToThisWeek()" ${timelineWeekOffset === 0 ? 'disabled' : ''}>This Week</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function changeTimelineWeek(delta) {
+    timelineWeekOffset += delta;
+    const board = document.querySelector('.board');
+    if (board) {
+        renderTimeline(board);
+    }
+}
+
+function goToThisWeek() {
+    timelineWeekOffset = 0;
+    const board = document.querySelector('.board');
+    if (board) {
+        renderTimeline(board);
+    }
+}
+
+// Timeline task bar rendering
+function renderTimelineTasks(tasks, today, weekStart) {
+    if (!tasks || tasks.length === 0) {
+        return '<div class="timeline-empty">No tasks with timeline data this week.</div>';
+    }
+
+    // Parse weekStart as a Date for computing column offsets
+    const weekStartDate = new Date(weekStart + 'T00:00:00');
+
+    // Helper: given a YYYY-MM-DD date string, return 1-based column (Sun=1 .. Sat=7)
+    // Clamps to 1..7 range (tasks starting before week start at col 1, etc.)
+    function dateToColumn(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00');
+        const diffDays = Math.round((d - weekStartDate) / (1000 * 60 * 60 * 24));
+        return Math.max(1, Math.min(7, diffDays + 1));
+    }
+
+    // Helper: determine if a section name represents a "done" section.
+    // Mirrors the backend is_done_section() logic for frontend rendering.
+    function isDoneSection(section) {
+        if (!section) return false;
+        return section === 'DONE THIS WEEK'
+            || section.startsWith('DONE Q')
+            || section.startsWith('DONE 20');
+    }
+
+    let html = '';
+
+    for (const task of tasks) {
+        if (!task.spans || task.spans.length === 0) continue;
+
+        // Determine if this task is completed (in a done section).
+        // The API only produces "in_progress" and "blocked" span statuses (co@ is
+        // terminal), so we derive "completed" from the task's current section.
+        const taskCompleted = isDoneSection(task.section);
+
+        // Each task gets its own row -- a CSS grid with the same 7 columns as the
+        // day headers (0.6fr 1fr 1fr 1fr 1fr 1fr 0.6fr). Bars position themselves
+        // using grid-column. AC 18: no visual overlap -- each task is its own row.
+        html += '<div class="timeline-task-row">';
+
+        // Build project color stripe HTML (matches card styling)
+        const projectStripe = task.project_color
+            ? `<div class="project-stripe" data-color="${task.project_color}"></div>`
+            : '';
+
+        // Render each span as a bar positioned via CSS grid-column
+        for (const span of task.spans) {
+            const colStart = dateToColumn(span.start);
+            const colEnd = dateToColumn(span.end);
+            // CSS grid-column end line is exclusive, so +1 to include the end column
+            const gridColEnd = colEnd + 1;
+
+            // AC 5/6: completed tasks use "completed" class for all bars;
+            // otherwise use the span-level status (in_progress or blocked)
+            const barStatus = taskCompleted ? 'completed' : span.status;
+
+            html += `<div class="timeline-bar ${barStatus}" style="grid-column: ${colStart} / ${gridColEnd};">`
+                + projectStripe
+                + `<span class="timeline-bar-text">${escapeHtml(task.text)}</span>`
+                + `</div>`;
+        }
+
+        html += '</div>';
+    }
+
+    return html;
+}
+
 function renderNotesArea() {
     return `
         <div class="notes-area">
             <div class="column-header">
                 <span>NOTES</span>
+                <button class="expand-notes-btn" onclick="showNotesModal()" title="Expand notes">&#x26F6;</button>
             </div>
             <textarea id="notes-textarea" class="notes-textarea" placeholder="Add notes here..."></textarea>
         </div>
     `;
+}
+
+function showNotesModal() {
+    // Save any pending changes from inline textarea first
+    const inlineTextarea = document.getElementById('notes-textarea');
+    if (inlineTextarea) {
+        notes = inlineTextarea.value;
+    }
+
+    let modal = document.getElementById('notes-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'notes-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content notes-modal-content">
+                <div class="notes-modal-header">
+                    <h2>Notes</h2>
+                    <button class="action-btn cancel" onclick="closeNotesModal()">Close</button>
+                </div>
+                <textarea id="notes-modal-textarea" class="notes-modal-textarea" placeholder="Add notes here..."></textarea>
+            </div>
+        `;
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeNotesModal();
+        });
+        document.body.appendChild(modal);
+    }
+
+    const modalTextarea = document.getElementById('notes-modal-textarea');
+    modalTextarea.value = notes;
+    modal.classList.remove('hidden');
+    modalTextarea.focus();
+
+    // Auto-save from modal textarea
+    modalTextarea.oninput = () => {
+        notes = modalTextarea.value;
+        // Sync back to inline textarea
+        const inline = document.getElementById('notes-textarea');
+        if (inline) inline.value = notes;
+        if (notesSaveTimeout) clearTimeout(notesSaveTimeout);
+        notesSaveTimeout = setTimeout(saveNotes, 5000);
+    };
+}
+
+function closeNotesModal() {
+    const modal = document.getElementById('notes-modal');
+    if (modal) modal.classList.add('hidden');
+    // Flush save immediately on close
+    if (notesSaveTimeout) {
+        clearTimeout(notesSaveTimeout);
+    }
+    saveNotes();
 }
 
 function handleNotesInput(event) {
@@ -628,6 +926,42 @@ async function saveNotes() {
     } catch (error) {
         console.error('Failed to save notes:', error);
     }
+}
+
+function renderProjectsColumn(section) {
+    const sectionTasks = tasks[section] || [];
+    const priorities = ['high', 'medium', 'paused'];
+    const priorityLabels = { high: 'High Priority', medium: 'Medium Priority', paused: 'Paused' };
+
+    let subsections = '';
+    for (const priority of priorities) {
+        const filtered = sectionTasks.filter(t => (t.priority || 'medium') === priority);
+        const cards = filtered.map(task => renderCard(task, section)).join('');
+        subsections += `
+            <div class="priority-subsection">
+                <div class="priority-header">
+                    <span>${priorityLabels[priority]}</span>
+                    <span class="column-count">${filtered.length}</span>
+                </div>
+                <div class="priority-tasks" data-section="${section}" data-priority="${priority}">
+                    ${cards}
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="column projects-column current-period" data-section="${section}">
+            <div class="column-header">
+                <span>${section}</span>
+                <span class="column-count">${sectionTasks.length}</span>
+            </div>
+            ${subsections}
+            <div class="add-task">
+                <button class="add-task-btn" onclick="showAddTask(this, '${section}')">+ Add project</button>
+            </div>
+        </div>
+    `;
 }
 
 function renderColumn(section, isSecondary = false) {
@@ -699,8 +1033,8 @@ function renderCard(task, section) {
     const textWithLinks = linkify(escapeHtml(task.text));
 
     // Determine which move button to show based on section
-    // Only main columns + BLOCKED get move buttons (not PROJECTS or FOLLOW UPS)
-    const currentWithMove = [...SECTION_CONFIG.current.columns, 'BLOCKED'];
+    // Only main columns + secondary columns (except FOLLOW UPS) get move buttons
+    const currentWithMove = [...SECTION_CONFIG.current.columns, ...SECTION_CONFIG.current.secondary];
     const backlogSections = SECTION_CONFIG.backlog.columns;
 
     let moveButton = '';
@@ -1495,6 +1829,71 @@ function closeProjectTimeline() {
     document.getElementById('project-timeline-modal')?.remove();
 }
 
+// Priority drag and drop between priority sub-sections
+async function handlePriorityDragEnd(event) {
+    if (!currentDraggedTaskId) return;
+
+    const taskId = event.item.dataset.id;
+    const fromPriority = event.from.dataset.priority;
+    const toPriority = event.to.dataset.priority;
+    const newIndex = event.newIndex;
+
+    currentDraggedTaskId = null;
+    currentDraggedFromSection = null;
+
+    // Change priority if moved between buckets
+    if (fromPriority !== toPriority) {
+        try {
+            await fetch(`/api/tasks/${taskId}/priority`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ priority: toPriority })
+            });
+        } catch (error) {
+            console.error('Failed to update priority:', error);
+        }
+    }
+
+    // Calculate the correct index within the full flat PROJECTS list.
+    // The flat list may have priorities interleaved, so we can't just
+    // count preceding priority groups. Instead, find where the Nth
+    // same-priority item sits in the flat list and insert there.
+    const allProjects = (tasks['PROJECTS'] || []).filter(t => t.id !== taskId);
+    const samePriorityIndices = [];
+    for (let i = 0; i < allProjects.length; i++) {
+        if ((allProjects[i].priority || 'medium') === toPriority) {
+            samePriorityIndices.push(i);
+        }
+    }
+    // newIndex is where in the priority bucket the item was dropped.
+    // Map that to the flat list index.
+    let flatIndex;
+    if (newIndex >= samePriorityIndices.length) {
+        // Dropped after the last same-priority item: insert after it
+        const lastIdx = samePriorityIndices[samePriorityIndices.length - 1];
+        flatIndex = lastIdx !== undefined ? lastIdx + 1 : allProjects.length;
+    } else {
+        // Insert at the position of the Nth same-priority item
+        flatIndex = samePriorityIndices[newIndex];
+    }
+
+    try {
+        await fetch('/api/tasks/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                taskId,
+                section: 'PROJECTS',
+                index: flatIndex
+            })
+        });
+    } catch (error) {
+        console.error('Failed to reorder:', error);
+    }
+
+    await loadTasks();
+}
+
 // Drag and drop
 async function handleDragEnd(event) {
     // Skip if already handled by header drop
@@ -1544,6 +1943,26 @@ function findTaskById(taskId) {
 }
 
 // New Week functionality
+function setupPrivateMode() {
+    const btn = document.getElementById('private-btn');
+    if (!btn) return;
+
+    fetch('/api/profile')
+        .then(r => r.json())
+        .then(data => {
+            if (data.profile === 'private') {
+                btn.classList.add('active');
+                btn.textContent = 'Private';
+            }
+        });
+
+    btn.addEventListener('click', () => {
+        fetch('/api/profile/toggle', { method: 'POST' })
+            .then(r => { if (r.ok) location.reload(); });
+    });
+}
+
+
 function setupNewWeek() {
     const newWeekBtn = document.getElementById('new-week-btn');
     const undoBtn = document.getElementById('undo-btn');

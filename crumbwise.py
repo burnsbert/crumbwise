@@ -5,10 +5,11 @@ import os
 import re
 import uuid
 import json
+import shutil
 import requests
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, redirect
+from flask import Flask, render_template, jsonify, request, redirect, g
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -57,29 +58,97 @@ def get_week_dates():
 
 app = Flask(__name__)
 
-DATA_DIR = Path(__file__).parent / "data"
-TASKS_FILE = DATA_DIR / "tasks.md"
-UNDO_FILE = DATA_DIR / "tasks.md.undo"
-SETTINGS_FILE = DATA_DIR / "settings.json"
-NOTES_FILE = DATA_DIR / "notes.txt"
+DEFAULT_DATA_DIR = Path(__file__).parent / "data"
+
+_last_backup_dates = {}  # keyed by profile name
+
+
+def _get_data_dir():
+    """Get the data directory for the current request's profile (thread-safe)."""
+    try:
+        data_dir = g._data_dir
+    except (AttributeError, RuntimeError):
+        data_dir = DEFAULT_DATA_DIR
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return data_dir
+
+
+# Thread-safe path accessors — read from flask.g, not module globals
+def _tasks_file():
+    return _get_data_dir() / "tasks.md"
+
+def _undo_file():
+    return _get_data_dir() / "tasks.md.undo"
+
+def _settings_file():
+    return _get_data_dir() / "settings.json"
+
+def _notes_file():
+    return _get_data_dir() / "notes.txt"
+
+def _backups_dir():
+    return _get_data_dir() / ".backups"
+
+
+def _reset_backup_state():
+    """Reset backup tracking (for testing)."""
+    global _last_backup_dates
+    _last_backup_dates = {}
+
+
+def _get_current_profile():
+    """Get the current profile name from the request cookie."""
+    try:
+        return request.cookies.get("profile", "default")
+    except RuntimeError:
+        return "default"
+
+
+def daily_backup():
+    """Create a daily backup of data files if not already done today."""
+    global _last_backup_dates
+    today = date.today()
+    profile = _get_current_profile()
+    if _last_backup_dates.get(profile) == today:
+        return
+    _last_backup_dates[profile] = today
+
+    backups = _backups_dir()
+    backup_dir = backups / today.isoformat()
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    for src in [_tasks_file(), _notes_file(), _settings_file()]:
+        if src.exists():
+            shutil.copy2(src, backup_dir / src.name)
+
+    # Retain only 3 most recent backups
+    if backups.exists():
+        dirs = sorted(
+            (d for d in backups.iterdir() if d.is_dir()),
+            key=lambda d: d.name,
+        )
+        for old_dir in dirs[:-3]:
+            shutil.rmtree(old_dir)
 
 
 def load_settings():
     """Load settings from JSON file."""
-    if SETTINGS_FILE.exists():
-        return json.loads(SETTINGS_FILE.read_text())
+    sf = _settings_file()
+    if sf.exists():
+        return json.loads(sf.read_text())
     return {}
 
 
 def save_settings(settings):
     """Save settings to JSON file."""
-    SETTINGS_FILE.write_text(json.dumps(settings, indent=2))
+    _settings_file().write_text(json.dumps(settings, indent=2))
 
 
 def clear_undo():
     """Clear undo file after any task modification."""
-    if UNDO_FILE.exists():
-        UNDO_FILE.unlink()
+    uf = _undo_file()
+    if uf.exists():
+        uf.unlink()
 
 
 # Section definitions with display order and tab grouping
@@ -116,6 +185,21 @@ CLEARS_IN_PROGRESS_SECTIONS = [
     "BACKLOG HIGH PRIORITY",
     "BACKLOG MEDIUM PRIORITY",
     "BACKLOG LOW PRIORITY"
+]
+
+# Sections for timeline blocked state tracking
+BLOCKED_SECTIONS = ["BLOCKED"]
+
+# Sections representing done/completed state
+# Note: dynamically includes current quarter (e.g., "DONE Q1 2026") and yearly sections (e.g., "DONE 2025")
+DONE_SECTIONS = ["DONE THIS WEEK"]
+
+# Sections in the research tab (excluded from timeline tracking)
+RESEARCH_SECTIONS = [
+    "PROBLEMS TO SOLVE",
+    "THINGS TO RESEARCH",
+    "RESEARCH IN PROGRESS",
+    "RESEARCH DONE"
 ]
 
 
@@ -155,16 +239,136 @@ def get_dynamic_sections():
     return sections
 
 
+def is_done_section(section_name):
+    """Check if a section name represents a 'done' state.
+
+    Returns True if the section is a done/completed section:
+    - Explicitly listed in DONE_SECTIONS constant, OR
+    - Starts with "DONE Q" (quarterly sections like "DONE Q1 2026"), OR
+    - Starts with "DONE 20" (yearly sections like "DONE 2025", "DONE 2026")
+
+    Returns False for all other sections, including "RESEARCH DONE".
+
+    Args:
+        section_name: Name of the section to check
+
+    Returns:
+        bool: True if section represents a done state, False otherwise
+    """
+    # Check against DONE_SECTIONS list
+    if section_name in DONE_SECTIONS:
+        return True
+
+    # Check for quarterly done sections (e.g., "DONE Q1 2026")
+    if section_name.startswith("DONE Q"):
+        return True
+
+    # Check for yearly done sections (e.g., "DONE 2025", "DONE 2026")
+    if section_name.startswith("DONE 20"):
+        return True
+
+    return False
+
+
+def append_history_entry(task, prefix):
+    """Append a timestamped history entry to a task. Returns the timestamp used."""
+    timestamp = now_iso()
+    entry = f"{prefix}@{timestamp}"
+    if task.get("history"):
+        task["history"] = f"{task['history']}|{entry}"
+    else:
+        task["history"] = entry
+    return timestamp
+
+
+def handle_section_transition(task, source_section, target_section):
+    """Handle timestamp lifecycle and history tracking for section transitions.
+
+    This is the central function for managing task state changes when moving
+    between sections. It handles:
+    - Setting/clearing in_progress, blocked_at, completed_at timestamps
+    - Appending history entries for status changes
+    - Research section exclusion (no tracking for research tasks)
+
+    History format: pipe-delimited entries like "ip@2026-02-10T09:00:00|bl@2026-02-12T14:00:00"
+    History prefixes:
+    - ip@ = moved to in-progress
+    - op@ = moved back to todo/backlog (opened)
+    - bl@ = moved to blocked
+    - co@ = completed
+
+    Args:
+        task: Task dictionary to update (modified in-place)
+        source_section: Section the task is moving from
+        target_section: Section the task is moving to
+
+    Behavioral changes from previous implementation:
+    - Moving to BLOCKED now clears in_progress (previously had no effect)
+    - Moving to done sections now sets completed_at (previously only via checkbox)
+    - All transitions now append history entries
+    """
+    # Skip history/blocked_at tracking for research section tasks (user decision #5)
+    if source_section in RESEARCH_SECTIONS:
+        return
+
+    # Helper to append history entry (delegates to module-level function)
+    def append_history(prefix):
+        append_history_entry(task, prefix)
+
+    # (a) Moving to IN_PROGRESS_SECTIONS
+    if target_section in IN_PROGRESS_SECTIONS:
+        # Set in_progress if not already set (preserve original start time)
+        if not task.get("in_progress"):
+            task["in_progress"] = now_iso()
+        # Clear blocked_at
+        task["blocked_at"] = None
+        # Append ip@ to history
+        append_history("ip")
+
+    # (b) Moving to CLEARS_IN_PROGRESS_SECTIONS
+    elif target_section in CLEARS_IN_PROGRESS_SECTIONS:
+        # Clear in_progress
+        task["in_progress"] = None
+        # Clear blocked_at
+        task["blocked_at"] = None
+        # Clear completed_at if moving from a done section
+        if is_done_section(source_section):
+            task["completed_at"] = None
+        # Append op@ to history
+        append_history("op")
+
+    # (c) Moving to BLOCKED_SECTIONS
+    elif target_section in BLOCKED_SECTIONS:
+        # Set blocked_at
+        task["blocked_at"] = now_iso()
+        # Clear in_progress (IMPORTANT behavioral change)
+        task["in_progress"] = None
+        # Append bl@ to history
+        append_history("bl")
+
+    # (d) Moving to done sections
+    elif is_done_section(target_section):
+        # Set completed_at
+        task["completed_at"] = now_iso()
+        # Clear in_progress
+        task["in_progress"] = None
+        # Clear blocked_at
+        task["blocked_at"] = None
+        # Append co@ to history
+        append_history("co")
+
+
 def migrate_section_renames():
     """Migrate renamed sections in existing tasks file."""
-    if not TASKS_FILE.exists():
+    tf = _tasks_file()
+    if not tf.exists():
         return
 
     renames = {
         "BIG ONGOING PROJECTS": "PROJECTS",
     }
 
-    content = TASKS_FILE.read_text()
+    content = tf.read_text()
     modified = False
 
     for old_name, new_name in renames.items():
@@ -175,17 +379,18 @@ def migrate_section_renames():
             modified = True
 
     if modified:
-        TASKS_FILE.write_text(content)
+        tf.write_text(content)
 
 
 def ensure_data_file():
     """Create the data file with default sections if it doesn't exist."""
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if not TASKS_FILE.exists():
+    _get_data_dir().mkdir(parents=True, exist_ok=True)
+    tf = _tasks_file()
+    if not tf.exists():
         content = []
         for section in sorted(SECTIONS.keys(), key=lambda s: (SECTIONS[s]["tab"], SECTIONS[s]["order"])):
             content.append(f"## {section}\n\n")
-        TASKS_FILE.write_text("\n".join(content))
+        tf.write_text("\n".join(content))
     else:
         migrate_section_renames()
 
@@ -193,7 +398,7 @@ def ensure_data_file():
 def parse_tasks():
     """Parse the markdown file into a structured dict."""
     ensure_data_file()
-    content = TASKS_FILE.read_text()
+    content = _tasks_file().read_text()
 
     sections = {}
     current_section = None
@@ -249,6 +454,13 @@ def parse_tasks():
             task["updated"] = meta.get("updated")
             task["in_progress"] = meta.get("in_progress")
             task["completed_at"] = meta.get("completed_at")
+            task["blocked_at"] = meta.get("blocked_at")
+            task["history"] = meta.get("history")
+
+            # Add priority for project sections (None if not in metadata;
+            # migrate_project_priorities will fill in "medium" and persist)
+            if current_section in PROJECT_SECTIONS:
+                task["priority"] = meta.get("priority")
 
             # Add order_index field if present (convert to int)
             oi = meta.get("order_index")
@@ -267,6 +479,9 @@ def parse_tasks():
 
     # Migrate projects without color_index
     migrate_project_colors(sections)
+
+    # Migrate projects without priority
+    migrate_project_priorities(sections)
 
     # Fix any orphaned project assignments (from uuid5->uuid4 ID change)
     migrate_orphaned_assignments(sections)
@@ -325,6 +540,23 @@ def migrate_project_colors(sections):
         for task in sections[section_name]:
             if "color_index" not in task:
                 task["color_index"] = get_next_project_color(sections)
+                needs_save = True
+
+    if needs_save:
+        save_tasks(sections)
+
+
+def migrate_project_priorities(sections):
+    """Assign 'medium' priority to projects that don't have one."""
+    needs_save = False
+
+    for section_name in PROJECT_SECTIONS:
+        if section_name not in sections:
+            continue
+
+        for task in sections[section_name]:
+            if not task.get("priority"):
+                task["priority"] = "medium"
                 needs_save = True
 
     if needs_save:
@@ -409,6 +641,8 @@ def save_tasks(sections):
             meta_parts = [f"id:{task['id']}"]
             if section in PROJECT_SECTIONS and task.get("color_index"):
                 meta_parts.append(f"project:{task['color_index']}")
+                if task.get("priority"):
+                    meta_parts.append(f"priority:{task['priority']}")
             elif task.get("assigned_project"):
                 meta_parts.append(f"assigned:{task['assigned_project']}")
 
@@ -421,6 +655,10 @@ def save_tasks(sections):
                 meta_parts.append(f"in_progress:{task['in_progress']}")
             if task.get("completed_at"):
                 meta_parts.append(f"completed_at:{task['completed_at']}")
+            if task.get("blocked_at"):
+                meta_parts.append(f"blocked_at:{task['blocked_at']}")
+            if task.get("history"):
+                meta_parts.append(f"history:{task['history']}")
 
             # Add order_index if present
             if task.get("order_index") is not None:
@@ -431,13 +669,45 @@ def save_tasks(sections):
 
         lines.append("")
 
-    TASKS_FILE.write_text("\n".join(lines))
+    _tasks_file().write_text("\n".join(lines))
+
+
+@app.before_request
+def _activate_profile_from_cookie():
+    """Store profile-specific data dir in flask.g (thread-safe, per-request)."""
+    profile = request.cookies.get("profile", "default")
+    if profile == "private":
+        g._data_dir = DEFAULT_DATA_DIR / "private"
+    else:
+        g._data_dir = DEFAULT_DATA_DIR
+
+
+@app.before_request
+def _check_daily_backup():
+    daily_backup()
 
 
 @app.route("/")
 def index():
     """Serve the main UI."""
     return render_template("index.html")
+
+
+@app.route("/api/profile")
+def get_profile():
+    """Get the current profile name."""
+    profile = request.cookies.get("profile", "default")
+    return jsonify({"profile": profile})
+
+
+@app.route("/api/profile/toggle", methods=["POST"])
+def toggle_profile():
+    """Toggle between default and private profiles."""
+    current = request.cookies.get("profile", "default")
+    new_profile = "private" if current == "default" else "default"
+    resp = jsonify({"profile": new_profile})
+    resp.set_cookie("profile", new_profile, httponly=False, samesite="Lax")
+    return resp
 
 
 @app.route("/api/sections")
@@ -497,9 +767,10 @@ def add_task():
     else:
         new_task["in_progress"] = None
 
-    # Assign color_index for project sections using smart assignment
+    # Assign color_index and default priority for project sections
     if section in PROJECT_SECTIONS:
         new_task["color_index"] = get_next_project_color(sections)
+        new_task["priority"] = "medium"
 
     sections[section].append(new_task)
     save_tasks(sections)
@@ -544,14 +815,8 @@ def update_task(task_id):
         sections[found_section].remove(found_task)
         sections[new_section].append(found_task)
 
-        # Handle in_progress timestamp transitions for section moves
-        if new_section in IN_PROGRESS_SECTIONS:
-            # Set in_progress if not already set (preserve original start time)
-            if not found_task.get("in_progress"):
-                found_task["in_progress"] = now_iso()
-        elif new_section in CLEARS_IN_PROGRESS_SECTIONS:
-            # Clear in_progress when moving to TODO or backlog sections
-            found_task["in_progress"] = None
+        # Handle section transition (timestamps and history)
+        handle_section_transition(found_task, found_section, new_section)
 
     # Set updated timestamp for any change (text or section)
     found_task["updated"] = now_iso()
@@ -598,12 +863,29 @@ def toggle_complete(task_id):
                     # Move to COMPLETED PROJECTS and set completed_at
                     tasks.remove(task)
                     sections["COMPLETED PROJECTS"].append(task)
-                    task["completed_at"] = now_iso()
+                    if section not in RESEARCH_SECTIONS:
+                        timestamp = append_history_entry(task, "co")
+                        task["completed_at"] = timestamp
+                    else:
+                        task["completed_at"] = now_iso()
                 elif section == "COMPLETED PROJECTS" and not task["completed"]:
                     # Move back to PROJECTS and clear completed_at
                     tasks.remove(task)
                     sections["PROJECTS"].append(task)
                     task["completed_at"] = None
+                    if section not in RESEARCH_SECTIONS:
+                        append_history_entry(task, "op")
+                else:
+                    # In-place completion (no section move) - append history directly
+                    # Skip research section tasks (user decision #5)
+                    if section not in RESEARCH_SECTIONS:
+                        if task["completed"]:
+                            append_history_entry(task, "co")
+                            # Clear in-progress and blocked state on completion
+                            task["in_progress"] = None
+                            task["blocked_at"] = None
+                        else:
+                            append_history_entry(task, "op")
 
                 # Always set updated timestamp
                 task["updated"] = now_iso()
@@ -655,14 +937,8 @@ def reorder_tasks():
     if source_section != target_section:
         found_task["updated"] = now_iso()
 
-        # Handle in_progress timestamp transitions
-        if target_section in IN_PROGRESS_SECTIONS:
-            # Set in_progress if not already set (preserve original start time)
-            if not found_task.get("in_progress"):
-                found_task["in_progress"] = now_iso()
-        elif target_section in CLEARS_IN_PROGRESS_SECTIONS:
-            # Clear in_progress when moving to TODO or backlog sections
-            found_task["in_progress"] = None
+        # Handle section transition (timestamps and history)
+        handle_section_transition(found_task, source_section, target_section)
 
     save_tasks(sections)
     clear_undo()
@@ -765,6 +1041,31 @@ def set_project_color(task_id):
             if task["id"] == task_id:
                 task["color_index"] = color_index
                 task["updated"] = now_iso()  # Set updated timestamp
+                save_tasks(sections)
+                clear_undo()
+                return jsonify(task)
+
+    return jsonify({"error": "Project not found"}), 404
+
+
+@app.route("/api/tasks/<task_id>/priority", methods=["POST"])
+def set_project_priority(task_id):
+    """Set a project's priority bucket."""
+    data = request.json
+    priority = data.get("priority")
+
+    valid_priorities = ("high", "medium", "paused")
+    if priority not in valid_priorities:
+        return jsonify({"error": f"priority must be one of: {', '.join(valid_priorities)}"}), 400
+
+    sections = parse_tasks()
+
+    # Find the project in PROJECT_SECTIONS
+    for section_name in PROJECT_SECTIONS:
+        for task in sections.get(section_name, []):
+            if task["id"] == task_id:
+                task["priority"] = priority
+                task["updated"] = now_iso()
                 save_tasks(sections)
                 clear_undo()
                 return jsonify(task)
@@ -934,8 +1235,8 @@ def reorder_project_tasks(project_id):
 def new_week():
     """Advance to a new week: move done items to history, shift weekly columns."""
     # Save current state for undo
-    current_content = TASKS_FILE.read_text()
-    UNDO_FILE.write_text(current_content)
+    current_content = _tasks_file().read_text()
+    _undo_file().write_text(current_content)
 
     sections = parse_tasks()
 
@@ -964,15 +1265,15 @@ def new_week():
 @app.route("/api/undo-new-week", methods=["POST"])
 def undo_new_week():
     """Undo the last new week operation."""
-    if not UNDO_FILE.exists():
+    if not _undo_file().exists():
         return jsonify({"error": "No undo data available"}), 400
 
     # Restore from undo file
-    undo_content = UNDO_FILE.read_text()
-    TASKS_FILE.write_text(undo_content)
+    undo_content = _undo_file().read_text()
+    _tasks_file().write_text(undo_content)
 
     # Remove undo file
-    UNDO_FILE.unlink()
+    _undo_file().unlink()
 
     return jsonify({"success": True})
 
@@ -980,7 +1281,7 @@ def undo_new_week():
 @app.route("/api/can-undo")
 def can_undo():
     """Check if undo is available."""
-    return jsonify({"canUndo": UNDO_FILE.exists()})
+    return jsonify({"canUndo": _undo_file().exists()})
 
 
 @app.route("/api/settings", methods=["GET"])
@@ -1023,8 +1324,9 @@ def update_settings():
 @app.route("/api/notes", methods=["GET"])
 def get_notes():
     """Get the notes content."""
-    if NOTES_FILE.exists():
-        return jsonify({"notes": NOTES_FILE.read_text()})
+    nf = _notes_file()
+    if nf.exists():
+        return jsonify({"notes": nf.read_text()})
     return jsonify({"notes": ""})
 
 
@@ -1033,8 +1335,8 @@ def save_notes():
     """Save the notes content."""
     data = request.json
     notes = data.get("notes", "")
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    NOTES_FILE.write_text(notes)
+    _get_data_dir().mkdir(parents=True, exist_ok=True)
+    _notes_file().write_text(notes)
     return jsonify({"success": True})
 
 
@@ -1072,7 +1374,9 @@ def generate_confluence_content(sections):
     # Define the order for Confluence export
     # Use None as a marker for horizontal rules
     section_order = [
-        ("PROJECTS", "PROJECTS"),
+        ("PROJECTS:high", "Projects - High Priority"),
+        ("PROJECTS:medium", "Projects - Medium Priority"),
+        ("PROJECTS:paused", "Projects - Paused"),
         None,  # HR below projects
         ("DONE THIS WEEK", "DONE THIS WEEK"),
         ("FOLLOW UPS", "FOLLOW UPS"),
@@ -1106,12 +1410,20 @@ def generate_confluence_content(sections):
             continue
 
         section_key, section_title = item
-        tasks = sections.get(section_key, [])
+
+        # Handle priority-filtered project sections (e.g., "PROJECTS:high")
+        if ":" in section_key:
+            base_section, priority_filter = section_key.split(":", 1)
+            section_tasks = [t for t in sections.get(base_section, [])
+                             if t.get("priority") == priority_filter]
+        else:
+            section_tasks = sections.get(section_key, [])
+
         html_parts.append(f'<h2>{section_title}</h2>')
 
-        if tasks:
+        if section_tasks:
             html_parts.append('<ul>')
-            for task in tasks:
+            for task in section_tasks:
                 text = task['text']
                 # Convert URLs to links
                 text = re.sub(
@@ -1127,8 +1439,8 @@ def generate_confluence_content(sections):
     # Add notes section at the end
     html_parts.append('<hr/>')
     notes = ""
-    if NOTES_FILE.exists():
-        notes = NOTES_FILE.read_text().strip()
+    if _notes_file().exists():
+        notes = _notes_file().read_text().strip()
     html_parts.append('<h2>NOTES</h2>')
     if notes:
         # Convert newlines to <br/> and URLs to links
@@ -1473,6 +1785,408 @@ def calendar_disconnect():
     settings.pop('google_oauth_state', None)
     save_settings(settings)
     return jsonify({"success": True})
+
+
+def get_timeline_week_boundaries(week_offset=0):
+    """Compute Sunday-Saturday week boundaries for the given offset.
+
+    Unlike get_week_dates() which uses Monday-Friday, the timeline uses
+    Sunday-Saturday to show full weeks including weekends.
+
+    Args:
+        week_offset: 0 = current week, -1 = last week, 1 = next week
+
+    Returns:
+        tuple: (week_start: date, week_end: date, today: date)
+    """
+    today = datetime.now().date()
+    # Sunday is weekday 6 in Python (Monday=0, Sunday=6)
+    # Calculate days since last Sunday
+    days_since_sunday = (today.weekday() + 1) % 7
+    this_sunday = today - timedelta(days=days_since_sunday)
+    # Apply offset
+    week_start = this_sunday + timedelta(weeks=week_offset)
+    week_end = week_start + timedelta(days=6)  # Saturday
+    return week_start, week_end, today
+
+
+def compute_spans_from_history(history_str, task, today, week_start, week_end,
+                               section_name=None):
+    """Compute timeline spans from a task's history string.
+
+    Parses the pipe-delimited history entries and creates spans between
+    consecutive entries. Each span has a start date, end date, and status.
+
+    The last entry's span extends to:
+    - completed_at if the task is completed
+    - blocked_at if the task is currently blocked
+    - today if the task is in progress
+
+    The last (current) span's status is overridden by the task's actual
+    section when provided, since the section is the source of truth.
+
+    op@ (opened/backlog) entries end the previous span without starting
+    a visible new span -- the task was deactivated.
+
+    Args:
+        history_str: Pipe-delimited history like "ip@2026-02-10T09:00:00|bl@2026-02-12T14:00:00"
+        task: Full task dict (for completed_at, blocked_at, in_progress fallback)
+        today: Today's date (date object)
+        week_start: Start of displayed week (date, Sunday)
+        week_end: End of displayed week (date, Saturday)
+        section_name: Current section (source of truth for current status)
+
+    Returns:
+        list: Spans within the week, each as {start: str, end: str, status: str}
+              Dates are ISO format (YYYY-MM-DD). Spans outside the week are excluded.
+    """
+    # Active states create visible spans; terminal events just end the previous span
+    ACTIVE_STATUSES = {
+        "ip": "in_progress",
+        "bl": "blocked",
+    }
+    # co@ and op@ are terminal -- they mark where the previous span ends
+    # co@ = completed, op@ = moved back to todo/backlog
+
+    entries = history_str.split("|")
+    parsed = []
+    for entry in entries:
+        if "@" not in entry:
+            continue
+        prefix, timestamp_str = entry.split("@", 1)
+        try:
+            entry_date = datetime.fromisoformat(timestamp_str).date()
+        except (ValueError, TypeError):
+            continue
+        parsed.append((prefix, entry_date))
+
+    if not parsed:
+        return []
+
+    raw_spans = []
+    for i in range(len(parsed)):
+        prefix, start_date = parsed[i]
+        status = ACTIVE_STATUSES.get(prefix)
+
+        # co@ and op@ entries don't start visible spans -- they only end
+        # the previous span (which is handled by the next-entry lookup below)
+        if status is None:
+            continue
+
+        # Determine end date for this span
+        if i + 1 < len(parsed):
+            next_prefix, next_date = parsed[i + 1]
+            if next_date > start_date:
+                # End the day before the next entry so spans don't overlap
+                end_date = next_date - timedelta(days=1)
+            elif next_prefix in ACTIVE_STATUSES:
+                # Same-day transition to another active state (ip→bl or bl→ip):
+                # skip this span since the next state supersedes it on this day,
+                # avoiding duplicate bars in the same column.
+                continue
+            else:
+                # Same-day transition to a terminal event (ip→co, ip→op):
+                # keep this span on its start day (last active state for the day)
+                end_date = start_date
+        else:
+            # Last entry is an active state (ip@ or bl@) -- task is currently
+            # in this state, so the span extends to today
+            end_date = today
+
+        raw_spans.append({
+            "start": start_date,
+            "end": end_date,
+            "status": status,
+        })
+
+    # Clip spans to week boundaries and filter out those entirely outside
+    clipped = []
+    for span in raw_spans:
+        s = span["start"]
+        e = span["end"]
+
+        # Skip spans entirely outside the week
+        if e < week_start or s > week_end:
+            continue
+
+        # Clip to week boundaries
+        clipped_start = max(s, week_start)
+        clipped_end = min(e, week_end)
+
+        clipped.append({
+            "start": clipped_start.isoformat(),
+            "end": clipped_end.isoformat(),
+            "status": span["status"],
+        })
+
+    # Override the last span's status based on the task's current section,
+    # which is the source of truth for current status.
+    if clipped and section_name:
+        if section_name in IN_PROGRESS_SECTIONS:
+            clipped[-1]["status"] = "in_progress"
+        elif section_name in BLOCKED_SECTIONS:
+            clipped[-1]["status"] = "blocked"
+
+    return clipped
+
+
+def compute_simplified_span(task, today, week_start, week_end, section_name):
+    """Compute a single simplified span for pre-existing tasks without history.
+
+    For tasks that have timestamps (in_progress, completed_at, blocked_at) but
+    no history field, create a single span from in_progress to the appropriate
+    end date.
+
+    For tasks in done sections without completed_at, backfill completed_at
+    to the in_progress date (per user decision #2).
+
+    Args:
+        task: Task dict with timestamp fields
+        today: Today's date
+        week_start: Start of displayed week (Sunday)
+        week_end: End of displayed week (Saturday)
+        section_name: Section the task is in (for done-section backfill)
+
+    Returns:
+        list: Zero or one span dicts, empty if span is entirely outside week
+    """
+    ip_str = task.get("in_progress")
+    if not ip_str:
+        return []
+
+    try:
+        start_date = datetime.fromisoformat(ip_str).date()
+    except (ValueError, TypeError):
+        return []
+
+    # Determine end date
+    if task.get("completed_at"):
+        try:
+            end_date = datetime.fromisoformat(task["completed_at"]).date()
+        except (ValueError, TypeError):
+            end_date = today
+    elif task.get("blocked_at"):
+        try:
+            end_date = datetime.fromisoformat(task["blocked_at"]).date()
+        except (ValueError, TypeError):
+            end_date = today
+    elif is_done_section(section_name):
+        # Backfill: done-section task without completed_at uses in_progress date
+        end_date = start_date
+    else:
+        end_date = today
+
+    # Check if entirely outside week
+    if end_date < week_start or start_date > week_end:
+        return []
+
+    # Clip to week boundaries
+    clipped_start = max(start_date, week_start)
+    clipped_end = min(end_date, week_end)
+
+    return [{
+        "start": clipped_start.isoformat(),
+        "end": clipped_end.isoformat(),
+        "status": "in_progress",
+    }]
+
+
+def _spans_from_terminal_history(task, today, week_start, week_end, section_name):
+    """Create spans for tasks with history containing only terminal events.
+
+    When a task has history like "co@2026-02-17T10:00:00" (completed via
+    checkbox without ever being moved to IP), create a single-day bar on
+    the event date. For co@, use the completion date. For bl@, create a
+    blocked span from that date to today.
+    """
+    history_str = task.get("history", "")
+    entries = history_str.split("|")
+
+    for entry in reversed(entries):
+        if "@" not in entry:
+            continue
+        prefix, timestamp_str = entry.split("@", 1)
+        try:
+            entry_date = datetime.fromisoformat(timestamp_str).date()
+        except (ValueError, TypeError):
+            continue
+
+        if prefix == "co":
+            if entry_date < week_start or entry_date > week_end:
+                return []
+            return [{
+                "start": entry_date.isoformat(),
+                "end": entry_date.isoformat(),
+                "status": "in_progress",
+            }]
+        elif prefix == "bl":
+            end_date = today
+            if end_date < week_start or entry_date > week_end:
+                return []
+            clipped_start = max(entry_date, week_start)
+            clipped_end = min(end_date, week_end)
+            return [{
+                "start": clipped_start.isoformat(),
+                "end": clipped_end.isoformat(),
+                "status": "blocked",
+            }]
+
+    return []
+
+
+def _spans_from_timestamp_only(task, today, week_start, week_end, section_name):
+    """Create spans for tasks with only completed_at or blocked_at, no in_progress.
+
+    For completed_at-only tasks: single-day bar on completion date.
+    For blocked_at-only tasks: bar from blocked_at to today.
+    """
+    if task.get("completed_at"):
+        try:
+            comp_date = datetime.fromisoformat(task["completed_at"]).date()
+        except (ValueError, TypeError):
+            return []
+        if comp_date < week_start or comp_date > week_end:
+            return []
+        return [{
+            "start": comp_date.isoformat(),
+            "end": comp_date.isoformat(),
+            "status": "in_progress",
+        }]
+
+    if task.get("blocked_at"):
+        try:
+            bl_date = datetime.fromisoformat(task["blocked_at"]).date()
+        except (ValueError, TypeError):
+            return []
+        end_date = today
+        if end_date < week_start or bl_date > week_end:
+            return []
+        clipped_start = max(bl_date, week_start)
+        clipped_end = min(end_date, week_end)
+        return [{
+            "start": clipped_start.isoformat(),
+            "end": clipped_end.isoformat(),
+            "status": "blocked",
+        }]
+
+    return []
+
+
+@app.route("/api/timeline")
+def get_timeline():
+    """Get timeline data for a given week.
+
+    Query params:
+        week_offset: int (default 0). 0 = current week, -1 = last week, etc.
+
+    Returns JSON:
+        {
+            week_start: "YYYY-MM-DD" (Sunday),
+            week_end: "YYYY-MM-DD" (Saturday),
+            today: "YYYY-MM-DD",
+            tasks: [{
+                id, text, section,
+                spans: [{start, end, status}],
+                assigned_project, project_color
+            }]
+        }
+    """
+    week_offset = request.args.get("week_offset", 0, type=int)
+    week_start, week_end, today = get_timeline_week_boundaries(week_offset)
+
+    sections = parse_tasks()
+
+    # Build project color lookup: project_id -> color_index
+    project_colors = {}
+    for section_name in PROJECT_SECTIONS:
+        for task in sections.get(section_name, []):
+            if task.get("color_index"):
+                project_colors[task["id"]] = task.get("color_index")
+
+    # Collect qualifying tasks from all sections
+    timeline_tasks = []
+    for section_name, tasks in sections.items():
+        # Exclude research sections
+        if section_name in RESEARCH_SECTIONS:
+            continue
+
+        for task in tasks:
+            # A task qualifies for the timeline if it has ANY timestamp,
+            # history, or is currently in an active section (IP/BLOCKED).
+            has_in_progress = task.get("in_progress")
+            has_completed_at = task.get("completed_at")
+            has_blocked_at = task.get("blocked_at")
+            has_history = bool(task.get("history"))
+            is_in_active_section = (
+                section_name in IN_PROGRESS_SECTIONS
+                or section_name in BLOCKED_SECTIONS
+            )
+
+            if not any([has_in_progress, has_completed_at, has_blocked_at,
+                        has_history, is_in_active_section]):
+                continue
+
+            # Compute spans
+            if has_history:
+                spans = compute_spans_from_history(
+                    task["history"], task, today, week_start, week_end,
+                    section_name=section_name
+                )
+                # If history has only terminal events (co@/op@) with no
+                # preceding active span, create a single-day bar on the
+                # terminal event date
+                if not spans and not has_in_progress:
+                    spans = _spans_from_terminal_history(
+                        task, today, week_start, week_end, section_name
+                    )
+            elif has_in_progress:
+                spans = compute_simplified_span(
+                    task, today, week_start, week_end, section_name
+                )
+            elif has_completed_at or has_blocked_at:
+                # Task with only completed_at or blocked_at, no in_progress
+                spans = _spans_from_timestamp_only(
+                    task, today, week_start, week_end, section_name
+                )
+            elif is_in_active_section:
+                # Pre-existing task in active section with no timestamps —
+                # show as single-day bar on today
+                if week_start <= today <= week_end:
+                    status = ("blocked" if section_name in BLOCKED_SECTIONS
+                              else "in_progress")
+                    spans = [{
+                        "start": today.isoformat(),
+                        "end": today.isoformat(),
+                        "status": status,
+                    }]
+                else:
+                    spans = []
+            else:
+                spans = []
+
+            # Skip tasks with no spans in this week
+            if not spans:
+                continue
+
+            # Build response entry
+            assigned_project = task.get("assigned_project")
+            project_color = project_colors.get(assigned_project) if assigned_project else None
+
+            timeline_tasks.append({
+                "id": task["id"],
+                "text": task["text"],
+                "section": section_name,
+                "spans": spans,
+                "assigned_project": assigned_project,
+                "project_color": project_color,
+            })
+
+    return jsonify({
+        "week_start": week_start.isoformat(),
+        "week_end": week_end.isoformat(),
+        "today": today.isoformat(),
+        "tasks": timeline_tasks,
+    })
 
 
 @app.route("/api/theme", methods=["GET"])
