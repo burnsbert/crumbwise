@@ -352,19 +352,8 @@ function renderBoard() {
 
         followupsColumns.innerHTML = secondaryHtml;
 
-        // Initialize SortableJS on the notes compact list (isolated group)
-        const notesList = document.getElementById('notes-compact-list');
-        if (notesList) {
-            const notesSortable = new Sortable(notesList, {
-                group: 'notes-panel',
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                dragClass: 'sortable-drag',
-                onEnd: handleNotesCompactReorder
-            });
-            sortableInstances.push(notesSortable);
-        }
+        // Note: SortableJS is NOT initialized on notes-compact-list because
+        // manual sort was removed and it conflicts with native drag-to-assign (AC9/AC10)
     } else {
         followupsArea.classList.add('hidden');
         followupsColumns.innerHTML = '';
@@ -938,13 +927,7 @@ function getSortedNotes(notes, sortMode) {
     } else if (sortMode === 'oldest') {
         copy.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
     }
-    // 'manual' keeps order_index ordering (already sorted by API)
     return copy;
-}
-
-function buildNoteColorStripe(projectColor) {
-    if (!projectColor) return '';
-    return `<div class="note-color-stripe" data-color="${projectColor}"></div>`;
 }
 
 // ── Compact notes panel (Current tab) ────────────────────────────────────────
@@ -1010,6 +993,8 @@ function setCompactNotesFilter(value) {
             input.focus();
             input.setSelectionRange(value.length, value.length);
         }
+        // Re-bind tooltip listeners on newly created .card-info elements
+        setupCardInfoTooltips();
     }
 }
 
@@ -1025,6 +1010,7 @@ function renderCompactNoteCard(note) {
              ondragstart="event.stopPropagation(); currentDraggedNoteId = '${note.id}'; event.dataTransfer.effectAllowed = 'link';"
              ondragend="currentDraggedNoteId = null;"
              ondragover="handleNoteDragOver(event)"
+             ondragleave="this.classList.remove('drop-target')"
              ondrop="handleNoteDrop(event, '${note.id}')">
             ${stripe}
             <div class="card-actions">
@@ -1041,22 +1027,6 @@ function setCompactNotesSort(value) {
     compactNotesSort = value;
     localStorage.setItem('crumbwise_compact_notes_sort', value);
     renderBoard();
-}
-
-async function handleNotesCompactReorder(evt) {
-    const list = document.getElementById('notes-compact-list');
-    if (!list) return;
-    const order = Array.from(list.querySelectorAll('.note-card-compact')).map(el => el.dataset.noteId);
-    try {
-        await fetch('/api/notes/reorder', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order })
-        });
-        await loadTasks();
-    } catch (error) {
-        console.error('Failed to reorder notes:', error);
-    }
 }
 
 // ── Note card CRUD ────────────────────────────────────────────────────────────
