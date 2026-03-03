@@ -86,6 +86,9 @@ def _settings_file():
 def _notes_file():
     return _get_data_dir() / "notes.txt"
 
+def _notes_json_file():
+    return _get_data_dir() / "notes.json"
+
 def _backups_dir():
     return _get_data_dir() / ".backups"
 
@@ -117,7 +120,7 @@ def daily_backup():
     backup_dir = backups / today.isoformat()
     backup_dir.mkdir(parents=True, exist_ok=True)
 
-    for src in [_tasks_file(), _notes_file(), _settings_file()]:
+    for src in [_tasks_file(), _notes_file(), _notes_json_file(), _settings_file()]:
         if src.exists():
             shutil.copy2(src, backup_dir / src.name)
 
@@ -142,6 +145,46 @@ def load_settings():
 def save_settings(settings):
     """Save settings to JSON file."""
     _settings_file().write_text(json.dumps(settings, indent=2))
+
+
+def load_notes():
+    """Load notes from JSON file, migrating from notes.txt if needed."""
+    nf = _notes_json_file()
+    if not nf.exists():
+        # Migrate from notes.txt if it exists and is non-empty
+        old = _notes_file()
+        if old.exists() and old.read_text().strip():
+            note = {
+                "id": str(uuid.uuid4()),
+                "title": "Old Notes",
+                "content": old.read_text(),
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+                "assigned_project": None,
+                "order_index": 0,
+            }
+            _get_data_dir().mkdir(parents=True, exist_ok=True)
+            nf.write_text(json.dumps([note], indent=2))
+            return [note]
+        return []
+    return json.loads(nf.read_text())
+
+
+def save_notes_data(notes_list):
+    """Save notes list to JSON file."""
+    _get_data_dir().mkdir(parents=True, exist_ok=True)
+    _notes_json_file().write_text(json.dumps(notes_list, indent=2))
+
+
+def get_project_colors():
+    """Return dict of project_id -> color_index for all PROJECTS."""
+    sections = parse_tasks()
+    colors = {}
+    for sn in PROJECT_SECTIONS:
+        for t in sections.get(sn, []):
+            if t.get("color_index"):
+                colors[t["id"]] = t["color_index"]
+    return colors
 
 
 def clear_undo():
@@ -1323,20 +1366,73 @@ def update_settings():
 
 @app.route("/api/notes", methods=["GET"])
 def get_notes():
-    """Get the notes content."""
-    nf = _notes_file()
-    if nf.exists():
-        return jsonify({"notes": nf.read_text()})
-    return jsonify({"notes": ""})
+    """Get all notes as JSON array, sorted by order_index."""
+    notes = load_notes()
+    colors = get_project_colors()
+    for n in notes:
+        n["project_color"] = colors.get(n.get("assigned_project")) if n.get("assigned_project") else None
+    return jsonify(sorted(notes, key=lambda n: n.get("order_index", 0)))
 
 
 @app.route("/api/notes", methods=["POST"])
-def save_notes():
-    """Save the notes content."""
+def create_note():
+    """Create a new note."""
     data = request.json
-    notes = data.get("notes", "")
-    _get_data_dir().mkdir(parents=True, exist_ok=True)
-    _notes_file().write_text(notes)
+    notes = load_notes()
+    max_order = max((n.get("order_index", 0) for n in notes), default=-1)
+    note = {
+        "id": str(uuid.uuid4()),
+        "title": data.get("title", ""),
+        "content": data.get("content", ""),
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+        "assigned_project": data.get("assigned_project") or None,
+        "order_index": max_order + 1,
+    }
+    notes.append(note)
+    save_notes_data(notes)
+    return jsonify(note), 201
+
+
+@app.route("/api/notes/reorder", methods=["POST"])
+def reorder_notes():
+    """Update order_index for all notes based on supplied ID order."""
+    data = request.json
+    order = data.get("order", [])
+    notes = load_notes()
+    id_to_note = {n["id"]: n for n in notes}
+    for i, note_id in enumerate(order):
+        if note_id in id_to_note:
+            id_to_note[note_id]["order_index"] = i
+    save_notes_data(list(id_to_note.values()))
+    return jsonify({"success": True})
+
+
+@app.route("/api/notes/<note_id>", methods=["PUT"])
+def update_note(note_id):
+    """Update title, content, and/or assigned_project; bumps updated_at."""
+    data = request.json
+    notes = load_notes()
+    for note in notes:
+        if note["id"] == note_id:
+            if "title" in data:
+                note["title"] = data["title"]
+            if "content" in data:
+                note["content"] = data["content"]
+            if "assigned_project" in data:
+                note["assigned_project"] = data.get("assigned_project") or None
+            note["updated_at"] = datetime.now().isoformat()
+            save_notes_data(notes)
+            return jsonify(note)
+    return jsonify({"error": "Note not found"}), 404
+
+
+@app.route("/api/notes/<note_id>", methods=["DELETE"])
+def delete_note(note_id):
+    """Delete a note."""
+    notes = load_notes()
+    notes = [n for n in notes if n["id"] != note_id]
+    save_notes_data(notes)
     return jsonify({"success": True})
 
 
@@ -1438,21 +1534,18 @@ def generate_confluence_content(sections):
 
     # Add notes section at the end
     html_parts.append('<hr/>')
-    notes = ""
-    if _notes_file().exists():
-        notes = _notes_file().read_text().strip()
     html_parts.append('<h2>NOTES</h2>')
-    if notes:
-        # Convert newlines to <br/> and URLs to links
-        notes_html = re.sub(
-            r'(https?://[^\s]+)',
-            r'<a href="\1">\1</a>',
-            notes
-        )
-        notes_html = notes_html.replace('\n', '<br/>')
-        html_parts.append(f'<p>{notes_html}</p>')
+    note_cards = load_notes()
+    if note_cards:
+        for note in sorted(note_cards, key=lambda n: n.get("order_index", 0)):
+            title_html = re.sub(r'(https?://[^\s]+)', r'<a href="\1">\1</a>', note["title"])
+            html_parts.append(f'<h3>{title_html}</h3>')
+            if note.get("content"):
+                content_html = re.sub(r'(https?://[^\s]+)', r'<a href="\1">\1</a>', note["content"])
+                content_html = content_html.replace('\n', '<br/>')
+                html_parts.append(f'<p>{content_html}</p>')
     else:
-        html_parts.append('<p><em>(empty)</em></p>')
+        html_parts.append('<p><em>(no notes)</em></p>')
 
     return '\n'.join(html_parts)
 
