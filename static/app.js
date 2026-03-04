@@ -50,6 +50,12 @@ let calendarEvents = [];
 let calendarConnected = false;
 let calendarDateOffset = 0; // 0 = today, -1 = yesterday, 1 = tomorrow, etc.
 let calendarVisible = true;
+let calendarLastRefreshDate = null; // 'YYYY-MM-DD' string, set on each fetch
+
+function getDateString(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
 let timelineWeekOffset = 0; // 0 = this week, -1 = last week, 1 = next week
 let currentTheme = 1;
 let currentDraggedTaskId = null;
@@ -123,6 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(() => {
         renderCalendarSidebar();
     }, 60000);
+
+    // Re-fetch calendar data every 15 minutes
+    setInterval(refreshCalendar, 15 * 60 * 1000);
 });
 
 // Theme functions
@@ -2681,6 +2690,7 @@ async function loadCalendarEvents() {
 
         calendarConnected = data.connected;
         calendarEvents = data.events || [];
+        calendarLastRefreshDate = getDateString();
 
         updateCalendarToggleButton();
         renderCalendarSidebar();
@@ -2691,6 +2701,21 @@ async function loadCalendarEvents() {
         updateCalendarToggleButton();
         renderCalendarSidebar();
     }
+}
+
+async function refreshCalendar() {
+    const todayStr = getDateString();
+
+    // Day-advance: if last refresh was yesterday and user is still viewing that day, advance to today
+    if (calendarLastRefreshDate !== null && calendarLastRefreshDate !== todayStr) {
+        const displayedDate = new Date();
+        displayedDate.setDate(displayedDate.getDate() + calendarDateOffset);
+        if (getDateString(displayedDate) === calendarLastRefreshDate) {
+            calendarDateOffset = 0;
+        }
+    }
+
+    await loadCalendarEvents();
 }
 
 function changeCalendarDay(delta) {
