@@ -1069,11 +1069,11 @@ function showNoteModal(noteId) {
                         ${projectOptions}
                     </select>
                 </div>
+                ${createdLine || updatedLine ? `<div class="note-modal-footer">${createdLine}${updatedLine}</div>` : ''}
                 <div class="note-modal-actions">
                     <button class="action-btn cancel" onclick="closeNoteModal()">Cancel</button>
                     <button class="action-btn confirm" onclick="saveNoteFromModal('${noteId || ''}')">Save</button>
                 </div>
-                ${createdLine || updatedLine ? `<div class="note-modal-footer">${createdLine}${updatedLine}</div>` : ''}
             </div>
         </div>
     `;
@@ -1302,7 +1302,7 @@ function renderColumn(section, isSecondary = false) {
         .join('');
 
     const columnClass = isSecondary ? 'column secondary' : 'column';
-    const sectionClass = (isSecondary && !PROJECT_SECTIONS.includes(section)) || section === 'DONE THIS WEEK' || section === 'RESEARCH DONE' || section === currentQuarter || section === 'COMPLETED PROJECTS' ? 'blocked-section' :
+    const sectionClass = (isSecondary && !PROJECT_SECTIONS.includes(section) && section !== 'TODO FOLLOWING WEEK') || section === 'DONE THIS WEEK' || section === 'RESEARCH DONE' || section === currentQuarter || section === 'COMPLETED PROJECTS' ? 'blocked-section' :
                          section === 'IN PROGRESS TODAY' || section === 'RESEARCH IN PROGRESS' || section === 'PROJECTS' ? 'current-period' :
                          (section.startsWith('DONE Q') || section.startsWith('DONE 20')) && section !== currentQuarter && section !== 'DONE THIS WEEK' ? 'past-period' : '';
 

@@ -1715,6 +1715,7 @@ main {
 .notes-area {
     background: var(--surface-color);
     border-radius: var(--border-radius);
+    border: 2px solid var(--blocked-section-color);
     width: var(--column-width);
     min-width: var(--column-width);
     flex-shrink: 0;
@@ -1729,7 +1730,8 @@ main {
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--text-muted);
+    color: white;
+    background: var(--blocked-section-color);
     border-bottom: 1px solid var(--column-border);
 }
 
@@ -1969,9 +1971,9 @@ main {
 
 /* ── Note edit/add modal ────────────────────────────────────────────────────── */
 
-.note-modal-content {
-    max-width: 720px;
-    width: min(720px, 92vw);
+.modal-content.note-modal-content {
+    max-width: 1260px;
+    width: min(1260px, 95vw);
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -2009,6 +2011,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex: 1;
     margin-bottom: 16px;
 }
 
@@ -2030,7 +2033,8 @@ main {
     border: 1px solid var(--column-border);
     border-radius: var(--border-radius);
     color: var(--text-color);
-    font-size: 0.9rem;
+    font-size: 1.05rem;
+    line-height: 1.5;
     font-family: inherit;
     box-sizing: border-box;
 }
@@ -2048,7 +2052,8 @@ main {
     border: 1px solid var(--column-border);
     border-radius: var(--border-radius);
     color: var(--text-color);
-    font-size: 0.9rem;
+    font-size: 1.05rem;
+    line-height: 1.6;
     font-family: inherit;
     resize: vertical;
     box-sizing: border-box;
@@ -2070,18 +2075,21 @@ main {
     display: flex;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 0;
+    margin-top: 12px;
 }
 
 .note-modal-footer {
     border-top: 1px solid var(--column-border);
     padding-top: 10px;
     margin-top: 12px;
+    display: flex;
+    gap: 16px;
 }
 
 .note-modal-timestamp {
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
+    font-family: inherit;
 }
 
 /* ── Notes tab ─────────────────────────────────────────────────────────────── */
