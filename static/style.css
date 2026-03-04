@@ -1715,6 +1715,7 @@ main {
 .notes-area {
     background: var(--surface-color);
     border-radius: var(--border-radius);
+    border: 2px solid var(--blocked-section-color);
     width: var(--column-width);
     min-width: var(--column-width);
     flex-shrink: 0;
@@ -1729,7 +1730,8 @@ main {
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--text-muted);
+    color: white;
+    background: var(--blocked-section-color);
     border-bottom: 1px solid var(--column-border);
 }
 
@@ -1827,6 +1829,35 @@ main {
     font-size: 0.75rem;
 }
 
+.notes-compact-filter-bar {
+    padding: 4px 8px 2px;
+}
+
+.notes-compact-filter-input {
+    width: 100%;
+    padding: 4px 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--column-border);
+    border-radius: var(--border-radius);
+    color: var(--text-color);
+    font-size: 0.8rem;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.notes-compact-filter-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.notes-compact-add {
+    padding: 6px 8px 8px;
+}
+
+.notes-compact-add .add-task-btn {
+    width: 100%;
+}
+
 .notes-sort-select {
     background: var(--btn-bg);
     border: 1px solid var(--btn-border);
@@ -1862,20 +1893,23 @@ main {
 
 .note-card-compact {
     position: relative;
-    display: flex;
-    align-items: center;
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    padding: 7px 8px 7px 12px;
+    padding: 8px 12px 18px 24px;
     cursor: pointer;
     overflow: hidden;
     border: 1px solid var(--column-border);
     transition: border-color 0.15s;
-    gap: 6px;
+    margin-bottom: 4px;
 }
 
 .note-card-compact:hover {
-    border-color: var(--accent-color);
+    border-color: var(--card-hover-border);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.note-card-compact:hover .card-actions {
+    display: flex;
 }
 
 .note-color-stripe {
@@ -1937,9 +1971,9 @@ main {
 
 /* ── Note edit/add modal ────────────────────────────────────────────────────── */
 
-.note-modal-content {
-    max-width: 520px;
-    width: 90%;
+.modal-content.note-modal-content {
+    max-width: 1260px;
+    width: min(1260px, 95vw);
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -1977,6 +2011,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex: 1;
     margin-bottom: 16px;
 }
 
@@ -1998,7 +2033,8 @@ main {
     border: 1px solid var(--column-border);
     border-radius: var(--border-radius);
     color: var(--text-color);
-    font-size: 0.9rem;
+    font-size: 1.05rem;
+    line-height: 1.5;
     font-family: inherit;
     box-sizing: border-box;
 }
@@ -2016,11 +2052,12 @@ main {
     border: 1px solid var(--column-border);
     border-radius: var(--border-radius);
     color: var(--text-color);
-    font-size: 0.9rem;
+    font-size: 1.05rem;
+    line-height: 1.6;
     font-family: inherit;
     resize: vertical;
     box-sizing: border-box;
-    min-height: 140px;
+    min-height: 260px;
 }
 
 .note-modal-textarea:focus {
@@ -2038,18 +2075,21 @@ main {
     display: flex;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 0;
+    margin-top: 12px;
 }
 
 .note-modal-footer {
     border-top: 1px solid var(--column-border);
     padding-top: 10px;
     margin-top: 12px;
+    display: flex;
+    gap: 16px;
 }
 
 .note-modal-timestamp {
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
+    font-family: inherit;
 }
 
 /* ── Notes tab ─────────────────────────────────────────────────────────────── */
@@ -2137,7 +2177,7 @@ main {
     background: var(--card-bg);
     border-radius: var(--border-radius);
     border: 1px solid var(--column-border);
-    padding: 12px 12px 12px 16px;
+    padding: 12px 12px 20px 24px;
     cursor: pointer;
     margin-bottom: 16px;
     transition: border-color 0.15s;
@@ -2145,7 +2185,12 @@ main {
 }
 
 .notes-tab-card:hover {
-    border-color: var(--accent-color);
+    border-color: var(--card-hover-border);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.notes-tab-card:hover .card-actions {
+    display: flex;
 }
 
 .note-tab-card-delete {
