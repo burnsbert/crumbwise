@@ -24,7 +24,7 @@ This is an example task file. Copy this to `tasks.md` to get started.
 - [ ] Waiting on response from someone
 - [ ] Check back on Friday
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 - [ ] Task blocked by external dependency
 

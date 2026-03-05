@@ -52,8 +52,8 @@ class TestSectionConstants:
         assert isinstance(crumbwise.BLOCKED_SECTIONS, list)
 
     def test_blocked_sections_contains_blocked(self):
-        """BLOCKED_SECTIONS should contain "BLOCKED"."""
-        assert "BLOCKED" in crumbwise.BLOCKED_SECTIONS
+        """BLOCKED_SECTIONS should contain "BLOCKED OR WAITING"."""
+        assert "BLOCKED OR WAITING" in crumbwise.BLOCKED_SECTIONS
 
     def test_done_sections_exists(self):
         """DONE_SECTIONS constant should be defined."""
@@ -86,7 +86,7 @@ class TestMetadataParsing:
 
 - [ ] Task with blocked_at <!-- id:task1 blocked_at:2026-02-14T10:00:00 -->
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 """)
 
@@ -116,7 +116,7 @@ class TestMetadataParsing:
     def test_parse_task_with_both_metadata(self, tmp_path):
         """Task can have both blocked_at and history."""
         tasks_file = tmp_path / "tasks.md"
-        write_tasks(tasks_file, """## BLOCKED
+        write_tasks(tasks_file, """## BLOCKED OR WAITING
 
 - [ ] Complex task <!-- id:task1 in_progress:2026-02-10T09:00:00 blocked_at:2026-02-12T14:00:00 history:ip@2026-02-10T09:00:00|bl@2026-02-12T14:00:00 -->
 
@@ -124,7 +124,7 @@ class TestMetadataParsing:
 
 
         sections = crumbwise.parse_tasks()
-        task = sections["BLOCKED"][0]
+        task = sections["BLOCKED OR WAITING"][0]
 
         assert task["in_progress"] == "2026-02-10T09:00:00"
         assert task["blocked_at"] == "2026-02-12T14:00:00"
@@ -172,7 +172,7 @@ class TestMetadataSerialization:
         # Create minimal sections to write
         sections = {
             "IN PROGRESS TODAY": [],
-            "BLOCKED": [
+            "BLOCKED OR WAITING": [
                 {
                     "id": "task1",
                     "text": "Blocked task",
@@ -221,7 +221,7 @@ class TestMetadataSerialization:
                     "history": "ip@2026-02-10T09:00:00|bl@2026-02-12T14:00:00|ip@2026-02-13T08:00:00",
                 }
             ],
-            "BLOCKED": [],
+            "BLOCKED OR WAITING": [],
             "DONE THIS WEEK": [],
         }
 
@@ -256,7 +256,7 @@ class TestMetadataSerialization:
 
         sections = {
             "IN PROGRESS TODAY": [],
-            "BLOCKED": [original_task.copy()],
+            "BLOCKED OR WAITING": [original_task.copy()],
             "DONE THIS WEEK": [],
         }
 
@@ -270,7 +270,7 @@ class TestMetadataSerialization:
 
         # Parse again
         parsed_sections = crumbwise.parse_tasks()
-        parsed_task = parsed_sections["BLOCKED"][0]
+        parsed_task = parsed_sections["BLOCKED OR WAITING"][0]
 
         # Verify all metadata is preserved
         assert parsed_task["blocked_at"] == "2026-02-12T14:00:00"
@@ -297,7 +297,7 @@ class TestMetadataSerialization:
                     "history": None,
                 }
             ],
-            "BLOCKED": [],
+            "BLOCKED OR WAITING": [],
             "DONE THIS WEEK": [],
         }
 
@@ -336,7 +336,7 @@ class TestMetadataSerialization:
                     "history": None,
                 }
             ],
-            "BLOCKED": [],
+            "BLOCKED OR WAITING": [],
             "DONE THIS WEEK": [],
         }
 
@@ -392,7 +392,7 @@ class TestIsDoneSection:
 
     def test_blocked_is_not_done_section(self):
         """'BLOCKED' should NOT be recognized as a done section."""
-        assert crumbwise.is_done_section("BLOCKED") is False
+        assert crumbwise.is_done_section("BLOCKED OR WAITING") is False
 
     def test_arbitrary_section_is_not_done_section(self):
         """Arbitrary section names should NOT be recognized as done sections."""
@@ -444,7 +444,7 @@ class TestHandleSectionTransition:
             "history": "ip@2026-02-10T09:00:00",
         }
 
-        crumbwise.handle_section_transition(task, "BLOCKED", "IN PROGRESS TODAY")
+        crumbwise.handle_section_transition(task, "BLOCKED OR WAITING", "IN PROGRESS TODAY")
 
         assert task["in_progress"] == original_timestamp
         assert task["blocked_at"] is None
@@ -462,7 +462,7 @@ class TestHandleSectionTransition:
             "history": "ip@2026-02-10T09:00:00",
         }
 
-        crumbwise.handle_section_transition(task, "IN PROGRESS TODAY", "BLOCKED")
+        crumbwise.handle_section_transition(task, "IN PROGRESS TODAY", "BLOCKED OR WAITING")
 
         assert task["blocked_at"] is not None
         assert task["in_progress"] is None
@@ -532,13 +532,13 @@ class TestHandleSectionTransition:
         }
 
         # Move to BLOCKED
-        crumbwise.handle_section_transition(task, "IN PROGRESS TODAY", "BLOCKED")
+        crumbwise.handle_section_transition(task, "IN PROGRESS TODAY", "BLOCKED OR WAITING")
         assert task["blocked_at"] is not None
         assert task["in_progress"] is None
         assert "|bl@" in task["history"]
 
         # Move back to IP
-        crumbwise.handle_section_transition(task, "BLOCKED", "IN PROGRESS TODAY")
+        crumbwise.handle_section_transition(task, "BLOCKED OR WAITING", "IN PROGRESS TODAY")
         assert task["in_progress"] is not None
         assert task["blocked_at"] is None
         assert task["history"].count("|ip@") == 1
@@ -573,7 +573,7 @@ class TestHandleSectionTransition:
         }
 
         # Move from research to blocked -- should NOT track
-        crumbwise.handle_section_transition(task, "RESEARCH IN PROGRESS", "BLOCKED")
+        crumbwise.handle_section_transition(task, "RESEARCH IN PROGRESS", "BLOCKED OR WAITING")
 
         assert task["blocked_at"] is None
         assert task["history"] is None
@@ -596,7 +596,7 @@ class TestHandleSectionTransition:
         assert "|" not in history_after_first  # First entry, no pipe yet
 
         # Second transition
-        crumbwise.handle_section_transition(task, "IN PROGRESS TODAY", "BLOCKED")
+        crumbwise.handle_section_transition(task, "IN PROGRESS TODAY", "BLOCKED OR WAITING")
         history_after_second = task["history"]
         assert "|bl@" in history_after_second
         assert history_after_second.startswith("ip@")
@@ -628,7 +628,7 @@ class TestHandleSectionTransition:
             "history": "ip@2026-02-10T09:00:00",
         }
 
-        crumbwise.handle_section_transition(task, "IN PROGRESS TODAY", "BLOCKED")
+        crumbwise.handle_section_transition(task, "IN PROGRESS TODAY", "BLOCKED OR WAITING")
 
         # Behavioral change: BLOCKED now clears in_progress
         assert task["in_progress"] is None
@@ -681,17 +681,17 @@ class TestUpdateTaskIntegration:
 
 - [ ] Test task <!-- id:task1 in_progress:2026-02-10T09:00:00 history:ip@2026-02-10T09:00:00 -->
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 """)
 
         # Move task to BLOCKED via PUT
-        response = client.put("/api/tasks/task1", json={"section": "BLOCKED"})
+        response = client.put("/api/tasks/task1", json={"section": "BLOCKED OR WAITING"})
         assert response.status_code == 200
 
         # Parse tasks and verify blocked_at is set
         sections = crumbwise.parse_tasks()
-        task = sections["BLOCKED"][0]
+        task = sections["BLOCKED OR WAITING"][0]
         assert task["blocked_at"] is not None
         assert task["in_progress"] is None  # Should be cleared
         assert "bl@" in task["history"]
@@ -729,7 +729,7 @@ class TestReorderTasksIntegration:
     def test_reorder_blocked_to_done_sets_completed_at(self, tmp_path, client):
         """Moving a task from BLOCKED to DONE THIS WEEK via reorder should set completed_at and clear blocked_at."""
         tasks_file = tmp_path / "tasks.md"
-        write_tasks(tasks_file, """## BLOCKED
+        write_tasks(tasks_file, """## BLOCKED OR WAITING
 
 - [ ] Test task <!-- id:task1 blocked_at:2026-02-12T14:00:00 history:ip@2026-02-10T09:00:00|bl@2026-02-12T14:00:00 -->
 

@@ -75,7 +75,7 @@ class TestTaskLifecycleIntegration:
 
 ## IN PROGRESS TODAY
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 ## DONE THIS WEEK
 
@@ -110,13 +110,13 @@ class TestTaskLifecycleIntegration:
 
             # (b) Move to BLOCKED
             resp = client.put(f"/api/tasks/{task_id}", json={
-                "section": "BLOCKED"
+                "section": "BLOCKED OR WAITING"
             })
             assert resp.status_code == 200
 
             # Verify: blocked_at is set, in_progress cleared, history has ip@|bl@
             sections = crumbwise.parse_tasks()
-            task = sections["BLOCKED"][0]
+            task = sections["BLOCKED OR WAITING"][0]
             assert task["in_progress"] is None  # Should be cleared
             assert task["blocked_at"] is not None
             assert task["completed_at"] is None
@@ -214,7 +214,7 @@ class TestTaskLifecycleIntegration:
 
 ## RESEARCH DONE
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 """)
 
@@ -243,13 +243,13 @@ class TestTaskLifecycleIntegration:
 
             # Move to BLOCKED (cross from research to non-research)
             resp = client.put(f"/api/tasks/{task_id}", json={
-                "section": "BLOCKED"
+                "section": "BLOCKED OR WAITING"
             })
             assert resp.status_code == 200
 
             # Verify: STILL no history or blocked_at because source was research section
             sections = crumbwise.parse_tasks()
-            task = sections["BLOCKED"][0]
+            task = sections["BLOCKED OR WAITING"][0]
             # Task moved FROM research section, so transition helper skips tracking
             assert task.get("history") is None or task["history"] == ""
             assert task.get("blocked_at") is None
@@ -283,7 +283,7 @@ class TestTaskLifecycleIntegration:
 
 ## IN PROGRESS TODAY
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 ## DONE THIS WEEK
 
@@ -307,7 +307,7 @@ class TestTaskLifecycleIntegration:
             task2_id = resp2.get_json()["id"]
 
             # Task 2: move to BLOCKED then back to IP
-            client.put(f"/api/tasks/{task2_id}", json={"section": "BLOCKED"})
+            client.put(f"/api/tasks/{task2_id}", json={"section": "BLOCKED OR WAITING"})
             client.put(f"/api/tasks/{task2_id}", json={"section": "IN PROGRESS TODAY"})
 
             # Create task 3: will be completed
@@ -412,7 +412,7 @@ class TestTaskLifecycleIntegration:
         """Tasks in BLOCKED with blocked_at but no in_progress should appear
         as a bar from blocked_at to today."""
         tasks_file = tmp_path / "tasks.md"
-        write_tasks(tasks_file, """## BLOCKED
+        write_tasks(tasks_file, """## BLOCKED OR WAITING
 
 - [ ] Blocked task <!-- id:task1 blocked_at:2026-02-16T09:00:00 history:bl@2026-02-16T09:00:00 -->
 """)
@@ -434,7 +434,7 @@ class TestTaskLifecycleIntegration:
         """Pre-existing tasks in BLOCKED with no timestamps should appear
         as a single-day bar on today."""
         tasks_file = tmp_path / "tasks.md"
-        write_tasks(tasks_file, """## BLOCKED
+        write_tasks(tasks_file, """## BLOCKED OR WAITING
 
 - [ ] Legacy blocked task
 """)

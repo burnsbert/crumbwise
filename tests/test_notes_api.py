@@ -272,7 +272,7 @@ def _empty_sections():
         "PROJECTS": [],
         "DONE THIS WEEK": [],
         "FOLLOW UPS": [],
-        "BLOCKED": [],
+        "BLOCKED OR WAITING": [],
         "IN PROGRESS TODAY": [],
         "TODO THIS WEEK": [],
         "TODO NEXT WEEK": [],

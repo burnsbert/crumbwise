@@ -55,7 +55,7 @@ class TestTimelineEndpointBasic:
 
 ## DONE THIS WEEK
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 """)
         with mock_today():
@@ -68,7 +68,7 @@ class TestTimelineEndpointBasic:
 
 ## DONE THIS WEEK
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 """)
         with mock_today():
@@ -124,7 +124,7 @@ class TestTimelineEndpointBasic:
 
 ## DONE THIS WEEK
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 """)
         with mock_today():
@@ -201,7 +201,7 @@ class TestTimelineTaskFiltering:
         """Blocked task with in_progress in its history should appear."""
         write_tasks(tmp_path / "tasks.md", """## IN PROGRESS TODAY
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 - [ ] Blocked task <!-- id:task1 blocked_at:2026-02-17T14:00:00 history:ip@2026-02-16T09:00:00|bl@2026-02-17T14:00:00 -->
 
@@ -318,7 +318,7 @@ class TestTimelineSpanComputation:
 
     def test_blocked_task_span_extends_to_today(self, tmp_path, client):
         """Currently blocked task => non-overlapping ip then blocked spans."""
-        write_tasks(tmp_path / "tasks.md", """## BLOCKED
+        write_tasks(tmp_path / "tasks.md", """## BLOCKED OR WAITING
 
 - [ ] Blocked task <!-- id:task1 blocked_at:2026-02-16T14:00:00 history:ip@2026-02-15T09:00:00|bl@2026-02-16T14:00:00 -->
 
@@ -490,7 +490,7 @@ class TestTimelinePreExistingTasks:
 
     def test_pre_existing_blocked_task_no_history(self, tmp_path, client):
         """Task with in_progress + blocked_at but no history => single span to blocked_at."""
-        write_tasks(tmp_path / "tasks.md", """## BLOCKED
+        write_tasks(tmp_path / "tasks.md", """## BLOCKED OR WAITING
 
 - [ ] Blocked old task <!-- id:task1 in_progress:2026-02-15T09:00:00 blocked_at:2026-02-17T14:00:00 -->
 

@@ -204,7 +204,7 @@ SECTIONS = {
     "DONE THIS WEEK": {"tab": "current", "order": 4},
     "PROJECTS": {"tab": "current", "order": 0, "area": "secondary", "locked": True},
     "FOLLOW UPS": {"tab": "current", "order": 1, "area": "secondary"},
-    "BLOCKED": {"tab": "current", "order": 2, "area": "secondary"},
+    "BLOCKED OR WAITING": {"tab": "current", "order": 2, "area": "secondary"},
     "PROBLEMS TO SOLVE": {"tab": "research", "order": 1},
     "THINGS TO RESEARCH": {"tab": "research", "order": 2},
     "RESEARCH IN PROGRESS": {"tab": "research", "order": 3},
@@ -231,7 +231,7 @@ CLEARS_IN_PROGRESS_SECTIONS = [
 ]
 
 # Sections for timeline blocked state tracking
-BLOCKED_SECTIONS = ["BLOCKED"]
+BLOCKED_SECTIONS = ["BLOCKED OR WAITING"]
 
 # Sections representing done/completed state
 # Note: dynamically includes current quarter (e.g., "DONE Q1 2026") and yearly sections (e.g., "DONE 2025")
@@ -1476,7 +1476,7 @@ def generate_confluence_content(sections):
         None,  # HR below projects
         ("DONE THIS WEEK", "DONE THIS WEEK"),
         ("FOLLOW UPS", "FOLLOW UPS"),
-        ("BLOCKED", "BLOCKED"),
+        ("BLOCKED OR WAITING", "BLOCKED OR WAITING"),
         ("IN PROGRESS TODAY", "IN PROGRESS TODAY"),
         ("TODO THIS WEEK", "TODO THIS WEEK"),
         ("TODO NEXT WEEK", "TODO NEXT WEEK"),

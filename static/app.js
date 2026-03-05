@@ -10,7 +10,7 @@ const SECTION_CONFIG = {
     current: {
         projectsSidebar: 'PROJECTS',
         columns: ['TODO NEXT WEEK', 'TODO THIS WEEK', 'IN PROGRESS TODAY', 'DONE THIS WEEK'],
-        secondary: ['TODO FOLLOWING WEEK', 'FOLLOW UPS', 'BLOCKED'],
+        secondary: ['TODO FOLLOWING WEEK', 'FOLLOW UPS', 'BLOCKED OR WAITING'],
         hasNotes: true
     },
     research: {

@@ -244,7 +244,7 @@ class TestConfluencePriorityGrouping:
             ],
             "DONE THIS WEEK": [],
             "FOLLOW UPS": [],
-            "BLOCKED": [],
+            "BLOCKED OR WAITING": [],
             "IN PROGRESS TODAY": [],
             "TODO THIS WEEK": [],
             "TODO NEXT WEEK": [],

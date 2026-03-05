@@ -177,7 +177,7 @@ class TestTimelineMultipleSpanTypes:
 
 - [ ] Blocked and resumed <!-- id:task1 in_progress:2026-02-18T09:00:00 history:ip@2026-02-16T09:00:00|bl@2026-02-17T14:00:00|ip@2026-02-18T09:00:00 -->
 
-## BLOCKED
+## BLOCKED OR WAITING
 
 ## DONE THIS WEEK
 
@@ -206,7 +206,7 @@ class TestTimelineMultipleSpanTypes:
 
     def test_blocked_task_currently_blocked_extends_to_today(self, tmp_path, client):
         """Blocked task (last history entry is bl@) should extend to today."""
-        write_tasks(tmp_path / "tasks.md", """## BLOCKED
+        write_tasks(tmp_path / "tasks.md", """## BLOCKED OR WAITING
 
 - [ ] Currently blocked <!-- id:task1 blocked_at:2026-02-17T10:00:00 history:ip@2026-02-16T09:00:00|bl@2026-02-17T10:00:00 -->
 
