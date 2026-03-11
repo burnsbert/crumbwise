@@ -1073,8 +1073,8 @@ def set_project_color(task_id):
     data = request.json
     color_index = data.get("color_index")
 
-    if not color_index or color_index < 1 or color_index > 16:
-        return jsonify({"error": "color_index must be 1-16"}), 400
+    if not color_index or color_index < 1 or color_index > 20:
+        return jsonify({"error": "color_index must be 1-20"}), 400
 
     sections = parse_tasks()
 
@@ -1124,7 +1124,7 @@ def reassign_project_colors():
     # Reassign active projects to colors 1-N
     active_projects = sections.get("PROJECTS", [])
     for i, project in enumerate(active_projects):
-        project["color_index"] = (i % 16) + 1
+        project["color_index"] = (i % 20) + 1
 
     save_tasks(sections)
     clear_undo()

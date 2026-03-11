@@ -45,13 +45,17 @@
     --project-color-8: #ec4899;  /* Pink */
     --project-color-9: #84cc16;  /* Lime */
     --project-color-10: #14b8a6; /* Teal */
-    /* Two-tone project colors (11-16) */
+    /* Two-tone project colors (11-20) */
     --project-color-11a: #ef4444; --project-color-11b: #3b82f6;  /* Red + Blue */
     --project-color-12a: #f59e0b; --project-color-12b: #0d9488;  /* Amber + Deep teal */
     --project-color-13a: #fbbf24; --project-color-13b: #7c3aed;  /* Gold + Purple */
     --project-color-14a: #ec4899; --project-color-14b: #16a34a;  /* Pink + Green */
     --project-color-15a: #a3e635; --project-color-15b: #f87171;  /* Lime + Coral */
     --project-color-16a: #22d3ee; --project-color-16b: #64748b;  /* Cyan + Slate */
+    --project-color-17a: #f97316; --project-color-17b: #4f46e5;  /* Orange + Indigo */
+    --project-color-18a: #8b5cf6; --project-color-18b: #fb7185;  /* Purple + Rose */
+    --project-color-19a: #10b981; --project-color-19b: #fb923c;  /* Emerald + Coral */
+    --project-color-20a: #6366f1; --project-color-20b: #e11d48;  /* Periwinkle + Crimson */
 }
 
 /* Theme 2: Minecraft (Dark - Creeper Green) */
@@ -625,8 +629,18 @@
 }
 
 [data-theme="14"] .card[data-project-color="13"],
-[data-theme="14"] .card[data-project-color="16"] {
+[data-theme="14"] .card[data-project-color="16"],
+[data-theme="14"] .card[data-project-color="19"] {
     background: #b0ffb0 !important;  /* Green card */
+}
+
+[data-theme="14"] .card[data-project-color="17"],
+[data-theme="14"] .card[data-project-color="20"] {
+    background: #b0e0ff !important;  /* Blue card */
+}
+
+[data-theme="14"] .card[data-project-color="18"] {
+    background: #ffb0d0 !important;  /* Pink card */
 }
 
 /* Theme 15: Blueprint (Dark) */
@@ -1939,6 +1953,10 @@ main {
 .note-color-stripe[data-color="14"] { background: linear-gradient(to right, var(--project-color-14a) 50%, var(--project-color-14b) 50%); }
 .note-color-stripe[data-color="15"] { background: linear-gradient(to right, var(--project-color-15a) 50%, var(--project-color-15b) 50%); }
 .note-color-stripe[data-color="16"] { background: linear-gradient(to right, var(--project-color-16a) 50%, var(--project-color-16b) 50%); }
+.note-color-stripe[data-color="17"] { background: linear-gradient(to right, var(--project-color-17a) 50%, var(--project-color-17b) 50%); }
+.note-color-stripe[data-color="18"] { background: linear-gradient(to right, var(--project-color-18a) 50%, var(--project-color-18b) 50%); }
+.note-color-stripe[data-color="19"] { background: linear-gradient(to right, var(--project-color-19a) 50%, var(--project-color-19b) 50%); }
+.note-color-stripe[data-color="20"] { background: linear-gradient(to right, var(--project-color-20a) 50%, var(--project-color-20b) 50%); }
 
 .note-card-title {
     flex: 1;
@@ -2510,6 +2528,10 @@ main {
 .project-stripe[data-color="14"] { background: linear-gradient(to right, var(--project-color-14a) 50%, var(--project-color-14b) 50%); }
 .project-stripe[data-color="15"] { background: linear-gradient(to right, var(--project-color-15a) 50%, var(--project-color-15b) 50%); }
 .project-stripe[data-color="16"] { background: linear-gradient(to right, var(--project-color-16a) 50%, var(--project-color-16b) 50%); }
+.project-stripe[data-color="17"] { background: linear-gradient(to right, var(--project-color-17a) 50%, var(--project-color-17b) 50%); }
+.project-stripe[data-color="18"] { background: linear-gradient(to right, var(--project-color-18a) 50%, var(--project-color-18b) 50%); }
+.project-stripe[data-color="19"] { background: linear-gradient(to right, var(--project-color-19a) 50%, var(--project-color-19b) 50%); }
+.project-stripe[data-color="20"] { background: linear-gradient(to right, var(--project-color-20a) 50%, var(--project-color-20b) 50%); }
 
 /* Match stripe border-radius to card shape for themes with custom shapes */
 [data-theme="2"] .project-stripe { border-radius: 0; }   /* Minecraft */
@@ -2595,7 +2617,7 @@ main {
 
 /* Assign color modal */
 .assign-color-modal-content {
-    max-width: 280px;
+    max-width: 320px;
 }
 
 .assign-color-modal-content h3 {
@@ -2604,8 +2626,8 @@ main {
 }
 
 .color-options {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(5, auto);
     gap: 8px;
     margin-bottom: 16px;
     justify-content: center;
@@ -2651,6 +2673,10 @@ main {
 .color-swatch[data-color="14"] { background: linear-gradient(to right, var(--project-color-14a) 50%, var(--project-color-14b) 50%); }
 .color-swatch[data-color="15"] { background: linear-gradient(to right, var(--project-color-15a) 50%, var(--project-color-15b) 50%); }
 .color-swatch[data-color="16"] { background: linear-gradient(to right, var(--project-color-16a) 50%, var(--project-color-16b) 50%); }
+.color-swatch[data-color="17"] { background: linear-gradient(to right, var(--project-color-17a) 50%, var(--project-color-17b) 50%); }
+.color-swatch[data-color="18"] { background: linear-gradient(to right, var(--project-color-18a) 50%, var(--project-color-18b) 50%); }
+.color-swatch[data-color="19"] { background: linear-gradient(to right, var(--project-color-19a) 50%, var(--project-color-19b) 50%); }
+.color-swatch[data-color="20"] { background: linear-gradient(to right, var(--project-color-20a) 50%, var(--project-color-20b) 50%); }
 
 /* Assign color button */
 .card-btn.assign-color {
