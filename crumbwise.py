@@ -1532,21 +1532,6 @@ def generate_confluence_content(sections):
         else:
             html_parts.append('<p><em>(empty)</em></p>')
 
-    # Add notes section at the end
-    html_parts.append('<hr/>')
-    html_parts.append('<h2>NOTES</h2>')
-    note_cards = load_notes()
-    if note_cards:
-        for note in sorted(note_cards, key=lambda n: n.get("order_index", 0)):
-            title_html = re.sub(r'(https?://[^\s]+)', r'<a href="\1">\1</a>', note["title"])
-            html_parts.append(f'<h3>{title_html}</h3>')
-            if note.get("content"):
-                content_html = re.sub(r'(https?://[^\s]+)', r'<a href="\1">\1</a>', note["content"])
-                content_html = content_html.replace('\n', '<br/>')
-                html_parts.append(f'<p>{content_html}</p>')
-    else:
-        html_parts.append('<p><em>(no notes)</em></p>')
-
     return '\n'.join(html_parts)
 
 
