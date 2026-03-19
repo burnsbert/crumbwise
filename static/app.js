@@ -1068,7 +1068,8 @@ function showNoteModal(noteId) {
                 </div>
                 <div class="note-modal-body">
                     <label class="note-modal-label">Title</label>
-                    <input id="note-modal-title" class="note-modal-input" type="text" value="${title}" placeholder="Note title…">
+                    <input id="note-modal-title" class="note-modal-input" type="text" value="${title}" placeholder="Note title…"
+                           oninput="if(this.value.trim()) document.getElementById('note-modal-title-error').classList.add('hidden')">
                     <div id="note-modal-title-error" class="note-modal-error hidden">Title is required.</div>
                     <label class="note-modal-label">Content</label>
                     <textarea id="note-modal-content" class="note-modal-textarea" rows="14" placeholder="Note content…">${content}</textarea>

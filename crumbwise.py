@@ -733,7 +733,12 @@ def _check_daily_backup():
 @app.route("/")
 def index():
     """Serve the main UI."""
-    return render_template("index.html")
+    static_dir = Path(__file__).parent / "static"
+    v = int(max(
+        (static_dir / "style.css").stat().st_mtime,
+        (static_dir / "app.js").stat().st_mtime,
+    ))
+    return render_template("index.html", v=v)
 
 
 @app.route("/api/profile")
