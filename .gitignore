@@ -5,6 +5,7 @@ data/notes.txt
 data/notes.json
 data/.backups/
 data/private/
+data/standup/
 
 # Python
 __pycache__/
