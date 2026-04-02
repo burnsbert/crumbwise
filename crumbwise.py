@@ -788,7 +788,7 @@ def add_task():
     """Add a new task to a section."""
     data = request.json
     section = data.get("section")
-    text = data.get("text", "").strip()
+    text = data.get("text", "").strip().replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
 
     dynamic_sections = get_dynamic_sections()
     if not section or (section not in dynamic_sections and not section.startswith("DONE Q")):
@@ -853,7 +853,7 @@ def update_task(task_id):
 
     # Update text if provided
     if new_text is not None:
-        found_task["text"] = new_text.strip()
+        found_task["text"] = new_text.strip().replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
 
     # Move to new section if provided
     if new_section and new_section != found_section:

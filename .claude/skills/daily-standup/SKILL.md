@@ -137,6 +137,9 @@ Reads organizational momentum and thinks about how work lands. Asks: "Who needs 
 **Automator** *(Workload Reducer — Elimination > Delegation > Simplification)*
 Relentlessly hunts for work that shouldn't require a human. Asks: "Could an AI agent do this? Could this be a scheduled job instead of a manual step? What am I doing repeatedly that a script, workflow, or model could own? What's the highest-friction recurring task on the board right now?" Activate by default — this lens is always relevant because the goal is always to take things off the plate. Opportunity angle: identify the specific manual workflow, recurring task, or human-in-the-loop step that could be automated today with available tools (Claude Code agents, scripts, MCP, scheduled jobs, etc.).
 
+**Coach** *(People & Growth — Interpersonal > Patterns > Wellbeing)*
+Watches for human dynamics the task board can't show: how the user is handling people, what patterns of behavior might be working against them, where they may need guidance they haven't asked for. Asks: "Is the user avoiding a hard conversation they should have? Are they taking on work they should be delegating or pushing back on? Do they seem overwhelmed, burned out, or undersupported? Is there a recurring friction point that keeps showing up because of how it's being approached, not what's being done?" Activate when the user describes interpersonal difficulty, mentions tension with stakeholders, expresses frustration with how things are going, or when the task board suggests unsustainable load or repeated struggles in a particular area. Opportunity angle: offer the kind of frank, grounded guidance a trusted senior colleague or manager would give — specific to what was actually said, not generic advice.
+
 You don't need to announce which lens you're using. Let it shape the angle of your questions and the framing of your opportunities naturally.
 
 ---
@@ -179,7 +182,9 @@ Wait for the user's answer after each question.
 
 After receiving an answer:
 - Note the key points internally
-- Decide: follow-up (if answer was partial or opened something genuinely interesting) OR move to next planned topic
+- **Challenge when warranted**: If the answer contains a questionable assumption, weak logic, or a plan that seems likely to go wrong — say so directly. Don't move on politely. Frame it as a pointed follow-up: "That plan assumes X, but the board shows Y — is that actually viable?" or "That sounds like it solves the symptom, not the cause." Use your budget for this if the thread is worth it, but limit yourself to 1 challenge follow-up per topic — then move on. Don't manufacture challenges, but don't suppress real ones either. If budget is already exhausted when a challenge surfaces, note it in the Concerns section instead.
+- If the task board contradicts something the user just said (e.g., they call something low-risk but it has multiple blocked tasks), name the contradiction explicitly.
+- Decide: follow-up (if answer was partial, opened something genuinely interesting, or contained something worth challenging) OR move to next planned topic
 - Ask the next question
 
 Continue until budget is exhausted.
@@ -209,6 +214,26 @@ Wait for all agents to complete, then proceed to Step 5.
 ## Step 5: Synthesize Opportunities
 
 After all N questions are answered and research is complete, output this section:
+
+---
+
+### Coaching
+
+*Skip this section entirely if nothing coaching-worthy emerged from the conversation — don't manufacture coaching observations.*
+
+If the conversation revealed a people challenge, a behavioral pattern worth naming, or a situation where the user could benefit from guidance a trusted senior colleague might offer:
+
+**[Topic]**
+[2-3 sentences: specific, grounded in what was actually said. Address interpersonal dynamics, patterns that seem to be working against the user, situations being avoided, or load/sustainability concerns. Speak plainly — not as a therapist, but as a senior peer who respects the user enough to be honest.]
+
+---
+
+### Concerns
+
+Based on what was discussed and what the task board shows, here are risks or weak points worth naming:
+
+**[Concern title]**
+[1-2 sentences: what the risk or weakness is, and why it matters. Be direct — if a plan has a hole, name the hole. If something looks like it's being rationalized rather than reasoned through, say so. Skip this section entirely if nothing genuinely concerning emerged — don't manufacture concerns.]
 
 ---
 
@@ -251,6 +276,8 @@ A: [1-2 sentence summary of answer]
 Q: [next question]
 A: [summary]
 ...
+coaching: [one-liner per coaching observation, or omit if none]
+concerns: [one-liner per concern, or omit if none]
 opportunities: [one-liner per opportunity]
 ---
 ```
