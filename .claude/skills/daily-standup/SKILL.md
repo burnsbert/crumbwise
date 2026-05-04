@@ -1,6 +1,6 @@
 ---
 name: daily-standup
-description: Daily standup that reviews Crumbwise status, asks N strategic questions about current work, and identifies opportunities. Usage: /daily-standup [N] (default N=5)
+description: Daily standup that reviews Crumbwise status, asks N strategic questions about current work, and identifies opportunities. Usage: /daily-standup [N] [written update] (default N=5)
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
 user-invocable: true
 ---
@@ -13,11 +13,19 @@ Interactive standup that reviews your task board, asks targeted questions, and s
 
 ## Parse Arguments
 
-Extract N from args. Default N=5 if no argument given.
-- `/daily-standup` → N=5
-- `/daily-standup 3` → N=3
+Parse args to extract an optional integer N and an optional written update string.
 
-If the argument is not a positive integer (e.g. `0`, `-1`, `abc`), default to N=5 and note the invalid input. Minimum valid value is 1.
+- If args starts with a positive integer (optionally followed by more text), that integer is N; everything after it is the written update.
+- If args contains no leading integer, N=5 and the entire args string is the written update.
+- If args is empty, N=5 and there is no written update.
+
+Examples:
+- `/daily-standup` → N=5, no update
+- `/daily-standup 3` → N=3, no update
+- `/daily-standup had a hard conversation with a stakeholder today` → N=5, update="had a hard conversation with a stakeholder today"
+- `/daily-standup 3 had a hard conversation with a stakeholder today` → N=3, update="had a hard conversation with a stakeholder today"
+
+If N parses to an invalid value (e.g. `0`, `-1`), default to N=5 and note the invalid input. Minimum valid value is 1.
 
 ## Step 0: Ensure Data Directory
 
@@ -96,7 +104,11 @@ Parse task text only for display. Use metadata only for filtering and grouping.
 
 Read `data/notes.txt` from the current working directory (read-only). If the file exists and has content, treat it as free-form context — it may contain team info, ongoing concerns, reminders, or anything the user has been tracking. Incorporate relevant details into your understanding of the current situation. Don't quote the notes back verbatim; just let them inform your questions and opportunity framing.
 
-### D. Load standup history
+### D. Written update (if provided)
+
+If a written update was passed as an argument, treat it as current-events context alongside the task board, notes, and history. Let it inform your question planning naturally — it's one more signal in the pile, not a script to follow. The questions needn't focus on it exclusively; surface it when it's the most interesting angle, and let the rest of the board drive questions otherwise.
+
+### F. Load standup history
 
 Read `data/standup/history.md`. If it doesn't exist, note "no prior history."
 
@@ -156,6 +168,7 @@ You have a budget of **N questions total** (including follow-ups). Every questio
    - Tasks approaching deadlines
    - Topics NOT in the `topics:` fields of recent history
    - Areas where you notice a pattern worth exploring (e.g., a project generating many tasks)
+   - Anything surfaced by the written update (if provided) — treat it as another signal in the pool, not a mandate to focus on it
 
 2. Allocate your budget across topics. With N≤3, you typically go 1 question per topic with little room for follow-ups. With N=5+, you have room to follow up on 1-2 answers. If N=1, skip the forward-looking reserve rule and ask the single highest-priority question from your candidate topics.
 
@@ -166,6 +179,28 @@ You have a budget of **N questions total** (including follow-ups). Every questio
 - Treat N as valuable. Never ask a question answerable from the task board alone.
 - If an answer opens a thread clearly worth pursuing AND you have budget, use a follow-up. But follow-ups aren't mandatory — save budget for breadth if the answer was complete.
 - If a user's answer covers a topic you had planned to ask about next, drop that topic from your plan and substitute a new one or move on.
+
+## Conversation Log
+
+Maintain a running log of the full standup conversation at `data/standup/last-session-log.md`. This file is read by other tools (opportunity-manager) for cross-referencing context.
+
+**Before the first question**, overwrite the file with today's date header:
+```markdown
+# Crumbwise Standup — YYYY-MM-DD
+```
+
+**After each question AND after each answer**, append to the log immediately:
+```markdown
+**Q:** [the question you asked]
+```
+or:
+```markdown
+**A:** [Eric's full answer, lightly cleaned up but preserving substance and detail — not summarized to 1-2 sentences like history.md]
+```
+
+**After Step 5 (synthesis)**, append the coaching, concerns, and opportunities sections to the log as well.
+
+The log is overwritten at the start of each standup session (next day's standup replaces it). It exists so that the full conversation — not just the compressed history — is available to other tools within the same day. Keep answers substantive (3-5 sentences capturing the real content), not the compressed 1-2 sentence summaries used in history.md.
 
 ## Step 3: Ask Questions One at a Time
 
@@ -182,6 +217,7 @@ Wait for the user's answer after each question.
 
 After receiving an answer:
 - Note the key points internally
+- **Append both Q and A to `data/standup/last-session-log.md`** immediately
 - **Challenge when warranted**: If the answer contains a questionable assumption, weak logic, or a plan that seems likely to go wrong — say so directly. Don't move on politely. Frame it as a pointed follow-up: "That plan assumes X, but the board shows Y — is that actually viable?" or "That sounds like it solves the symptom, not the cause." Use your budget for this if the thread is worth it, but limit yourself to 1 challenge follow-up per topic — then move on. Don't manufacture challenges, but don't suppress real ones either. If budget is already exhausted when a challenge surfaces, note it in the Concerns section instead.
 - If the task board contradicts something the user just said (e.g., they call something low-risk but it has multiple blocked tasks), name the contradiction explicitly.
 - Decide: follow-up (if answer was partial, opened something genuinely interesting, or contained something worth challenging) OR move to next planned topic
