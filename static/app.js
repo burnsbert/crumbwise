@@ -1,5 +1,7 @@
 // Crumbwise - Frontend Application
 
+let currentSettings = {};
+
 // Sections that are locked - can reorder within but not move items to/from other sections
 const LOCKED_SECTIONS = ['PROJECTS', 'COMPLETED PROJECTS'];
 
@@ -713,6 +715,26 @@ function renderSettingsPage() {
 
                 <div class="settings-actions">
                     <button id="save-settings-btn" class="action-btn confirm">Save Settings</button>
+                </div>
+            </div>
+
+            <div class="settings-card" style="margin-top: 16px;">
+                <h2>Notion Integration</h2>
+                <p class="settings-help">Sync your tasks to a Notion page. You'll need an integration token from <a href="https://www.notion.so/my-integrations" target="_blank">Notion Integrations</a>. The page must be shared with your integration.</p>
+
+                <div class="form-group">
+                    <label for="notion-url">Page URL</label>
+                    <input type="text" id="notion-url" placeholder="https://www.notion.so/your-page-title-...">
+                </div>
+
+                <div class="form-group">
+                    <label for="notion-token">Integration Token</label>
+                    <input type="password" id="notion-token" placeholder="Enter new token to change">
+                    <span id="notion-token-status" class="token-status"></span>
+                </div>
+
+                <div class="settings-actions">
+                    <button id="save-notion-settings-btn" class="action-btn confirm">Save Notion Settings</button>
                 </div>
             </div>
         </div>
@@ -2454,6 +2476,9 @@ function setupSettings() {
         if (e.target.id === 'save-settings-btn') {
             await saveSettings();
         }
+        if (e.target.id === 'save-notion-settings-btn') {
+            await saveNotionSettings();
+        }
         if (e.target.id === 'save-google-config-btn') {
             await saveGoogleConfig();
         }
@@ -2467,7 +2492,7 @@ function setupSettings() {
 
     syncBtn.addEventListener('click', async () => {
         if (!syncBtn.classList.contains('disabled')) {
-            await syncToConfluence();
+            await syncAll();
         }
     });
 }
@@ -2476,6 +2501,7 @@ async function loadSettings() {
     try {
         const response = await fetch('/api/settings');
         const settings = await response.json();
+        currentSettings = settings;
         updateSyncButton(settings);
     } catch (error) {
         console.error('Failed to load settings:', error);
@@ -2486,16 +2512,22 @@ function loadSettingsIntoForm() {
     fetch('/api/settings')
         .then(res => res.json())
         .then(settings => {
+            currentSettings = settings;
+
             document.getElementById('confluence-url').value = settings.confluence_url || '';
             document.getElementById('confluence-email').value = settings.confluence_email || '';
             document.getElementById('confluence-token').value = '';
 
             const tokenStatus = document.getElementById('token-status');
-            if (settings.confluence_token_set) {
-                tokenStatus.textContent = 'Token is configured';
-            } else {
-                tokenStatus.textContent = '';
-            }
+            tokenStatus.textContent = settings.confluence_token_set ? 'Token is configured' : '';
+
+            document.getElementById('notion-url').value = settings.notion_page_url || '';
+            document.getElementById('notion-token').value = '';
+
+            const notionTokenStatus = document.getElementById('notion-token-status');
+            notionTokenStatus.textContent = settings.notion_token_set ? 'Token is configured' : '';
+
+            updateSyncButton(settings);
 
             // Load calendar status (shows appropriate UI based on state)
             loadGoogleCalendarStatus();
@@ -2531,13 +2563,40 @@ async function saveSettings() {
     }
 }
 
+async function saveNotionSettings() {
+    const url = document.getElementById('notion-url').value.trim();
+    const token = document.getElementById('notion-token').value;
+
+    const data = { notion_page_url: url };
+    if (token) {
+        data.notion_token = token;
+    }
+
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            await loadSettings();
+            loadSettingsIntoForm();
+        }
+    } catch (error) {
+        console.error('Failed to save Notion settings:', error);
+    }
+}
+
 function updateSyncButton(settings) {
     const syncBtn = document.getElementById('sync-btn');
-    const isConfigured = settings.confluence_url &&
-                         settings.confluence_email &&
-                         settings.confluence_token_set;
+    const isPrivate = settings.profile === 'private';
+    const confluenceConfigured = settings.confluence_url &&
+                                 settings.confluence_email &&
+                                 settings.confluence_token_set;
+    const notionConfigured = settings.notion_page_url && settings.notion_token_set;
 
-    if (isConfigured) {
+    if (!isPrivate && (confluenceConfigured || notionConfigured)) {
         syncBtn.classList.remove('disabled');
     } else {
         syncBtn.classList.add('disabled');
@@ -2850,31 +2909,44 @@ function renderCalendarEvent(event, className) {
     `;
 }
 
-async function syncToConfluence() {
+async function syncAll() {
     const syncBtn = document.getElementById('sync-btn');
-    const originalText = syncBtn.textContent;
     syncBtn.textContent = 'Syncing...';
     syncBtn.classList.add('disabled');
 
-    try {
-        const response = await fetch('/api/sync-confluence', { method: 'POST' });
-        const data = await response.json();
+    const promises = [];
+    if (currentSettings.confluence_url && currentSettings.confluence_email && currentSettings.confluence_token_set) {
+        promises.push(
+            fetch('/api/sync-confluence', { method: 'POST' })
+                .then(r => r.json())
+                .then(d => ({ target: 'Confluence', ...d }))
+        );
+    }
+    if (currentSettings.notion_page_url && currentSettings.notion_token_set) {
+        promises.push(
+            fetch('/api/sync-notion', { method: 'POST' })
+                .then(r => r.json())
+                .then(d => ({ target: 'Notion', ...d }))
+        );
+    }
 
-        if (data.success) {
-            syncBtn.textContent = 'Synced!';
-            setTimeout(() => {
-                syncBtn.textContent = originalText;
-                syncBtn.classList.remove('disabled');
-            }, 2000);
-        } else {
-            alert('Sync failed: ' + (data.error || 'Unknown error'));
-            syncBtn.textContent = originalText;
+    const results = await Promise.allSettled(promises);
+    const failures = results.filter(r => r.status === 'rejected' || !r.value?.success);
+
+    if (failures.length === 0) {
+        syncBtn.textContent = 'Synced!';
+        setTimeout(() => {
+            syncBtn.textContent = 'Sync';
             syncBtn.classList.remove('disabled');
-        }
-    } catch (error) {
-        console.error('Sync failed:', error);
-        alert('Sync failed: ' + error.message);
-        syncBtn.textContent = originalText;
+        }, 2000);
+    } else {
+        const msgs = failures.map(f =>
+            f.status === 'rejected'
+                ? f.reason?.message || 'Unknown error'
+                : `${f.value.target}: ${f.value.error || 'Unknown error'}`
+        );
+        alert('Sync failed: ' + msgs.join(', '));
+        syncBtn.textContent = 'Sync';
         syncBtn.classList.remove('disabled');
     }
 }

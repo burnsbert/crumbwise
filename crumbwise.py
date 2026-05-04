@@ -1340,12 +1340,16 @@ def get_settings():
     if settings.get("confluence_token"):
         settings["confluence_token_set"] = True
         settings["confluence_token"] = ""  # Don't send actual token
+    if settings.get("notion_token"):
+        settings["notion_token_set"] = True
+        settings["notion_token"] = ""
     # Don't expose Google client secret
     if settings.get("google_client_secret"):
         settings["google_client_secret"] = ""
     # Don't expose Google credentials
     settings.pop("google_credentials", None)
     settings.pop("google_oauth_state", None)
+    settings["profile"] = request.cookies.get("profile", "default")
     return jsonify(settings)
 
 
@@ -1364,6 +1368,12 @@ def update_settings():
     # Only update token if a new one is provided
     if data.get("confluence_token"):
         settings["confluence_token"] = data["confluence_token"]
+
+    if "notion_page_url" in data:
+        settings["notion_page_url"] = data["notion_page_url"]
+
+    if data.get("notion_token"):
+        settings["notion_token"] = data["notion_token"]
 
     save_settings(settings)
     return jsonify({"success": True})
@@ -1468,17 +1478,16 @@ def extract_confluence_base_url(url):
     return None
 
 
-def generate_confluence_content(sections):
-    """Generate Confluence storage format HTML from tasks."""
-    html_parts = []
+def _build_section_data(sections):
+    """Return ordered list of section data for export. None entries are dividers.
 
-    # Define the order for Confluence export
-    # Use None as a marker for horizontal rules
+    Each non-None entry is (section_key, section_title, tasks_list).
+    """
     section_order = [
         ("PROJECTS:high", "Projects - High Priority"),
         ("PROJECTS:medium", "Projects - Medium Priority"),
         ("PROJECTS:paused", "Projects - Paused"),
-        None,  # HR below projects
+        None,
         ("DONE THIS WEEK", "DONE THIS WEEK"),
         ("FOLLOW UPS", "FOLLOW UPS"),
         ("BLOCKED OR WAITING", "BLOCKED OR WAITING"),
@@ -1486,52 +1495,55 @@ def generate_confluence_content(sections):
         ("TODO THIS WEEK", "TODO THIS WEEK"),
         ("TODO NEXT WEEK", "TODO NEXT WEEK"),
         ("TODO FOLLOWING WEEK", "TODO FOLLOWING WEEK"),
-        None,  # HR before backlog
+        None,
         ("BACKLOG HIGH PRIORITY", "BACKLOG HIGH PRIORITY"),
         ("BACKLOG MEDIUM PRIORITY", "BACKLOG MEDIUM PRIORITY"),
         ("BACKLOG LOW PRIORITY", "BACKLOG LOW PRIORITY"),
-        None,  # HR after backlog
+        None,
         ("PROBLEMS TO SOLVE", "PROBLEMS TO SOLVE"),
         ("THINGS TO RESEARCH", "THINGS TO RESEARCH"),
-        None,  # HR after research
+        None,
     ]
 
-    # Add current quarter
     current_q = get_current_quarter()
     section_order.append((current_q, current_q))
 
-    # Add DONE 2025 if it exists
     if "DONE 2025" in sections:
         section_order.append(("DONE 2025", "DONE 2025"))
 
+    result = []
     for item in section_order:
-        # Handle horizontal rule markers
+        if item is None:
+            result.append(None)
+            continue
+        section_key, section_title = item
+        if ":" in section_key:
+            base_section, priority_filter = section_key.split(":", 1)
+            tasks = [t for t in sections.get(base_section, [])
+                     if t.get("priority") == priority_filter]
+        else:
+            tasks = sections.get(section_key, [])
+        result.append((section_key, section_title, tasks))
+    return result
+
+
+def generate_confluence_content(sections):
+    """Generate Confluence storage format HTML from tasks."""
+    html_parts = []
+
+    for item in _build_section_data(sections):
         if item is None:
             html_parts.append('<hr/>')
             continue
 
-        section_key, section_title = item
-
-        # Handle priority-filtered project sections (e.g., "PROJECTS:high")
-        if ":" in section_key:
-            base_section, priority_filter = section_key.split(":", 1)
-            section_tasks = [t for t in sections.get(base_section, [])
-                             if t.get("priority") == priority_filter]
-        else:
-            section_tasks = sections.get(section_key, [])
-
+        _section_key, section_title, section_tasks = item
         html_parts.append(f'<h2>{section_title}</h2>')
 
         if section_tasks:
             html_parts.append('<ul>')
             for task in section_tasks:
                 text = task['text']
-                # Convert URLs to links
-                text = re.sub(
-                    r'(https?://[^\s]+)',
-                    r'<a href="\1">\1</a>',
-                    text
-                )
+                text = re.sub(r'(https?://[^\s]+)', r'<a href="\1">\1</a>', text)
                 html_parts.append(f'<li>{text}</li>')
             html_parts.append('</ul>')
         else:
@@ -1540,9 +1552,77 @@ def generate_confluence_content(sections):
     return '\n'.join(html_parts)
 
 
+def _text_to_notion_rich_text(text):
+    """Convert plain text to a Notion rich_text array, making URLs clickable."""
+    parts = re.split(r'(https?://[^\s]+)', text)
+    rich_text = []
+    for part in parts:
+        if not part:
+            continue
+        if re.match(r'https?://', part):
+            rich_text.append({"type": "text", "text": {"content": part, "link": {"url": part}}})
+        else:
+            rich_text.append({"type": "text", "text": {"content": part}})
+    return rich_text or [{"type": "text", "text": {"content": ""}}]
+
+
+def extract_notion_page_id(url):
+    """Extract page ID (UUID) from a Notion page URL."""
+    match = re.search(
+        r'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})',
+        url, re.IGNORECASE
+    )
+    if match:
+        return match.group(1)
+    match = re.search(r'([0-9a-f]{32})(?:[/?#]|$)', url, re.IGNORECASE)
+    if match:
+        raw = match.group(1)
+        return f"{raw[:8]}-{raw[8:12]}-{raw[12:16]}-{raw[16:20]}-{raw[20:]}"
+    return None
+
+
+def generate_notion_blocks(sections):
+    """Generate Notion block objects from tasks."""
+    blocks = []
+
+    for item in _build_section_data(sections):
+        if item is None:
+            blocks.append({"object": "block", "type": "divider", "divider": {}})
+            continue
+
+        _section_key, section_title, section_tasks = item
+        blocks.append({
+            "object": "block",
+            "type": "heading_2",
+            "heading_2": {"rich_text": [{"type": "text", "text": {"content": section_title}}]}
+        })
+
+        if section_tasks:
+            for task in section_tasks:
+                blocks.append({
+                    "object": "block",
+                    "type": "bulleted_list_item",
+                    "bulleted_list_item": {"rich_text": _text_to_notion_rich_text(task['text'])}
+                })
+        else:
+            blocks.append({
+                "object": "block",
+                "type": "paragraph",
+                "paragraph": {
+                    "rich_text": [{"type": "text", "text": {"content": "(empty)"},
+                                   "annotations": {"italic": True}}]
+                }
+            })
+
+    return blocks
+
+
 @app.route("/api/sync-confluence", methods=["POST"])
 def sync_confluence():
     """Sync current tasks to Confluence page."""
+    if request.cookies.get("profile", "default") == "private":
+        return jsonify({"error": "Cannot sync in private mode"}), 403
+
     settings = load_settings()
 
     confluence_url = settings.get("confluence_url")
@@ -1618,6 +1698,86 @@ def sync_confluence():
                 "error": f"Failed to update page: {response.status_code}",
                 "details": response.text
             }), 400
+
+    except requests.RequestException as e:
+        return jsonify({"error": f"Request failed: {str(e)}"}), 500
+
+
+@app.route("/api/sync-notion", methods=["POST"])
+def sync_notion():
+    """Sync current tasks to Notion page."""
+    if request.cookies.get("profile", "default") == "private":
+        return jsonify({"error": "Cannot sync in private mode"}), 403
+
+    settings = load_settings()
+    notion_token = settings.get("notion_token")
+    notion_page_url = settings.get("notion_page_url")
+
+    if not all([notion_token, notion_page_url]):
+        return jsonify({"error": "Notion settings not configured"}), 400
+
+    page_id = extract_notion_page_id(notion_page_url)
+    if not page_id:
+        return jsonify({"error": "Could not parse Notion page URL"}), 400
+
+    headers = {
+        "Authorization": f"Bearer {notion_token}",
+        "Notion-Version": "2022-06-28",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        # Collect all existing child block IDs (paginated)
+        block_ids = []
+        cursor = None
+        while True:
+            params = {"page_size": 100}
+            if cursor:
+                params["start_cursor"] = cursor
+            resp = requests.get(
+                f"https://api.notion.com/v1/blocks/{page_id}/children",
+                headers=headers,
+                params=params,
+                timeout=30
+            )
+            if resp.status_code != 200:
+                return jsonify({
+                    "error": f"Failed to read Notion page: {resp.status_code}",
+                    "details": resp.text
+                }), 400
+            data = resp.json()
+            block_ids.extend(b["id"] for b in data.get("results", []))
+            if not data.get("has_more"):
+                break
+            cursor = data.get("next_cursor")
+
+        # Delete all existing child blocks
+        for block_id in block_ids:
+            requests.delete(
+                f"https://api.notion.com/v1/blocks/{block_id}",
+                headers=headers,
+                timeout=30
+            )
+
+        # Generate new blocks and append in chunks of 100
+        sections = parse_tasks()
+        all_blocks = generate_notion_blocks(sections)
+
+        for i in range(0, len(all_blocks), 100):
+            chunk = all_blocks[i:i + 100]
+            resp = requests.patch(
+                f"https://api.notion.com/v1/blocks/{page_id}/children",
+                headers=headers,
+                json={"children": chunk},
+                timeout=30
+            )
+            if resp.status_code != 200:
+                return jsonify({
+                    "error": f"Failed to write Notion blocks: {resp.status_code}",
+                    "details": resp.text
+                }), 400
+
+        return jsonify({"success": True, "message": "Notion page updated"})
 
     except requests.RequestException as e:
         return jsonify({"error": f"Request failed: {str(e)}"}), 500
