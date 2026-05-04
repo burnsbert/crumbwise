@@ -7,6 +7,7 @@ import uuid
 import json
 import shutil
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request, redirect, g
@@ -1560,7 +1561,11 @@ def _text_to_notion_rich_text(text):
         if not part:
             continue
         if re.match(r'https?://', part):
-            rich_text.append({"type": "text", "text": {"content": part, "link": {"url": part}}})
+            url = part.rstrip('.,;:!?)')
+            trailing = part[len(url):]
+            rich_text.append({"type": "text", "text": {"content": url, "link": {"url": url}}})
+            if trailing:
+                rich_text.append({"type": "text", "text": {"content": trailing}})
         else:
             rich_text.append({"type": "text", "text": {"content": part}})
     return rich_text or [{"type": "text", "text": {"content": ""}}]
@@ -1581,11 +1586,50 @@ def extract_notion_page_id(url):
     return None
 
 
+def _build_notion_section_data(sections):
+    """Return ordered section data for Notion export (trimmed vs Confluence).
+
+    Excludes: backlog, research/problems sections, all Done except current quarter.
+    """
+    section_order = [
+        ("PROJECTS:high", "Projects - High Priority"),
+        ("PROJECTS:medium", "Projects - Medium Priority"),
+        ("PROJECTS:paused", "Projects - Paused"),
+        None,
+        ("DONE THIS WEEK", "DONE THIS WEEK"),
+        ("FOLLOW UPS", "FOLLOW UPS"),
+        ("BLOCKED OR WAITING", "BLOCKED OR WAITING"),
+        ("IN PROGRESS TODAY", "IN PROGRESS TODAY"),
+        ("TODO THIS WEEK", "TODO THIS WEEK"),
+        ("TODO NEXT WEEK", "TODO NEXT WEEK"),
+        ("TODO FOLLOWING WEEK", "TODO FOLLOWING WEEK"),
+        None,
+    ]
+
+    current_q = get_current_quarter()
+    section_order.append((current_q, current_q))
+
+    result = []
+    for item in section_order:
+        if item is None:
+            result.append(None)
+            continue
+        section_key, section_title = item
+        if ":" in section_key:
+            base_section, priority_filter = section_key.split(":", 1)
+            tasks = [t for t in sections.get(base_section, [])
+                     if t.get("priority") == priority_filter]
+        else:
+            tasks = sections.get(section_key, [])
+        result.append((section_key, section_title, tasks))
+    return result
+
+
 def generate_notion_blocks(sections):
-    """Generate Notion block objects from tasks."""
+    """Generate Notion block objects from tasks (flat list — all blocks top-level)."""
     blocks = []
 
-    for item in _build_section_data(sections):
+    for item in _build_notion_section_data(sections):
         if item is None:
             blocks.append({"object": "block", "type": "divider", "divider": {}})
             continue
@@ -1751,15 +1795,26 @@ def sync_notion():
                 break
             cursor = data.get("next_cursor")
 
-        # Delete all existing child blocks
-        for block_id in block_ids:
-            requests.delete(
+        # Delete all existing child blocks in parallel
+        def _delete_block(block_id):
+            resp = requests.delete(
                 f"https://api.notion.com/v1/blocks/{block_id}",
                 headers=headers,
                 timeout=30
             )
+            return block_id, resp.status_code, resp.text
 
-        # Generate new blocks and append in chunks of 100
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = {executor.submit(_delete_block, bid): bid for bid in block_ids}
+            for future in as_completed(futures):
+                _, status, text = future.result()
+                if status not in (200, 404):
+                    return jsonify({
+                        "error": f"Failed to delete block: {status}",
+                        "details": text
+                    }), 400
+
+        # Write all blocks flat (headings + tasks as siblings) in chunks of 100.
         sections = parse_tasks()
         all_blocks = generate_notion_blocks(sections)
 
