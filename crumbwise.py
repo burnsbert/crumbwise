@@ -1403,6 +1403,8 @@ def create_note():
         "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat(),
         "assigned_project": data.get("assigned_project") or None,
+        "section": data.get("section") or None,
+        "client": data.get("client") or None,
         "order_index": max_order + 1,
     }
     notes.append(note)
@@ -1437,6 +1439,10 @@ def update_note(note_id):
                 note["content"] = data["content"]
             if "assigned_project" in data:
                 note["assigned_project"] = data.get("assigned_project") or None
+            if "section" in data:
+                note["section"] = data.get("section") or None
+            if "client" in data:
+                note["client"] = data.get("client") or None
             note["updated_at"] = datetime.now().isoformat()
             save_notes_data(notes)
             return jsonify(note)

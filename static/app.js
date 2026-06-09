@@ -16,7 +16,7 @@ const SECTION_CONFIG = {
         hasNotes: true
     },
     research: {
-        columns: ['PROBLEMS TO SOLVE', 'THINGS TO RESEARCH', 'RESEARCH IN PROGRESS', 'RESEARCH DONE']
+        columns: ['OPPORTUNITIES', 'PROBLEMS TO SOLVE', 'THINGS TO RESEARCH', 'RESEARCH IN PROGRESS', 'RESEARCH DONE']
     },
     backlog: {
         columns: ['BACKLOG HIGH PRIORITY', 'BACKLOG MEDIUM PRIORITY', 'BACKLOG LOW PRIORITY']
@@ -345,6 +345,7 @@ function renderBoard() {
 
     // Render main columns
     board.innerHTML = config.columns.map(col => {
+        if (col === 'OPPORTUNITIES') return renderOpportunitiesColumn();
         if (typeof col === 'string') return renderColumn(col);
         return '';
     }).join('');
@@ -407,6 +408,28 @@ function renderBoard() {
         });
         sortableInstances.push(sortable);
     });
+
+    // Initialize sortable on opportunities list (isolated — notes only, no cross-column drag)
+    const opList = document.querySelector('.opportunities-list');
+    if (opList) {
+        const sortable = new Sortable(opList, {
+            group: 'opportunities',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            onEnd: async () => {
+                const ids = [...opList.querySelectorAll('.opportunity-card')].map(el => el.dataset.id);
+                await fetch('/api/notes/reorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order: ids })
+                });
+                await loadTasks();
+            }
+        });
+        sortableInstances.push(sortable);
+    }
 
     // Update calendar sidebar visibility
     renderCalendarSidebar();
@@ -1062,11 +1085,14 @@ function setCompactNotesSort(value) {
 
 // ── Note card CRUD ────────────────────────────────────────────────────────────
 
-function showNoteModal(noteId) {
+function showNoteModal(noteId, defaultSection = null) {
     const note = noteId ? notesList.find(n => n.id === noteId) : null;
     const title = note ? escapeHtml(note.title || '') : '';
     const content = note ? escapeHtml(note.content || '') : '';
     const isEdit = !!note;
+    const noteSection = note ? (note.section || '') : (defaultSection || '');
+    const isOpportunity = noteSection === 'opportunities';
+    const client = note ? escapeHtml(note.client || '') : '';
     const createdLine = note ? `<div class="note-modal-timestamp">Created ${formatNoteDate(note.created_at)}</div>` : '';
     const updatedLine = note ? `<div class="note-modal-timestamp">Updated ${formatNoteDate(note.updated_at)}</div>` : '';
 
@@ -1100,6 +1126,11 @@ function showNoteModal(noteId) {
                         <option value="" ${noneSelected}>— none —</option>
                         ${projectOptions}
                     </select>
+                    ${isOpportunity ? `
+                    <label class="note-modal-label">Client</label>
+                    <input id="note-modal-client" class="note-modal-input" type="text" value="${client}" placeholder="Client name (optional)">
+                    ` : ''}
+                    <input type="hidden" id="note-modal-section" value="${noteSection}">
                 </div>
                 ${createdLine || updatedLine ? `<div class="note-modal-footer">${createdLine}${updatedLine}</div>` : ''}
                 <div class="note-modal-actions">
@@ -1111,8 +1142,15 @@ function showNoteModal(noteId) {
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    document.getElementById('note-edit-modal').addEventListener('click', (e) => {
+    const modal = document.getElementById('note-edit-modal');
+    modal.addEventListener('click', (e) => {
         if (e.target.id === 'note-edit-modal') closeNoteModal();
+    });
+    modal.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            saveNoteFromModal(noteId || '');
+        }
     });
     document.getElementById('note-modal-title').focus();
 }
@@ -1125,6 +1163,8 @@ async function saveNoteFromModal(noteId) {
     const titleEl = document.getElementById('note-modal-title');
     const contentEl = document.getElementById('note-modal-content');
     const projectEl = document.getElementById('note-modal-project');
+    const sectionEl = document.getElementById('note-modal-section');
+    const clientEl = document.getElementById('note-modal-client');
     const errorEl = document.getElementById('note-modal-title-error');
 
     const title = titleEl.value.trim();
@@ -1138,7 +1178,9 @@ async function saveNoteFromModal(noteId) {
     const payload = {
         title,
         content: contentEl.value,
-        assigned_project: projectEl.value || null
+        assigned_project: projectEl.value || null,
+        section: sectionEl.value || null,
+        client: clientEl ? (clientEl.value.trim() || null) : null
     };
 
     try {
@@ -1322,6 +1364,43 @@ function renderProjectsColumn(section) {
             ${subsections}
             <div class="add-task">
                 <button class="add-task-btn" onclick="showAddTask(this, '${section}')">+ Add project</button>
+            </div>
+        </div>
+    `;
+}
+
+function renderOpportunitiesColumn() {
+    const opNotes = notesList
+        .filter(n => n.section === 'opportunities')
+        .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    const cards = opNotes.map(n => {
+        const stripe = n.project_color ? `<div class="project-stripe" data-color="${n.project_color}"></div>` : '';
+        const preview = escapeHtml(n.content || '');
+        const clientHtml = n.client ? `<div class="opportunity-card-client">${escapeHtml(n.client)}</div>` : '';
+        return `
+            <div class="opportunity-card" data-id="${n.id}" onclick="showNoteModal('${n.id}')">
+                ${stripe}
+                <div class="card-actions">
+                    <button class="card-btn delete" onclick="event.stopPropagation(); deleteNoteCard('${n.id}')" title="Delete">×</button>
+                </div>
+                <div class="opportunity-card-title">${escapeHtml(n.title || '')}</div>
+                <div class="opportunity-card-preview">${preview}</div>
+                ${clientHtml}
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="column" data-section="OPPORTUNITIES">
+            <div class="column-header">
+                <span>OPPORTUNITIES</span>
+                <span class="column-count">${opNotes.length}</span>
+            </div>
+            <div class="opportunities-list">
+                ${cards}
+            </div>
+            <div class="add-task">
+                <button class="add-task-btn" onclick="showNoteModal(null, 'opportunities')">+ Add opportunity</button>
             </div>
         </div>
     `;
