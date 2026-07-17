@@ -3331,6 +3331,22 @@ main {
     background: transparent;
 }
 
+.action-btn.delete {
+    background: transparent;
+    border-color: #c0392b;
+    color: #c0392b;
+}
+
+.action-btn.delete:hover {
+    background: #c0392b;
+    color: white;
+}
+
+.note-modal-actions-right {
+    display: flex;
+    gap: 8px;
+}
+
 /* Settings Modal */
 .settings-modal {
     max-width: 500px;

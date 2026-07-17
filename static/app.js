@@ -1134,8 +1134,11 @@ function showNoteModal(noteId, defaultSection = null) {
                 </div>
                 ${createdLine || updatedLine ? `<div class="note-modal-footer">${createdLine}${updatedLine}</div>` : ''}
                 <div class="note-modal-actions">
-                    <button class="action-btn cancel" onclick="closeNoteModal()">Cancel</button>
-                    <button class="action-btn confirm" onclick="saveNoteFromModal('${noteId || ''}')">Save</button>
+                    <div>${isEdit ? `<button class="action-btn delete" onclick="deleteNoteFromModal('${noteId}')">Delete</button>` : ''}</div>
+                    <div class="note-modal-actions-right">
+                        <button class="action-btn cancel" onclick="closeNoteModal()">Cancel</button>
+                        <button class="action-btn confirm" onclick="saveNoteFromModal('${noteId || ''}')">Save</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1211,6 +1214,12 @@ async function deleteNoteCard(noteId) {
     } catch (error) {
         console.error('Failed to delete note:', error);
     }
+}
+
+async function deleteNoteFromModal(noteId) {
+    if (!confirm('Delete this note?')) return;
+    closeNoteModal();
+    await deleteNoteCard(noteId);
 }
 
 // ── Notes tab ─────────────────────────────────────────────────────────────────
