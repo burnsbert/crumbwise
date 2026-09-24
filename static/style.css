@@ -36,26 +36,26 @@
     --gap: 16px;
     /* Project colors - distinct hues across the spectrum */
     --project-color-1: #ef4444;  /* Red */
-    --project-color-2: #f97316;  /* Orange */
-    --project-color-3: #facc15;  /* Yellow */
-    --project-color-4: #22c55e;  /* Green */
-    --project-color-5: #06b6d4;  /* Cyan */
-    --project-color-6: #3b82f6;  /* Blue */
-    --project-color-7: #8b5cf6;  /* Purple */
-    --project-color-8: #ec4899;  /* Pink */
-    --project-color-9: #6b7280;  /* Gray */
-    --project-color-10: #14b8a6; /* Teal */
-    /* Two-tone project colors (11-20) */
-    --project-color-11a: #ef4444; --project-color-11b: #3b82f6;  /* Red + Blue */
-    --project-color-12a: #f59e0b; --project-color-12b: #0d9488;  /* Amber + Deep teal */
-    --project-color-13a: #facc15; --project-color-13b: #7c3aed;  /* Yellow + Purple */
-    --project-color-14a: #ec4899; --project-color-14b: #16a34a;  /* Pink + Green */
-    --project-color-15a: #a3e635; --project-color-15b: #f87171;  /* Lime + Coral */
-    --project-color-16a: #22d3ee; --project-color-16b: #f97316;  /* Cyan + Orange */
-    --project-color-17a: #4f46e5; --project-color-17b: #fbbf24;  /* Indigo + Gold */
-    --project-color-18a: #8b5cf6; --project-color-18b: #fb7185;  /* Purple + Rose */
-    --project-color-19a: #10b981; --project-color-19b: #fb923c;  /* Emerald + Coral */
-    --project-color-20a: #64748b; --project-color-20b: #e11d48;  /* Slate + Crimson */
+    --project-color-2: #ee8214;  /* Orange */
+    --project-color-3: #f8cf1f;  /* Yellow */
+    --project-color-4: #7ae438;  /* Green */
+    --project-color-5: #20cef7;  /* Cyan */
+    --project-color-6: #428af6;  /* Blue */
+    --project-color-7: #8e40fd;  /* Purple */
+    --project-color-8: #f955b4;  /* Pink */
+    --project-color-9: #77767d;  /* Gray */
+    --project-color-10: #3cb496; /* Teal */
+    /* Two-tone project colors (11-20) - halves reuse singles so every combo stays distinct */
+    --project-color-11a: #ef4444; --project-color-11b: #428af6;  /* Red + Blue */
+    --project-color-12a: #ee8214; --project-color-12b: #3cb496;  /* Orange + Teal */
+    --project-color-13a: #f8cf1f; --project-color-13b: #8e40fd;  /* Yellow + Purple */
+    --project-color-14a: #f955b4; --project-color-14b: #7ae438;  /* Pink + Green */
+    --project-color-15a: #3cb496; --project-color-15b: #ef4444;  /* Teal + Red */
+    --project-color-16a: #20cef7; --project-color-16b: #ee8214;  /* Cyan + Orange */
+    --project-color-17a: #428af6; --project-color-17b: #f8cf1f;  /* Blue + Yellow */
+    --project-color-18a: #8e40fd; --project-color-18b: #ee8214;  /* Purple + Orange */
+    --project-color-19a: #8e40fd; --project-color-19b: #7ae438;  /* Purple + Green */
+    --project-color-20a: #77767d; --project-color-20b: #ef4444;  /* Gray + Red */
 }
 
 /* Theme 2: Minecraft (Dark - Creeper Green) */
@@ -843,306 +843,363 @@ body[data-theme="15"] {
 /* Project colors per theme - maximally distinct hues */
 [data-theme="2"] {
     /* Minecraft - earthy/nature tones */
-    --project-color-1: #e53935;  /* Red */
-    --project-color-2: #fb8c00;  /* Orange */
-    --project-color-3: #fdd835;  /* Yellow */
-    --project-color-4: #7cb342;  /* Green */
-    --project-color-5: #00acc1;  /* Cyan */
-    --project-color-6: #1e88e5;  /* Blue */
-    --project-color-7: #8e24aa;  /* Purple */
-    --project-color-8: #d81b60;  /* Pink */
-    --project-color-9: #c0ca33;  /* Lime */
-    --project-color-10: #00897b; /* Teal */
-    --project-color-11a: #e53935; --project-color-11b: #1e88e5;  /* Redstone + Lapis */
-    --project-color-12a: #ffb300; --project-color-12b: #00897b;  /* Gold ore + Sea green */
-    --project-color-13a: #fdd835; --project-color-13b: #8e24aa;  /* Glowstone + Nether */
-    --project-color-14a: #d81b60; --project-color-14b: #7cb342;  /* Pink + Leaf */
-    --project-color-15a: #c0ca33; --project-color-15b: #d32f2f;  /* Lime + Brick red */
-    --project-color-16a: #00bcd4; --project-color-16b: #546e7a;  /* Diamond cyan + Stone */
+    --project-color-1: #f21c27;  /* Red */
+    --project-color-2: #fc8d0d;  /* Orange */
+    --project-color-3: #fed937;  /* Yellow */
+    --project-color-4: #83d953;  /* Green */
+    --project-color-5: #03c1e2;  /* Cyan */
+    --project-color-6: #0c83ef;  /* Blue */
+    --project-color-7: #af2fdc;  /* Purple */
+    --project-color-8: #fb66a1;  /* Pink */
+    --project-color-9: #e0e0e0;  /* Iron */
+    --project-color-10: #09a080; /* Teal */
+    --project-color-11a: #f21c27; --project-color-11b: #0c83ef;  /* Red + Blue */
+    --project-color-12a: #fc8d0d; --project-color-12b: #09a080;  /* Orange + Teal */
+    --project-color-13a: #fed937; --project-color-13b: #af2fdc;  /* Yellow + Purple */
+    --project-color-14a: #fb66a1; --project-color-14b: #83d953;  /* Pink + Green */
+    --project-color-15a: #09a080; --project-color-15b: #f21c27;  /* Teal + Red */
+    --project-color-16a: #03c1e2; --project-color-16b: #fc8d0d;  /* Cyan + Orange */
+    --project-color-17a: #0c83ef; --project-color-17b: #fed937;  /* Blue + Yellow */
+    --project-color-18a: #af2fdc; --project-color-18b: #fc8d0d;  /* Purple + Orange */
+    --project-color-19a: #af2fdc; --project-color-19b: #83d953;  /* Purple + Green */
+    --project-color-20a: #e0e0e0; --project-color-20b: #f21c27;  /* Iron + Red */
 }
 
 [data-theme="3"] {
     /* Knight Rider - red/orange spectrum with high contrast */
-    --project-color-1: #ff0000;  /* Bright red */
-    --project-color-2: #ff6600;  /* Orange */
-    --project-color-3: #ffcc00;  /* Gold */
-    --project-color-4: #00ff00;  /* Green */
-    --project-color-5: #00ffff;  /* Cyan */
-    --project-color-6: #0066ff;  /* Blue */
-    --project-color-7: #9900ff;  /* Purple */
-    --project-color-8: #ff0099;  /* Magenta */
-    --project-color-9: #99ff00;  /* Lime */
-    --project-color-10: #ff3366; /* Coral */
-    --project-color-11a: #ff0000; --project-color-11b: #0066ff;  /* Red + Blue */
-    --project-color-12a: #ffaa00; --project-color-12b: #00cc99;  /* Gold + Teal */
-    --project-color-13a: #ffff00; --project-color-13b: #9900ff;  /* Yellow + Purple */
-    --project-color-14a: #ff0099; --project-color-14b: #00ff00;  /* Magenta + Green */
-    --project-color-15a: #99ff00; --project-color-15b: #ff3366;  /* Lime + Neon coral */
-    --project-color-16a: #00ffcc; --project-color-16b: #778899;  /* Neon cyan + Steel */
+    --project-color-1: #f3181c;  /* Bright red */
+    --project-color-2: #fa8710;  /* Orange */
+    --project-color-3: #fed01c;  /* Gold */
+    --project-color-4: #36fb24;  /* Green */
+    --project-color-5: #38faf7;  /* Cyan */
+    --project-color-6: #2779f8;  /* Blue */
+    --project-color-7: #a518fe;  /* Purple */
+    --project-color-8: #f6308e;  /* Magenta */
+    --project-color-9: #9c9b9b;  /* Chrome */
+    --project-color-10: #24a977; /* Teal */
+    --project-color-11a: #f3181c; --project-color-11b: #2779f8;  /* Bright red + Blue */
+    --project-color-12a: #fa8710; --project-color-12b: #24a977;  /* Orange + Teal */
+    --project-color-13a: #fed01c; --project-color-13b: #a518fe;  /* Gold + Purple */
+    --project-color-14a: #f6308e; --project-color-14b: #36fb24;  /* Magenta + Green */
+    --project-color-15a: #24a977; --project-color-15b: #f3181c;  /* Teal + Bright red */
+    --project-color-16a: #38faf7; --project-color-16b: #fa8710;  /* Cyan + Orange */
+    --project-color-17a: #2779f8; --project-color-17b: #fed01c;  /* Blue + Gold */
+    --project-color-18a: #a518fe; --project-color-18b: #fa8710;  /* Purple + Orange */
+    --project-color-19a: #a518fe; --project-color-19b: #36fb24;  /* Purple + Green */
+    --project-color-20a: #9c9b9b; --project-color-20b: #f3181c;  /* Chrome + Bright red */
 }
 
 [data-theme="4"] {
     /* Amethyst Dusk - jewel tones */
     --project-color-1: #e53935;  /* Ruby */
-    --project-color-2: #ff7043;  /* Coral */
-    --project-color-3: #ffd54f;  /* Amber */
-    --project-color-4: #66bb6a;  /* Emerald */
-    --project-color-5: #26c6da;  /* Turquoise */
-    --project-color-6: #42a5f5;  /* Sapphire */
-    --project-color-7: #ab47bc;  /* Amethyst */
-    --project-color-8: #ec407a;  /* Rose */
-    --project-color-9: #9ccc65;  /* Peridot */
-    --project-color-10: #7e57c2; /* Violet */
-    --project-color-11a: #e53935; --project-color-11b: #42a5f5;  /* Ruby + Sapphire */
-    --project-color-12a: #ffa726; --project-color-12b: #26a69a;  /* Topaz + Jade */
-    --project-color-13a: #ffd54f; --project-color-13b: #ab47bc;  /* Amber + Amethyst */
-    --project-color-14a: #ec407a; --project-color-14b: #66bb6a;  /* Rose + Emerald */
-    --project-color-15a: #9ccc65; --project-color-15b: #ef5350;  /* Peridot + Garnet */
-    --project-color-16a: #4dd0e1; --project-color-16b: #78909c;  /* Aquamarine + Moonstone */
+    --project-color-2: #fca982;  /* Coral */
+    --project-color-3: #fdd34b;  /* Amber */
+    --project-color-4: #69b759;  /* Emerald */
+    --project-color-5: #00ccf9;  /* Turquoise */
+    --project-color-6: #0d86f5;  /* Sapphire */
+    --project-color-7: #ce84fe;  /* Amethyst */
+    --project-color-8: #d22288;  /* Rose */
+    --project-color-9: #989898;  /* Moonstone */
+    --project-color-10: #34ffe0; /* Jade */
+    --project-color-11a: #e53935; --project-color-11b: #0d86f5;  /* Ruby + Sapphire */
+    --project-color-12a: #fca982; --project-color-12b: #34ffe0;  /* Coral + Jade */
+    --project-color-13a: #fdd34b; --project-color-13b: #ce84fe;  /* Amber + Amethyst */
+    --project-color-14a: #d22288; --project-color-14b: #69b759;  /* Rose + Emerald */
+    --project-color-15a: #34ffe0; --project-color-15b: #e53935;  /* Jade + Ruby */
+    --project-color-16a: #00ccf9; --project-color-16b: #fca982;  /* Turquoise + Coral */
+    --project-color-17a: #0d86f5; --project-color-17b: #fdd34b;  /* Sapphire + Amber */
+    --project-color-18a: #ce84fe; --project-color-18b: #fca982;  /* Amethyst + Coral */
+    --project-color-19a: #ce84fe; --project-color-19b: #69b759;  /* Amethyst + Emerald */
+    --project-color-20a: #989898; --project-color-20b: #e53935;  /* Moonstone + Ruby */
 }
 
 [data-theme="5"] {
     /* Warm Sand - desert/earth tones */
-    --project-color-1: #c62828;  /* Terracotta */
-    --project-color-2: #ef6c00;  /* Burnt orange */
-    --project-color-3: #f9a825;  /* Mustard */
-    --project-color-4: #558b2f;  /* Olive */
-    --project-color-5: #00838f;  /* Ocean */
-    --project-color-6: #1565c0;  /* Navy */
-    --project-color-7: #6a1b9a;  /* Plum */
-    --project-color-8: #ad1457;  /* Burgundy */
-    --project-color-9: #827717;  /* Khaki */
+    --project-color-1: #b7221d;  /* Terracotta */
+    --project-color-2: #fa6802;  /* Burnt orange */
+    --project-color-3: #ca9e29;  /* Mustard */
+    --project-color-4: #529029;  /* Olive */
+    --project-color-5: #06a3b4;  /* Ocean */
+    --project-color-6: #0464c2;  /* Navy */
+    --project-color-7: #650f9e;  /* Plum */
+    --project-color-8: #ce2e86;  /* Burgundy */
+    --project-color-9: #6d6c6d;  /* Slate */
     --project-color-10: #00695c; /* Teal */
-    --project-color-11a: #c62828; --project-color-11b: #1565c0;  /* Terracotta + Navy */
-    --project-color-12a: #e65100; --project-color-12b: #00695c;  /* Burnt sienna + Teal */
-    --project-color-13a: #f9a825; --project-color-13b: #6a1b9a;  /* Mustard + Plum */
-    --project-color-14a: #ad1457; --project-color-14b: #558b2f;  /* Burgundy + Olive */
-    --project-color-15a: #827717; --project-color-15b: #c62828;  /* Khaki + Clay red */
-    --project-color-16a: #0097a7; --project-color-16b: #546e7a;  /* Ocean cyan + Slate */
+    --project-color-11a: #b7221d; --project-color-11b: #0464c2;  /* Terracotta + Navy */
+    --project-color-12a: #fa6802; --project-color-12b: #00695c;  /* Burnt orange + Teal */
+    --project-color-13a: #ca9e29; --project-color-13b: #650f9e;  /* Mustard + Plum */
+    --project-color-14a: #ce2e86; --project-color-14b: #529029;  /* Burgundy + Olive */
+    --project-color-15a: #00695c; --project-color-15b: #b7221d;  /* Teal + Terracotta */
+    --project-color-16a: #06a3b4; --project-color-16b: #fa6802;  /* Ocean + Burnt orange */
+    --project-color-17a: #0464c2; --project-color-17b: #ca9e29;  /* Navy + Mustard */
+    --project-color-18a: #650f9e; --project-color-18b: #fa6802;  /* Plum + Burnt orange */
+    --project-color-19a: #650f9e; --project-color-19b: #529029;  /* Plum + Olive */
+    --project-color-20a: #6d6c6d; --project-color-20b: #b7221d;  /* Slate + Terracotta */
 }
 
 [data-theme="6"] {
     /* Ember Glow - warm with contrast */
-    --project-color-1: #ef4444;  /* Red */
-    --project-color-2: #f97316;  /* Orange */
-    --project-color-3: #facc15;  /* Yellow */
-    --project-color-4: #22c55e;  /* Green */
-    --project-color-5: #06b6d4;  /* Cyan */
-    --project-color-6: #3b82f6;  /* Blue */
-    --project-color-7: #8b5cf6;  /* Purple */
-    --project-color-8: #ec4899;  /* Pink */
-    --project-color-9: #6b7280;  /* Gray */
-    --project-color-10: #14b8a6; /* Teal */
-    --project-color-11a: #ef4444; --project-color-11b: #3b82f6;  /* Red + Blue */
-    --project-color-12a: #f59e0b; --project-color-12b: #0d9488;  /* Amber + Deep teal */
-    --project-color-13a: #facc15; --project-color-13b: #7c3aed;  /* Yellow + Purple */
-    --project-color-14a: #ec4899; --project-color-14b: #16a34a;  /* Pink + Green */
-    --project-color-15a: #a3e635; --project-color-15b: #f87171;  /* Lime + Coral */
-    --project-color-16a: #22d3ee; --project-color-16b: #f97316;  /* Cyan + Orange */
+    --project-color-1: #ee2635;  /* Red */
+    --project-color-2: #e98736;  /* Orange */
+    --project-color-3: #f3ca1b;  /* Yellow */
+    --project-color-4: #34b845;  /* Green */
+    --project-color-5: #23cbf8;  /* Cyan */
+    --project-color-6: #3d86f5;  /* Blue */
+    --project-color-7: #943ef8;  /* Purple */
+    --project-color-8: #f15caa;  /* Pink */
+    --project-color-9: #989898;  /* Ash */
+    --project-color-10: #44f9dc; /* Teal */
+    --project-color-11a: #ee2635; --project-color-11b: #3d86f5;  /* Red + Blue */
+    --project-color-12a: #e98736; --project-color-12b: #44f9dc;  /* Orange + Teal */
+    --project-color-13a: #f3ca1b; --project-color-13b: #943ef8;  /* Yellow + Purple */
+    --project-color-14a: #f15caa; --project-color-14b: #34b845;  /* Pink + Green */
+    --project-color-15a: #44f9dc; --project-color-15b: #ee2635;  /* Teal + Red */
+    --project-color-16a: #23cbf8; --project-color-16b: #e98736;  /* Cyan + Orange */
+    --project-color-17a: #3d86f5; --project-color-17b: #f3ca1b;  /* Blue + Yellow */
+    --project-color-18a: #943ef8; --project-color-18b: #e98736;  /* Purple + Orange */
+    --project-color-19a: #943ef8; --project-color-19b: #34b845;  /* Purple + Green */
+    --project-color-20a: #989898; --project-color-20b: #ee2635;  /* Ash + Red */
 }
 
 [data-theme="7"] {
     /* SNES Classic - retro gaming colors */
-    --project-color-1: #e53935;  /* Mario red */
-    --project-color-2: #ff7043;  /* DK orange */
-    --project-color-3: #ffca28;  /* Coin gold */
-    --project-color-4: #66bb6a;  /* Yoshi green */
-    --project-color-5: #26c6da;  /* Ice blue */
-    --project-color-6: #5c6bc0;  /* Blue */
+    --project-color-1: #e50b31;  /* Mario red */
+    --project-color-2: #f98a4e;  /* DK orange */
+    --project-color-3: #f5c737;  /* Coin gold */
+    --project-color-4: #6cb95f;  /* Yoshi green */
+    --project-color-5: #2cd6f5;  /* Ice blue */
+    --project-color-6: #4574db;  /* Blue */
     --project-color-7: #ab47bc;  /* Purple */
-    --project-color-8: #ec407a;  /* Kirby pink */
-    --project-color-9: #9ccc65;  /* Pipe green */
-    --project-color-10: #29b6f6; /* Sky blue */
-    --project-color-11a: #e53935; --project-color-11b: #5c6bc0;  /* Mario red + Blue */
-    --project-color-12a: #ffca28; --project-color-12b: #26a69a;  /* Coin + Teal */
-    --project-color-13a: #ffee58; --project-color-13b: #ab47bc;  /* Star + Purple */
-    --project-color-14a: #ec407a; --project-color-14b: #66bb6a;  /* Kirby + Yoshi */
-    --project-color-15a: #9ccc65; --project-color-15b: #ef5350;  /* Pipe + Fire flower */
-    --project-color-16a: #4dd0e1; --project-color-16b: #78909c;  /* Ice power + Cartridge */
+    --project-color-8: #f981a6;  /* Kirby pink */
+    --project-color-9: #9e9e9e;  /* Cartridge gray */
+    --project-color-10: #0d8e85; /* Teal */
+    --project-color-11a: #e50b31; --project-color-11b: #4574db;  /* Mario red + Blue */
+    --project-color-12a: #f98a4e; --project-color-12b: #0d8e85;  /* DK orange + Teal */
+    --project-color-13a: #f5c737; --project-color-13b: #ab47bc;  /* Coin gold + Purple */
+    --project-color-14a: #f981a6; --project-color-14b: #6cb95f;  /* Kirby pink + Yoshi green */
+    --project-color-15a: #0d8e85; --project-color-15b: #e50b31;  /* Teal + Mario red */
+    --project-color-16a: #2cd6f5; --project-color-16b: #f98a4e;  /* Ice blue + DK orange */
+    --project-color-17a: #4574db; --project-color-17b: #f5c737;  /* Blue + Coin gold */
+    --project-color-18a: #ab47bc; --project-color-18b: #f98a4e;  /* Purple + DK orange */
+    --project-color-19a: #ab47bc; --project-color-19b: #6cb95f;  /* Purple + Yoshi green */
+    --project-color-20a: #9e9e9e; --project-color-20b: #e50b31;  /* Cartridge gray + Mario red */
 }
 
 [data-theme="8"] {
     /* Crystal Fog - cool pastels with distinction */
-    --project-color-1: #e57373;  /* Light red */
-    --project-color-2: #ffb74d;  /* Light orange */
-    --project-color-3: #fff176;  /* Light yellow */
-    --project-color-4: #81c784;  /* Light green */
-    --project-color-5: #4dd0e1;  /* Light cyan */
-    --project-color-6: #64b5f6;  /* Light blue */
-    --project-color-7: #ba68c8;  /* Light purple */
-    --project-color-8: #f06292;  /* Light pink */
-    --project-color-9: #aed581;  /* Light lime */
-    --project-color-10: #4db6ac; /* Light teal */
-    --project-color-11a: #e57373; --project-color-11b: #64b5f6;  /* Light red + Light blue */
-    --project-color-12a: #ffcc80; --project-color-12b: #4db6ac;  /* Light orange + Light teal */
-    --project-color-13a: #fff176; --project-color-13b: #ba68c8;  /* Light yellow + Light purple */
-    --project-color-14a: #f06292; --project-color-14b: #81c784;  /* Light pink + Light green */
-    --project-color-15a: #aed581; --project-color-15b: #ef9a9a;  /* Light lime + Light coral */
-    --project-color-16a: #80deea; --project-color-16b: #90a4ae;  /* Light cyan + Light slate */
+    --project-color-1: #e05252;  /* Red */
+    --project-color-2: #f07b10;  /* Orange */
+    --project-color-3: #b89c00;  /* Yellow */
+    --project-color-4: #76b871;  /* Green */
+    --project-color-5: #20bac3;  /* Cyan */
+    --project-color-6: #5ca8ff;  /* Blue */
+    --project-color-7: #795997;  /* Purple */
+    --project-color-8: #fc13b1;  /* Pink */
+    --project-color-9: #898988;  /* Fog gray */
+    --project-color-10: #0a7d65; /* Teal */
+    --project-color-11a: #e05252; --project-color-11b: #5ca8ff;  /* Red + Blue */
+    --project-color-12a: #f07b10; --project-color-12b: #0a7d65;  /* Orange + Teal */
+    --project-color-13a: #b89c00; --project-color-13b: #795997;  /* Yellow + Purple */
+    --project-color-14a: #fc13b1; --project-color-14b: #76b871;  /* Pink + Green */
+    --project-color-15a: #0a7d65; --project-color-15b: #e05252;  /* Teal + Red */
+    --project-color-16a: #20bac3; --project-color-16b: #f07b10;  /* Cyan + Orange */
+    --project-color-17a: #5ca8ff; --project-color-17b: #b89c00;  /* Blue + Yellow */
+    --project-color-18a: #795997; --project-color-18b: #f07b10;  /* Purple + Orange */
+    --project-color-19a: #795997; --project-color-19b: #76b871;  /* Purple + Green */
+    --project-color-20a: #898988; --project-color-20b: #e05252;  /* Fog gray + Red */
 }
 
 [data-theme="9"] {
     /* Super Famicom - Japanese console colors */
-    --project-color-1: #e53935;  /* Red button */
-    --project-color-2: #fb8c00;  /* Orange */
+    --project-color-1: #e53a30;  /* Red button */
+    --project-color-2: #df8618;  /* Orange */
     --project-color-3: #fdd835;  /* Yellow button */
-    --project-color-4: #43a047;  /* Green button */
-    --project-color-5: #00acc1;  /* Cyan */
-    --project-color-6: #1e88e5;  /* Blue button */
-    --project-color-7: #7b1fa2;  /* Purple */
-    --project-color-8: #d81b60;  /* Pink */
-    --project-color-9: #c0ca33;  /* Lime */
-    --project-color-10: #00897b; /* Teal */
-    --project-color-11a: #e53935; --project-color-11b: #1e88e5;  /* Red + Blue */
-    --project-color-12a: #fb8c00; --project-color-12b: #00897b;  /* Orange + Teal */
-    --project-color-13a: #fdd835; --project-color-13b: #7b1fa2;  /* Yellow + Purple */
-    --project-color-14a: #d81b60; --project-color-14b: #43a047;  /* Pink + Green */
-    --project-color-15a: #c0ca33; --project-color-15b: #d32f2f;  /* Lime + Red */
-    --project-color-16a: #00bcd4; --project-color-16b: #546e7a;  /* Cyan + Gray */
+    --project-color-4: #5fae45;  /* Green button */
+    --project-color-5: #0daec3;  /* Cyan */
+    --project-color-6: #4580db;  /* Blue button */
+    --project-color-7: #7d1da1;  /* Purple */
+    --project-color-8: #de4a95;  /* Pink */
+    --project-color-9: #424242;  /* Charcoal */
+    --project-color-10: #02775c; /* Teal */
+    --project-color-11a: #e53a30; --project-color-11b: #4580db;  /* Red button + Blue button */
+    --project-color-12a: #df8618; --project-color-12b: #02775c;  /* Orange + Teal */
+    --project-color-13a: #fdd835; --project-color-13b: #7d1da1;  /* Yellow button + Purple */
+    --project-color-14a: #de4a95; --project-color-14b: #5fae45;  /* Pink + Green button */
+    --project-color-15a: #02775c; --project-color-15b: #e53a30;  /* Teal + Red button */
+    --project-color-16a: #0daec3; --project-color-16b: #df8618;  /* Cyan + Orange */
+    --project-color-17a: #4580db; --project-color-17b: #fdd835;  /* Blue button + Yellow button */
+    --project-color-18a: #7d1da1; --project-color-18b: #df8618;  /* Purple + Orange */
+    --project-color-19a: #7d1da1; --project-color-19b: #5fae45;  /* Purple + Green button */
+    --project-color-20a: #424242; --project-color-20b: #e53a30;  /* Charcoal + Red button */
 }
 
 [data-theme="10"] {
     /* Snowy Night - cool winter tones */
-    --project-color-1: #ef5350;  /* Winter berry */
-    --project-color-2: #ff7043;  /* Sunset */
-    --project-color-3: #ffca28;  /* Warm light */
-    --project-color-4: #66bb6a;  /* Evergreen */
-    --project-color-5: #4dd0e1;  /* Ice */
-    --project-color-6: #42a5f5;  /* Twilight */
-    --project-color-7: #ab47bc;  /* Aurora */
-    --project-color-8: #ec407a;  /* Frostbite */
-    --project-color-9: #9ccc65;  /* Pine */
-    --project-color-10: #26c6da; /* Glacier */
-    --project-color-11a: #ef5350; --project-color-11b: #42a5f5;  /* Berry + Twilight */
-    --project-color-12a: #ffca28; --project-color-12b: #26c6da;  /* Warm light + Glacier */
-    --project-color-13a: #fff176; --project-color-13b: #ab47bc;  /* Starlight + Aurora */
-    --project-color-14a: #ec407a; --project-color-14b: #66bb6a;  /* Frostbite + Evergreen */
-    --project-color-15a: #9ccc65; --project-color-15b: #ef5350;  /* Pine + Cardinal */
-    --project-color-16a: #4dd0e1; --project-color-16b: #78909c;  /* Frost cyan + Slate */
+    --project-color-1: #e01a33;  /* Winter berry */
+    --project-color-2: #ff8542;  /* Sunset */
+    --project-color-3: #fdcb2c;  /* Warm light */
+    --project-color-4: #5dc76a;  /* Evergreen */
+    --project-color-5: #3bdcee;  /* Ice */
+    --project-color-6: #279bfd;  /* Twilight */
+    --project-color-7: #ab4abc;  /* Aurora */
+    --project-color-8: #fe7fa6;  /* Frostbite */
+    --project-color-9: #a1a1a1;  /* Slate */
+    --project-color-10: #108e81; /* Glacier */
+    --project-color-11a: #e01a33; --project-color-11b: #279bfd;  /* Winter berry + Twilight */
+    --project-color-12a: #ff8542; --project-color-12b: #108e81;  /* Sunset + Glacier */
+    --project-color-13a: #fdcb2c; --project-color-13b: #ab4abc;  /* Warm light + Aurora */
+    --project-color-14a: #fe7fa6; --project-color-14b: #5dc76a;  /* Frostbite + Evergreen */
+    --project-color-15a: #108e81; --project-color-15b: #e01a33;  /* Glacier + Winter berry */
+    --project-color-16a: #3bdcee; --project-color-16b: #ff8542;  /* Ice + Sunset */
+    --project-color-17a: #279bfd; --project-color-17b: #fdcb2c;  /* Twilight + Warm light */
+    --project-color-18a: #ab4abc; --project-color-18b: #ff8542;  /* Aurora + Sunset */
+    --project-color-19a: #ab4abc; --project-color-19b: #5dc76a;  /* Aurora + Evergreen */
+    --project-color-20a: #a1a1a1; --project-color-20b: #e01a33;  /* Slate + Winter berry */
 }
 
 [data-theme="11"] {
     /* Portal 2 - test chamber colors */
-    --project-color-1: #ff6b00;  /* Portal orange */
-    --project-color-2: #ffaa00;  /* Yellow */
-    --project-color-3: #ffee00;  /* Bright yellow */
-    --project-color-4: #00ff00;  /* Green */
-    --project-color-5: #00ccff;  /* Light blue */
-    --project-color-6: #00a2ff;  /* Portal blue */
-    --project-color-7: #aa00ff;  /* Purple */
-    --project-color-8: #ff00aa;  /* Magenta */
-    --project-color-9: #aaff00;  /* Lime */
-    --project-color-10: #00ffaa; /* Teal */
-    --project-color-11a: #ff6b00; --project-color-11b: #00a2ff;  /* Portal orange + Portal blue */
-    --project-color-12a: #ffaa00; --project-color-12b: #00ffaa;  /* Yellow + Teal */
-    --project-color-13a: #ffee00; --project-color-13b: #aa00ff;  /* Bright yellow + Purple */
-    --project-color-14a: #ff00aa; --project-color-14b: #00ff00;  /* Magenta + Green */
-    --project-color-15a: #aaff00; --project-color-15b: #ff3366;  /* Lime + Neon coral */
-    --project-color-16a: #00ffcc; --project-color-16b: #778899;  /* Turquoise + Steel */
+    --project-color-1: #fc3537;  /* Red */
+    --project-color-2: #fa8a1a;  /* Portal orange */
+    --project-color-3: #f8ec04;  /* Bright yellow */
+    --project-color-4: #22e622;  /* Green */
+    --project-color-5: #30d6fb;  /* Light blue */
+    --project-color-6: #3490f6;  /* Portal blue */
+    --project-color-7: #a718fa;  /* Purple */
+    --project-color-8: #fa5ab1;  /* Magenta */
+    --project-color-9: #999999;  /* Steel */
+    --project-color-10: #219b6a; /* Teal */
+    --project-color-11a: #fc3537; --project-color-11b: #3490f6;  /* Red + Portal blue */
+    --project-color-12a: #fa8a1a; --project-color-12b: #219b6a;  /* Portal orange + Teal */
+    --project-color-13a: #f8ec04; --project-color-13b: #a718fa;  /* Bright yellow + Purple */
+    --project-color-14a: #fa5ab1; --project-color-14b: #22e622;  /* Magenta + Green */
+    --project-color-15a: #219b6a; --project-color-15b: #fc3537;  /* Teal + Red */
+    --project-color-16a: #30d6fb; --project-color-16b: #fa8a1a;  /* Light blue + Portal orange */
+    --project-color-17a: #3490f6; --project-color-17b: #f8ec04;  /* Portal blue + Bright yellow */
+    --project-color-18a: #a718fa; --project-color-18b: #fa8a1a;  /* Purple + Portal orange */
+    --project-color-19a: #a718fa; --project-color-19b: #22e622;  /* Purple + Green */
+    --project-color-20a: #999999; --project-color-20b: #fc3537;  /* Steel + Red */
 }
 
 [data-theme="12"] {
     /* Fallout - pip-boy greens with variety */
-    --project-color-1: #ff4444;  /* Danger red */
-    --project-color-2: #ff8800;  /* Warning orange */
-    --project-color-3: #ffff00;  /* Caution yellow */
-    --project-color-4: #14ff00;  /* Pip-boy green */
-    --project-color-5: #00ffcc;  /* Cyan */
-    --project-color-6: #00aaff;  /* Blue */
-    --project-color-7: #aa00ff;  /* Purple */
-    --project-color-8: #ff00aa;  /* Magenta */
-    --project-color-9: #88ff00;  /* Lime */
-    --project-color-10: #00ff88; /* Mint */
-    --project-color-11a: #ff4444; --project-color-11b: #00aaff;  /* Danger red + Blue */
-    --project-color-12a: #ff8800; --project-color-12b: #00ff88;  /* Warning + Mint */
-    --project-color-13a: #ffff00; --project-color-13b: #aa00ff;  /* Caution + Purple */
-    --project-color-14a: #ff00aa; --project-color-14b: #14ff00;  /* Magenta + Pip-boy */
-    --project-color-15a: #88ff00; --project-color-15b: #ff3366;  /* Lime + Danger coral */
-    --project-color-16a: #00ffcc; --project-color-16b: #778899;  /* Neon cyan + Steel */
+    --project-color-1: #fa3f3c;  /* Danger red */
+    --project-color-2: #fa8b1a;  /* Warning orange */
+    --project-color-3: #fff41a;  /* Caution yellow */
+    --project-color-4: #0efb34;  /* Pip-boy green */
+    --project-color-5: #71fce4;  /* Cyan */
+    --project-color-6: #0aaafe;  /* Blue */
+    --project-color-7: #ac02fa;  /* Purple */
+    --project-color-8: #f861ad;  /* Magenta */
+    --project-color-9: #adaba8;  /* Steel */
+    --project-color-10: #39a268; /* Teal */
+    --project-color-11a: #fa3f3c; --project-color-11b: #0aaafe;  /* Danger red + Blue */
+    --project-color-12a: #fa8b1a; --project-color-12b: #39a268;  /* Warning orange + Teal */
+    --project-color-13a: #fff41a; --project-color-13b: #ac02fa;  /* Caution yellow + Purple */
+    --project-color-14a: #f861ad; --project-color-14b: #0efb34;  /* Magenta + Pip-boy green */
+    --project-color-15a: #39a268; --project-color-15b: #fa3f3c;  /* Teal + Danger red */
+    --project-color-16a: #71fce4; --project-color-16b: #fa8b1a;  /* Cyan + Warning orange */
+    --project-color-17a: #0aaafe; --project-color-17b: #fff41a;  /* Blue + Caution yellow */
+    --project-color-18a: #ac02fa; --project-color-18b: #fa8b1a;  /* Purple + Warning orange */
+    --project-color-19a: #ac02fa; --project-color-19b: #0efb34;  /* Purple + Pip-boy green */
+    --project-color-20a: #adaba8; --project-color-20b: #fa3f3c;  /* Steel + Danger red */
 }
 
 [data-theme="13"] {
     /* Emerald City - Oz colors */
-    --project-color-1: #e53935;  /* Ruby red */
-    --project-color-2: #ff7043;  /* Poppy orange */
-    --project-color-3: #ffd700;  /* Yellow brick */
-    --project-color-4: #50c878;  /* Emerald */
-    --project-color-5: #00bcd4;  /* Cyan */
-    --project-color-6: #2196f3;  /* Sky blue */
-    --project-color-7: #9c27b0;  /* Purple */
-    --project-color-8: #e91e63;  /* Pink */
-    --project-color-9: #8bc34a;  /* Lime */
-    --project-color-10: #009688; /* Teal */
-    --project-color-11a: #e53935; --project-color-11b: #2196f3;  /* Ruby + Sky */
-    --project-color-12a: #ff7043; --project-color-12b: #009688;  /* Poppy + Teal */
-    --project-color-13a: #ffd700; --project-color-13b: #9c27b0;  /* Gold + Purple */
-    --project-color-14a: #e91e63; --project-color-14b: #50c878;  /* Pink + Emerald */
-    --project-color-15a: #8bc34a; --project-color-15b: #e53935;  /* Lime + Ruby slipper */
-    --project-color-16a: #00bcd4; --project-color-16b: #607d8b;  /* Cyan + Slate */
+    --project-color-1: #eb2807;  /* Ruby red */
+    --project-color-2: #fdad86;  /* Poppy orange */
+    --project-color-3: #f9d407;  /* Yellow brick */
+    --project-color-4: #5dce75;  /* Emerald */
+    --project-color-5: #15daef;  /* Cyan */
+    --project-color-6: #1194f7;  /* Sky blue */
+    --project-color-7: #ae2ce2;  /* Purple */
+    --project-color-8: #f6337c;  /* Pink */
+    --project-color-9: #99999a;  /* Silver */
+    --project-color-10: #178e80; /* Teal */
+    --project-color-11a: #eb2807; --project-color-11b: #1194f7;  /* Ruby red + Sky blue */
+    --project-color-12a: #fdad86; --project-color-12b: #178e80;  /* Poppy orange + Teal */
+    --project-color-13a: #f9d407; --project-color-13b: #ae2ce2;  /* Yellow brick + Purple */
+    --project-color-14a: #f6337c; --project-color-14b: #5dce75;  /* Pink + Emerald */
+    --project-color-15a: #178e80; --project-color-15b: #eb2807;  /* Teal + Ruby red */
+    --project-color-16a: #15daef; --project-color-16b: #fdad86;  /* Cyan + Poppy orange */
+    --project-color-17a: #1194f7; --project-color-17b: #f9d407;  /* Sky blue + Yellow brick */
+    --project-color-18a: #ae2ce2; --project-color-18b: #fdad86;  /* Purple + Poppy orange */
+    --project-color-19a: #ae2ce2; --project-color-19b: #5dce75;  /* Purple + Emerald */
+    --project-color-20a: #99999a; --project-color-20b: #eb2807;  /* Silver + Ruby red */
 }
 
 [data-theme="14"] {
     /* Whiteboard Post-Its - saturated stripes for contrast on pastel cards */
-    /* Blue card stripes (1, 6) - warm on cool */
+    /* Stripes contrast with their post-it card: blue cards (1, 6), pink (2, 7), green (3, 4, 8), yellow (5, 9, 10) */
     --project-color-1: #dc2626;  /* Bold red */
-    --project-color-6: #ea580c;  /* Burnt orange */
-    /* Pink card stripes (2, 7) - cool/contrast on warm */
-    --project-color-2: #059669;  /* Emerald */
-    --project-color-7: #7c3aed;  /* Violet */
-    /* Green card stripes (3, 4, 8) - warm on cool */
-    --project-color-3: #ca8a04;  /* Gold */
-    --project-color-4: #dc2626;  /* Red */
-    --project-color-8: #db2777;  /* Magenta */
-    /* Yellow card stripes (5, 9, 10) - cool on warm */
-    --project-color-5: #2563eb;  /* Royal blue */
-    --project-color-9: #7c3aed;  /* Violet */
-    --project-color-10: #0891b2; /* Cyan */
-    --project-color-11a: #dc2626; --project-color-11b: #2563eb;  /* Bold red + Royal blue */
-    --project-color-12a: #ea580c; --project-color-12b: #0891b2;  /* Orange + Cyan */
-    --project-color-13a: #ca8a04; --project-color-13b: #7c3aed;  /* Gold + Violet */
-    --project-color-14a: #db2777; --project-color-14b: #059669;  /* Magenta + Emerald */
-    --project-color-15a: #65a30d; --project-color-15b: #dc2626;  /* Green + Bold coral */
-    --project-color-16a: #06b6d4; --project-color-16b: #64748b;  /* Cyan + Slate */
+    --project-color-2: #077633;  /* Emerald */
+    --project-color-3: #be8e02;  /* Gold */
+    --project-color-4: #383f4d;  /* Charcoal */
+    --project-color-5: #186bd4;  /* Royal blue */
+    --project-color-6: #f97316;  /* Orange */
+    --project-color-7: #8935e9;  /* Violet */
+    --project-color-8: #e01b79;  /* Magenta */
+    --project-color-9: #129a8c;  /* Teal */
+    --project-color-10: #1ea3d1; /* Cyan */
+    --project-color-11a: #dc2626; --project-color-11b: #186bd4;  /* Bold red + Royal blue */
+    --project-color-12a: #f97316; --project-color-12b: #129a8c;  /* Orange + Teal */
+    --project-color-13a: #be8e02; --project-color-13b: #8935e9;  /* Gold + Violet */
+    --project-color-14a: #e01b79; --project-color-14b: #077633;  /* Magenta + Emerald */
+    --project-color-15a: #129a8c; --project-color-15b: #dc2626;  /* Teal + Bold red */
+    --project-color-16a: #1ea3d1; --project-color-16b: #f97316;  /* Cyan + Orange */
+    --project-color-17a: #186bd4; --project-color-17b: #be8e02;  /* Royal blue + Gold */
+    --project-color-18a: #8935e9; --project-color-18b: #f97316;  /* Violet + Orange */
+    --project-color-19a: #8935e9; --project-color-19b: #077633;  /* Violet + Emerald */
+    --project-color-20a: #383f4d; --project-color-20b: #dc2626;  /* Charcoal + Bold red */
 }
 
 [data-theme="15"] {
     /* Blueprint - technical drawing colors */
     --project-color-1: #e53935;  /* Error red */
-    --project-color-2: #fb8c00;  /* Warning orange */
-    --project-color-3: #fdd835;  /* Highlight yellow */
-    --project-color-4: #43a047;  /* Approved green */
-    --project-color-5: #00acc1;  /* Dimension cyan */
-    --project-color-6: #1976d2;  /* Blueprint blue */
-    --project-color-7: #7b1fa2;  /* Note purple */
-    --project-color-8: #d81b60;  /* Markup pink */
-    --project-color-9: #7cb342;  /* Draft lime */
-    --project-color-10: #00838f; /* Section teal */
-    --project-color-11a: #e53935; --project-color-11b: #1976d2;  /* Error red + Blueprint blue */
-    --project-color-12a: #fb8c00; --project-color-12b: #00838f;  /* Warning + Section teal */
-    --project-color-13a: #fdd835; --project-color-13b: #7b1fa2;  /* Highlight + Note purple */
-    --project-color-14a: #d81b60; --project-color-14b: #43a047;  /* Markup pink + Approved green */
-    --project-color-15a: #7cb342; --project-color-15b: #c62828;  /* Draft lime + Markup red */
-    --project-color-16a: #00bcd4; --project-color-16b: #546e7a;  /* Dimension cyan + Steel */
+    --project-color-2: #f88d27;  /* Warning orange */
+    --project-color-3: #fdd733;  /* Highlight yellow */
+    --project-color-4: #4aa043;  /* Approved green */
+    --project-color-5: #7ce7f0;  /* Dimension cyan */
+    --project-color-6: #4f8ff7;  /* Blueprint blue */
+    --project-color-7: #ad37d6;  /* Note purple */
+    --project-color-8: #fa73aa;  /* Markup pink */
+    --project-color-9: #efeeef;  /* Chalk white */
+    --project-color-10: #008d96; /* Section teal */
+    --project-color-11a: #e53935; --project-color-11b: #4f8ff7;  /* Error red + Blueprint blue */
+    --project-color-12a: #f88d27; --project-color-12b: #008d96;  /* Warning orange + Section teal */
+    --project-color-13a: #fdd733; --project-color-13b: #ad37d6;  /* Highlight yellow + Note purple */
+    --project-color-14a: #fa73aa; --project-color-14b: #4aa043;  /* Markup pink + Approved green */
+    --project-color-15a: #008d96; --project-color-15b: #e53935;  /* Section teal + Error red */
+    --project-color-16a: #7ce7f0; --project-color-16b: #f88d27;  /* Dimension cyan + Warning orange */
+    --project-color-17a: #4f8ff7; --project-color-17b: #fdd733;  /* Blueprint blue + Highlight yellow */
+    --project-color-18a: #ad37d6; --project-color-18b: #f88d27;  /* Note purple + Warning orange */
+    --project-color-19a: #ad37d6; --project-color-19b: #4aa043;  /* Note purple + Approved green */
+    --project-color-20a: #efeeef; --project-color-20b: #e53935;  /* Chalk white + Error red */
 }
 
 [data-theme="16"] {
     /* Coffee Shop - warm cafe tones */
-    --project-color-1: #c62828;  /* Cranberry */
-    --project-color-2: #ef6c00;  /* Pumpkin */
-    --project-color-3: #f9a825;  /* Honey */
-    --project-color-4: #558b2f;  /* Matcha */
-    --project-color-5: #00838f;  /* Teal mug */
-    --project-color-6: #1565c0;  /* Blueberry */
-    --project-color-7: #6a1b9a;  /* Grape */
-    --project-color-8: #ad1457;  /* Raspberry */
-    --project-color-9: #9e9d24;  /* Pistachio */
+    --project-color-1: #b80e16;  /* Cranberry */
+    --project-color-2: #f07550;  /* Pumpkin */
+    --project-color-3: #d59818;  /* Honey */
+    --project-color-4: #5c8c29;  /* Matcha */
+    --project-color-5: #319db4;  /* Teal mug */
+    --project-color-6: #2467c4;  /* Blueberry */
+    --project-color-7: #641196;  /* Grape */
+    --project-color-8: #c34385;  /* Raspberry */
+    --project-color-9: #6b6a6b;  /* Espresso gray */
     --project-color-10: #00695c; /* Mint */
-    --project-color-11a: #c62828; --project-color-11b: #1565c0;  /* Cranberry + Blueberry */
-    --project-color-12a: #ef6c00; --project-color-12b: #00695c;  /* Pumpkin + Mint */
-    --project-color-13a: #f9a825; --project-color-13b: #6a1b9a;  /* Honey + Grape */
-    --project-color-14a: #ad1457; --project-color-14b: #558b2f;  /* Raspberry + Matcha */
-    --project-color-15a: #9e9d24; --project-color-15b: #c62828;  /* Pistachio + Cherry */
-    --project-color-16a: #0097a7; --project-color-16b: #546e7a;  /* Teal cyan + Slate */
+    --project-color-11a: #b80e16; --project-color-11b: #2467c4;  /* Cranberry + Blueberry */
+    --project-color-12a: #f07550; --project-color-12b: #00695c;  /* Pumpkin + Mint */
+    --project-color-13a: #d59818; --project-color-13b: #641196;  /* Honey + Grape */
+    --project-color-14a: #c34385; --project-color-14b: #5c8c29;  /* Raspberry + Matcha */
+    --project-color-15a: #00695c; --project-color-15b: #b80e16;  /* Mint + Cranberry */
+    --project-color-16a: #319db4; --project-color-16b: #f07550;  /* Teal mug + Pumpkin */
+    --project-color-17a: #2467c4; --project-color-17b: #d59818;  /* Blueberry + Honey */
+    --project-color-18a: #641196; --project-color-18b: #f07550;  /* Grape + Pumpkin */
+    --project-color-19a: #641196; --project-color-19b: #5c8c29;  /* Grape + Matcha */
+    --project-color-20a: #6b6a6b; --project-color-20b: #b80e16;  /* Espresso gray + Cranberry */
 }
 
 body {
