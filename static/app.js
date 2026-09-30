@@ -2972,7 +2972,7 @@ function renderCalendarEvent(event, className) {
 
     let meetLink = '';
     if (event.hangoutLink) {
-        meetLink = `<a href="${event.hangoutLink}" target="_blank" class="calendar-meet-link">Join Meet</a>`;
+        meetLink = `<a href="${event.hangoutLink}" target="_blank" class="calendar-meet-link" onclick="return confirmMeetJoin('${event.start}', '${event.end}')">Join Meet</a>`;
     }
 
     // Add response status class
@@ -2995,6 +2995,32 @@ function renderCalendarEvent(event, className) {
             ${meetLink}
         </div>
     `;
+}
+
+function formatMinutesAway(totalMinutes) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const parts = [];
+    if (hours > 0) parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`);
+    if (minutes > 0) parts.push(`${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`);
+    return parts.join(' and ');
+}
+
+// Returns why joining now looks like the wrong meeting, or null if it looks right
+function getMeetingJoinWarning(start, end, now) {
+    if (now >= end) return 'already complete';
+    if (now >= start) {
+        return (now - start) / (end - start) > 0.75 ? 'almost done' : null;
+    }
+    const msAway = start - now;
+    if (msAway <= 10 * 60 * 1000) return null;
+    return `${formatMinutesAway(Math.ceil(msAway / 60000))} in the future`;
+}
+
+function confirmMeetJoin(start, end) {
+    const warning = getMeetingJoinWarning(new Date(start), new Date(end), new Date());
+    if (!warning) return true;
+    return confirm(`This meeting is ${warning}. Are you sure you want to join?`);
 }
 
 async function syncAll() {
